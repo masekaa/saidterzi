@@ -237,7 +237,7 @@ export default function Home() {
                   {Object.entries(bt.strategies[0].timeInAsset)
                     .map(([k, v]) => `${k.toUpperCase()} %${v}`)
                     .join(" · ")}{" "}
-                  · Yıllık ~{num(bt.strategies[0].switchesPerYear)} geçiş
+                  · Yıllık ~{num(bt.strategies[0].switchesPerYear ?? null)} geçiş
                 </p>
               )}
             </>
