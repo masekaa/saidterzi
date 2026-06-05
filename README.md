@@ -1,13 +1,30 @@
 # saidterzi — Dual Momentum Investing Projesi
 
-Gary Antonacci'nin *Dual Momentum Investing: An Innovative Strategy for Higher Returns with Lower Risk* (McGraw-Hill, 2014) kitabına dayalı, **GEM (Global Equities Momentum)** ve türev stratejilerin kapsam dokümanı ve (ileride) backtest/uygulama kodu.
+Gary Antonacci'nin *Dual Momentum Investing: An Innovative Strategy for Higher Returns with Lower Risk* (McGraw-Hill, 2014) kitabına dayalı **GEM (Global Equities Momentum)** stratejisi: kapsam dokümanı + **canlı analiz web uygulaması**.
+
+## 🚀 Canlı Uygulama (Next.js → Vercel)
+
+Altın · S&P 500 · NASDAQ için anlık dual momentum analizi yapan dashboard.
+
+```bash
+npm install
+npm run dev      # http://localhost:3000
+```
+
+Deploy için → [`DEPLOY.md`](DEPLOY.md). Veri: Yahoo Finance (keyless). Strateji: 12-ay look-back, T-Bill eşikli GEM rotasyonu + varlık-bazlı sinyaller.
+
+| Yol | İçerik |
+|-----|--------|
+| `app/` | Next.js App Router — `page.tsx` (dashboard), `api/analysis/` (serverless route) |
+| `lib/` | `yahoo.ts` (veri çekme), `momentum.ts` (GEM/dual momentum hesabı), `types.ts` |
 
 ## 📂 Yapı
 
 | Klasör/Dosya | İçerik |
 |--------------|--------|
+| `app/`, `lib/` | Canlı analiz web uygulaması (Next.js/TypeScript) |
 | [`dual-momentum-kapsam/`](dual-momentum-kapsam/) | Kitabın tüm teknik içeriğinin kapsam dokümanı (TR + İng. terimli). Hem referans arşivi hem kodlanabilir spesifikasyon. |
-| `dual_momentum/` *(planlanan)* | Python implementasyonu (backtest motoru, sinyal üretimi, metrikler). Bkz. `09-implementasyon-spec.md`. |
+| [`DEPLOY.md`](DEPLOY.md) | Vercel deploy rehberi |
 
 ## 📖 Kapsam Dokümanı Haritası
 
