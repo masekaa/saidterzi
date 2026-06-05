@@ -1,13 +1,6 @@
-// Ortak tipler — Dual Momentum / GEM analiz uygulaması
+// Ortak tipler — Dual Momentum / GEM çok-yöntemli analiz uygulaması
 
-export type AssetKey = "spy" | "qqq" | "gld";
-
-export interface AssetConfig {
-  key: AssetKey;
-  name: string; // Görünen ad (TR)
-  ticker: string; // Yahoo sembolü (ETF — adjusted close = total return)
-  description: string;
-}
+export type Signal = "LONG" | "CASH";
 
 export interface MonthlyPoint {
   date: string; // ISO (YYYY-MM-DD)
@@ -22,42 +15,77 @@ export interface RawSeries {
   series: MonthlyPoint[]; // aylık, eskiden yeniye sıralı
 }
 
-export type Signal = "LONG" | "CASH";
-
-export interface AssetAnalysis {
-  key: AssetKey;
-  name: string;
-  ticker: string;
-  currentPrice: number;
-  currency: string;
-  ret12m: number | null; // son 12 ay toplam getiri (oran, örn. 0.18 = %18)
-  excessReturn: number | null; // ret12m - tbillRet12m
-  signal: Signal; // varlık-bazlı absolute momentum sinyali
-  asOf: string | null; // 12 ay referans tarihi
+// --- Şeffaf hesaplama gösterimi ---
+// Her yöntem, formülünü + ara girdilerini + sonucunu açıkça döndürür.
+export interface CalcStep {
+  label: string; // örn. "P (güncel)"
+  value: string; // formatlanmış değer
 }
 
+export interface AssetMethodResult {
+  assetKey: string;
+  assetName: string;
+  ticker: string;
+  steps: CalcStep[]; // ara girdiler/hesaplar (şeffaflık)
+  result: string; // nihai değer (formatlı)
+  resultRaw: number | null;
+  signal?: Signal; // varsa AL/NAKİT
+  highlight?: boolean; // örn. relative momentum kazananı
+  note?: string;
+}
+
+export interface MethodResult {
+  id: string;
+  title: string; // TR başlık
+  category: string; // gruplama (örn. "Trend / Absolute")
+  bookRef: string; // kitap bölüm referansı
+  formula: string; // okunabilir formül
+  description: string; // ne yapar
+  assets: AssetMethodResult[];
+  summary: string; // genel yorum
+  warnings?: string[];
+}
+
+// --- Backtest / metrik ---
+export interface StrategyMetrics {
+  name: string;
+  annualReturnArith: number | null;
+  cagr: number | null;
+  annualVol: number | null;
+  sharpe: number | null;
+  maxDrawdown: number | null;
+  pctProfitMonths: number | null;
+  totalReturn: number | null;
+  switchesPerYear?: number | null;
+  timeInAsset?: Record<string, number>; // her varlıkta geçirilen zaman %
+}
+
+export interface BacktestResult {
+  startDate: string;
+  endDate: string;
+  months: number;
+  strategies: StrategyMetrics[]; // GEM + buy&hold benchmark'lar
+  note: string;
+}
+
+// --- GEM önerisi (çekirdek) ---
 export interface GemRecommendation {
-  // Relative momentum kazananı (3 varlıktan en yüksek 12m getiri)
-  relativeWinnerKey: AssetKey;
+  relativeWinnerKey: string;
   relativeWinnerName: string;
   relativeWinnerRet12m: number;
-  // Absolute momentum filtresi
-  absolutePositive: boolean; // kazananın getirisi T-Bill'i geçiyor mu?
-  // Nihai pozisyon
-  positionKey: AssetKey | "cash";
+  absolutePositive: boolean;
+  positionKey: string; // varlık anahtarı veya "cash"
   positionName: string;
   rationale: string;
 }
 
+// --- Tüm analiz çıktısı ---
 export interface AnalysisResult {
-  generatedAt: string; // ISO timestamp
+  generatedAt: string;
   lookbackMonths: number;
-  tbill: {
-    ticker: string;
-    ret12m: number | null; // T-Bill son 12 ay getirisi (eşik)
-    currentPrice: number;
-  };
-  assets: AssetAnalysis[];
+  tbill: { ticker: string; ret12m: number | null; currentPrice: number };
   gem: GemRecommendation;
+  methods: MethodResult[]; // tüm yöntemler (şeffaf)
+  backtest: BacktestResult | null;
   warnings: string[];
 }

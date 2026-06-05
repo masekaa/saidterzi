@@ -26,13 +26,17 @@ interface YahooChartResponse {
 }
 
 /**
- * Bir sembol için ~2 yıllık aylık adjusted-close serisi + güncel fiyat çeker.
+ * Bir sembol için aylık adjusted-close serisi + güncel fiyat çeker.
+ * range: "2y" | "5y" | "10y" | "max" ... (varsayılan "max" — backtest için tam geçmiş).
  * Hata durumunda exception fırlatır.
  */
-export async function fetchMonthlySeries(ticker: string): Promise<RawSeries> {
+export async function fetchMonthlySeries(
+  ticker: string,
+  range: string = "max"
+): Promise<RawSeries> {
   const url = `${BASE}/${encodeURIComponent(
     ticker
-  )}?range=2y&interval=1mo&includePrePost=false`;
+  )}?range=${encodeURIComponent(range)}&interval=1mo&includePrePost=false`;
 
   const res = await fetch(url, {
     headers: {

@@ -1,22 +1,21 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import type { AnalysisResult, AssetAnalysis } from "@/lib/types";
+import type {
+  AnalysisResult,
+  AssetMethodResult,
+  MethodResult,
+  StrategyMetrics,
+} from "@/lib/types";
 
-function pct(x: number | null, digits = 1): string {
+function pct(x: number | null, d = 1): string {
   if (x == null || !isFinite(x)) return "—";
-  return `${x >= 0 ? "+" : ""}${(x * 100).toFixed(digits)}%`;
+  return `${x >= 0 ? "+" : ""}${(x * 100).toFixed(d)}%`;
 }
-
-function price(x: number, currency: string): string {
-  if (!isFinite(x)) return "—";
-  return new Intl.NumberFormat("tr-TR", {
-    style: "currency",
-    currency: currency || "USD",
-    maximumFractionDigits: 2,
-  }).format(x);
+function num(x: number | null, d = 2): string {
+  if (x == null || !isFinite(x)) return "—";
+  return x.toFixed(d);
 }
-
 function fmtTime(iso: string): string {
   try {
     return new Date(iso).toLocaleString("tr-TR", {
@@ -28,7 +27,8 @@ function fmtTime(iso: string): string {
   }
 }
 
-function SignalBadge({ signal }: { signal: "LONG" | "CASH" }) {
+function SignalBadge({ signal }: { signal?: "LONG" | "CASH" }) {
+  if (!signal) return null;
   const isLong = signal === "LONG";
   return (
     <span className={`badge ${isLong ? "badge-long" : "badge-cash"}`}>
@@ -38,51 +38,100 @@ function SignalBadge({ signal }: { signal: "LONG" | "CASH" }) {
   );
 }
 
-function AssetCard({
-  a,
-  isWinner,
-}: {
-  a: AssetAnalysis;
-  isWinner: boolean;
-}) {
+function MethodRow({ a }: { a: AssetMethodResult }) {
   return (
-    <div className={`card ${isWinner ? "winner" : ""}`}>
-      {isWinner && <span className="winner-tag">En güçlü</span>}
-      <div className="card-head">
-        <div>
-          <div className="card-name">{a.name}</div>
-          <div className="card-ticker">{a.ticker}</div>
-        </div>
+    <div className={`mrow ${a.highlight ? "mrow-hl" : ""}`}>
+      <div className="mrow-name">
+        {a.assetName}
+        {a.ticker && <span className="mrow-ticker">{a.ticker}</span>}
+      </div>
+      <div className="mrow-steps">
+        {a.steps.map((s, i) => (
+          <span className="chip" key={i}>
+            <b>{s.label}:</b> {s.value}
+          </span>
+        ))}
+      </div>
+      <div className="mrow-result">
+        <span className="mrow-result-text">{a.result}</span>
         <SignalBadge signal={a.signal} />
       </div>
-      <div className="card-price">
-        {price(a.currentPrice, a.currency)}{" "}
-        <span className="card-currency">{a.currency}</span>
-      </div>
-      <div className="metric-row">
-        <span className="k">12 ay getiri</span>
-        <span
-          className={`v ${
-            a.ret12m != null ? (a.ret12m >= 0 ? "pos" : "neg") : ""
-          }`}
-        >
-          {pct(a.ret12m)}
-        </span>
-      </div>
-      <div className="metric-row">
-        <span className="k">T-Bill üstü (excess)</span>
-        <span
-          className={`v ${
-            a.excessReturn != null
-              ? a.excessReturn >= 0
-                ? "pos"
-                : "neg"
-              : ""
-          }`}
-        >
-          {pct(a.excessReturn)}
-        </span>
-      </div>
+      {a.note && <div className="mrow-note">{a.note}</div>}
+    </div>
+  );
+}
+
+function MethodCard({
+  m,
+  defaultOpen,
+}: {
+  m: MethodResult;
+  defaultOpen?: boolean;
+}) {
+  const [open, setOpen] = useState(!!defaultOpen);
+  return (
+    <div className="method">
+      <button className="method-head" onClick={() => setOpen((o) => !o)}>
+        <div className="method-head-left">
+          <span className="method-title">{m.title}</span>
+          <span className="method-cat">{m.category}</span>
+        </div>
+        <span className={`chevron ${open ? "up" : ""}`}>▾</span>
+      </button>
+      {open && (
+        <div className="method-body">
+          <div className="formula">
+            <span className="formula-tag">Formül</span>
+            <code>{m.formula}</code>
+          </div>
+          <p className="method-desc">{m.description}</p>
+          <div className="method-rows">
+            {m.assets.map((a) => (
+              <MethodRow key={a.assetKey} a={a} />
+            ))}
+          </div>
+          <div className="method-summary">{m.summary}</div>
+          {m.warnings && m.warnings.length > 0 && (
+            <div className="method-warn">{m.warnings.join(" · ")}</div>
+          )}
+          <div className="bookref">📖 {m.bookRef}</div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function MetricsTable({ rows }: { rows: StrategyMetrics[] }) {
+  return (
+    <div className="table-scroll">
+      <table className="metrics">
+        <thead>
+          <tr>
+            <th className="left">Strateji</th>
+            <th>Yıllık (arit.)</th>
+            <th>CAGR</th>
+            <th>Volatilite</th>
+            <th>Sharpe</th>
+            <th>Max DD</th>
+            <th>% Kârlı Ay</th>
+            <th>Toplam Getiri</th>
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map((s, i) => (
+            <tr key={i} className={i === 0 ? "row-hl" : ""}>
+              <td className="left">{s.name}</td>
+              <td>{pct(s.annualReturnArith)}</td>
+              <td>{pct(s.cagr)}</td>
+              <td>{pct(s.annualVol)}</td>
+              <td className="strong">{num(s.sharpe)}</td>
+              <td className="neg">{pct(s.maxDrawdown)}</td>
+              <td>{s.pctProfitMonths != null ? num(s.pctProfitMonths, 0) : "—"}</td>
+              <td>{pct(s.totalReturn, 0)}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
     </div>
   );
 }
@@ -101,8 +150,7 @@ export default function Home() {
         const body = await res.json().catch(() => ({}));
         throw new Error(body.detail || body.error || `HTTP ${res.status}`);
       }
-      const json = (await res.json()) as AnalysisResult;
-      setData(json);
+      setData((await res.json()) as AnalysisResult);
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
     } finally {
@@ -116,23 +164,20 @@ export default function Home() {
 
   const gem = data?.gem;
   const isCash = gem?.positionKey === "cash";
+  const bt = data?.backtest;
 
   return (
     <div className="wrap">
       <div className="header">
         <div>
-          <h1 className="title">Dual Momentum Analiz</h1>
+          <h1 className="title">Dual Momentum Analiz Motoru</h1>
           <p className="subtitle">
-            Altın · S&amp;P 500 · NASDAQ — Antonacci GEM stratejisi (12 ay
-            look-back, T-Bill eşiği)
+            Altın · S&amp;P 500 · NASDAQ — Antonacci stratejilerinin canlı,
+            şeffaf hesaplamaları (12 ay look-back, T-Bill eşiği)
           </p>
         </div>
         <div className="header-right">
-          <button
-            className="refresh-btn"
-            onClick={load}
-            disabled={loading}
-          >
+          <button className="refresh-btn" onClick={load} disabled={loading}>
             {loading ? "Yükleniyor…" : "↻ Yenile"}
           </button>
           {data && (
@@ -146,7 +191,7 @@ export default function Home() {
       {loading && !data && (
         <div className="state">
           <div className="spinner" />
-          Piyasa verileri çekiliyor…
+          Piyasa verileri çekiliyor ve tüm yöntemler hesaplanıyor…
         </div>
       )}
 
@@ -177,23 +222,35 @@ export default function Home() {
             <p className="hero-rationale">{gem.rationale}</p>
           </div>
 
-          {/* Varlık-bazlı sinyaller */}
-          <div className="section-label">Varlık-Bazlı Sinyaller</div>
-          <div className="grid">
-            {data.assets.map((a) => (
-              <AssetCard
-                key={a.key}
-                a={a}
-                isWinner={a.key === gem.relativeWinnerKey}
-              />
-            ))}
-          </div>
+          {/* Backtest & Metrikler */}
+          {bt && (
+            <>
+              <div className="section-label">
+                Backtest &amp; Risk Metrikleri ({bt.startDate} → {bt.endDate},{" "}
+                {bt.months} ay)
+              </div>
+              <MetricsTable rows={bt.strategies} />
+              <p className="table-note">{bt.note}</p>
+              {bt.strategies[0]?.timeInAsset && (
+                <p className="table-note">
+                  GEM zaman dağılımı:{" "}
+                  {Object.entries(bt.strategies[0].timeInAsset)
+                    .map(([k, v]) => `${k.toUpperCase()} %${v}`)
+                    .join(" · ")}{" "}
+                  · Yıllık ~{num(bt.strategies[0].switchesPerYear)} geçiş
+                </p>
+              )}
+            </>
+          )}
 
-          <div className="tbill-line">
-            Risksiz eşik (T-Bill, {data.tbill.ticker}) son 12 ay getirisi:{" "}
-            <b>{pct(data.tbill.ret12m)}</b>. Bir varlığın 12 aylık getirisi bu
-            eşiği geçiyorsa <b>AL/TUT</b>, geçmiyorsa <b>NAKİT</b> sinyali üretir
-            (absolute momentum).
+          {/* Tüm Yöntemler */}
+          <div className="section-label">
+            Yöntem Hesaplamaları (formül + adımlar şeffaf)
+          </div>
+          <div className="methods">
+            {data.methods.map((m, i) => (
+              <MethodCard key={m.id} m={m} defaultOpen={i === 0} />
+            ))}
           </div>
 
           {data.warnings.length > 0 && (
@@ -207,39 +264,20 @@ export default function Home() {
             </div>
           )}
 
-          {/* Strateji açıklaması */}
-          <div className="info">
-            <h3>GEM Mantığı Nasıl Çalışır?</h3>
-            <ol>
-              <li>
-                <b>Relative momentum:</b> Altın, S&amp;P 500 ve NASDAQ'tan son 12
-                ayda en yüksek <code>total return</code> getiren varlık seçilir.
-              </li>
-              <li>
-                <b>Absolute momentum (trend filtresi):</b> Seçilen varlığın 12
-                aylık getirisi T-Bill'i geçiyorsa o varlıkta kal; geçmiyorsa
-                trend negatif kabul edilir ve <code>NAKİT/T-Bill</code>'e geçilir.
-              </li>
-              <li>
-                Her ay sonu tekrarlanır. Amaç: yüksek getiri + ayı piyasalarında
-                büyük düşüşlerden korunma.
-              </li>
-            </ol>
-          </div>
-
           <p className="disclaimer">
-            ⚠️ Bu uygulama yalnızca eğitim ve bilgilendirme amaçlıdır; yatırım
-            tavsiyesi değildir. Veriler Yahoo Finance'ten gecikmeli/yaklaşık
-            olabilir. Geçmiş performans gelecek getiriyi garanti etmez. Kitabın
-            orijinal GEM modeli ABD/yabancı hisse + tahvil kullanır; bu uygulama
-            stratejiyi Altın/S&amp;P 500/NASDAQ üçlüsüne uyarlar.
+            ⚠️ Yalnızca eğitim/bilgilendirme amaçlıdır; yatırım tavsiyesi
+            değildir. Veriler Yahoo Finance'ten gecikmeli/yaklaşık olabilir.
+            Tüm hesaplamalar kapsam dokümanındaki (dual-momentum-kapsam/)
+            metodolojiye dayanır; backtest işlem maliyeti içermez ve geçmiş
+            performans gelecek getiriyi garanti etmez.
           </p>
         </>
       )}
 
       <div className="footer">
         Kaynak metodoloji: Gary Antonacci, <i>Dual Momentum Investing</i>{" "}
-        (2014). · Veri: Yahoo Finance
+        (2014). · Veri: Yahoo Finance · {data?.methods.length ?? 0} yöntem canlı
+        hesaplanıyor
       </div>
     </div>
   );
