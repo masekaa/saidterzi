@@ -524,11 +524,13 @@ export function methodGBM(bondRaw: RawMap, tbill: RawSeries): MethodResult {
       highlight: !!isWinner,
     };
   });
-  const pickName = winner
-    ? winner.ret > thr
-      ? winner.b.name
-      : `${winner.b.name} (zayıf; T-Bill tercih edilebilir)`
-    : "—";
+  const winnerRet = winner ? (winner.ret as number) : null;
+  const pickName =
+    winner && winnerRet != null
+      ? winnerRet > thr
+        ? winner.b.name
+        : `${winner.b.name} (zayıf; T-Bill tercih edilebilir)`
+      : "—";
   return {
     id: "gbm",
     title: "GBM — Sabit-Getiri Dual Momentum",
