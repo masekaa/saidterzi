@@ -1,0 +1,28 @@
+# --- Telifli kaynak materyal (GitHub'a YÜKLENMEZ) ---
+# Kitabın orijinal EPUB'ı ve ondan çıkarılan ham tam metin/görseller.
+# Yalnızca kendi sentezimiz olan kapsam dokümanı versiyonlanır.
+*.epub
+_book/
+_txt/
+
+# --- Python ---
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+env/
+.pytest_cache/
+.ipynb_checkpoints/
+
+# --- Veri (büyük / lisanslı olabilir) ---
+data/raw/
+*.parquet
+*.feather
+
+# --- OS / editör ---
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.log
