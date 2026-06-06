@@ -313,6 +313,12 @@ function EquityChart({ bt }: { bt: BacktestResult }) {
       <div className="chart-title">
         Kümülatif Büyüme — 1$ yatırımın gelişimi (log ölçek)
       </div>
+      <div className="chart-help">
+        Çizgi ne kadar dik yukarıdaysa büyüme o kadar hızlı. Log ölçekte eşit
+        dikey mesafe = eşit yüzde kazanç; bu yüzden farklı büyüklükteki
+        stratejiler adil karşılaştırılır. Legend&apos;daki ×değer = dönem sonu
+        toplam çarpan.
+      </div>
       <svg
         className="equity-svg"
         viewBox={`0 0 ${W} ${H}`}
@@ -407,6 +413,11 @@ function PositionTimeline({ bt }: { bt: BacktestResult }) {
     <div className="chart-card">
       <div className="chart-title">
         GEM Pozisyon Geçmişi — her ay hangi varlıkta tutuldu
+      </div>
+      <div className="chart-help">
+        Her dikey dilim bir ay; renk o ay tutulan varlık. Renk değişimi =
+        GEM&apos;in pozisyon değiştirdiği (rotasyon yaptığı) an. Legend&apos;daki
+        %değer, o varlıkta geçirilen toplam zamanın oranı.
       </div>
       <svg
         className="equity-svg"
@@ -507,6 +518,12 @@ function UnderwaterChart({ bt }: { bt: BacktestResult }) {
       <div className="chart-title">
         GEM Drawdown (Underwater) — zirveden düşüş · en kötü {pct(minDD, 1)}
       </div>
+      <div className="chart-help">
+        0 çizgisi = yeni zirve (yatırımcı en yüksek noktasında). Eğri ne kadar
+        aşağıdaysa, o an zirveden o kadar uzakta/kayıpta demektir. Düz 0&apos;a
+        dönüş = kayıpların telafi edildiği an. Dual momentum&apos;un amacı bu
+        çukurları sığ tutmaktır.
+      </div>
       <svg
         className="equity-svg"
         viewBox={`0 0 ${W} ${H}`}
@@ -598,6 +615,11 @@ function MonthlyHeatmap({ bt }: { bt: BacktestResult }) {
       <div className="chart-title">
         GEM Aylık Getiri Isı Haritası — yıl × ay (yeşil: kâr, kırmızı: zarar)
       </div>
+      <div className="chart-help">
+        Her hücre o ayın GEM getirisi (%). Renk yoğunluğu büyüklüğü gösterir:
+        koyu yeşil güçlü kâr, koyu kırmızı güçlü zarar. Sağdaki <b>Yıl</b>{" "}
+        sütunu yıllık bileşik getiri. Kırmızı kümeleri = stres dönemleri.
+      </div>
       <div className="table-scroll">
         <table className="heatmap">
           <thead>
@@ -681,6 +703,12 @@ function RiskReturnChart({ rows }: { rows: StrategyMetrics[] }) {
       <div className="chart-title">
         Risk–Getiri Dağılımı — yıllık volatilite (x) vs. CAGR (y) · sol-üst daha iyi
       </div>
+      <div className="chart-help">
+        Her nokta bir strateji. <b>Sol-üst köşe idealdir:</b> düşük volatilite +
+        yüksek getiri. GEM&apos;in (yeşil) al-tut benchmark&apos;lara göre
+        konumuna bak — kitabın tezi, dual momentum&apos;un sola-yukarı
+        kaymasıdır (aynı/daha yüksek getiri, daha az risk).
+      </div>
       <svg
         className="equity-svg"
         viewBox={`0 0 ${W} ${H}`}
@@ -756,6 +784,54 @@ function MetricsTable({ rows }: { rows: StrategyMetrics[] }) {
           ))}
         </tbody>
       </table>
+    </div>
+  );
+}
+
+function MethodologyPanel() {
+  const [open, setOpen] = useState(false);
+  return (
+    <div className="howto">
+      <button className="howto-head" onClick={() => setOpen((o) => !o)}>
+        <span className="howto-title">
+          📘 Nasıl çalışır? — GEM / Dual Momentum metodolojisi
+        </span>
+        <span className={`chevron ${open ? "up" : ""}`}>▾</span>
+      </button>
+      {open && (
+        <div className="howto-body">
+          <p>
+            <b>Dual Momentum (Çift Momentum)</b> iki basit kuralı birleştirir.
+            Her ay sonu, son <b>12 ayın total return</b>'üne (temettü dahil)
+            bakılır:
+          </p>
+          <ol>
+            <li>
+              <b>Göreceli momentum (relative):</b> Hisse varlıkları (S&amp;P 500
+              vs NASDAQ vs Altın) karşılaştırılır, en güçlü getiriye sahip olan
+              aday seçilir. Mantık: kazananlar kısa-orta vadede kazanmaya devam
+              eder.
+            </li>
+            <li>
+              <b>Mutlak momentum (absolute / trend filtresi):</b> Seçilen aday,
+              risksiz faizi (<b>T-Bill</b>) geçiyor mu? Geçiyorsa o varlığa %100
+              girilir; geçmiyorsa <b>nakde</b> (T-Bill/tahvil) kaçılır. Bu, ayı
+              piyasalarında büyük düşüşlerden korur.
+            </li>
+          </ol>
+          <p>
+            İkisinin birleşimi = <b>Dual Momentum</b>. Pozisyon ayda bir
+            gözden geçirilir (aylık rebalance); sinyal ay-sonu fiyatla üretilir,
+            getiri ertesi ay gerçekleşir (lookahead bias yok).
+          </p>
+          <p className="howto-note">
+            Bu uygulamadaki her sayı canlı Yahoo Finance verisinden hesaplanır.
+            Yöntemlerin tam formülleri ve ara adımları aşağıdaki{" "}
+            <b>Yöntem Hesaplamaları</b> bölümünde şeffaftır; teorik arka plan{" "}
+            <code>dual-momentum-kapsam/</code> dokümanındadır.
+          </p>
+        </div>
+      )}
     </div>
   );
 }
@@ -865,6 +941,71 @@ export default function Home() {
     URL.revokeObjectURL(url);
   }, [data]);
 
+  const exportCsv = useCallback(() => {
+    if (!data) return;
+    const fmt = (x: number | null) =>
+      x == null || !isFinite(x) ? "" : x.toFixed(6);
+    const lines: string[] = [];
+
+    // Bölüm 1: Strateji metrikleri
+    if (data.backtest) {
+      lines.push("# Strateji Metrikleri");
+      lines.push(
+        "Strateji,Yillik_Aritmetik,CAGR,Volatilite,Sharpe,Max_Drawdown,Yuzde_Karli_Ay,Toplam_Getiri"
+      );
+      for (const s of data.backtest.strategies) {
+        lines.push(
+          [
+            `"${s.name}"`,
+            fmt(s.annualReturnArith),
+            fmt(s.cagr),
+            fmt(s.annualVol),
+            fmt(s.sharpe),
+            fmt(s.maxDrawdown),
+            fmt(s.pctProfitMonths),
+            fmt(s.totalReturn),
+          ].join(",")
+        );
+      }
+      lines.push("");
+    }
+
+    // Bölüm 2: Varlık sinyal panosu
+    if (data.signals?.assets?.length) {
+      lines.push("# Varlik Sinyal Panosu");
+      lines.push(
+        "Varlik,Ticker,Ret_12ay,Excess_vs_TBill,Mutlak_Sinyal,MA_Ustunde,MA_Gap,52h_Yakinlik"
+      );
+      for (const a of data.signals.assets) {
+        lines.push(
+          [
+            `"${a.name}"`,
+            a.ticker,
+            fmt(a.ret12m),
+            fmt(a.excessVsTbill),
+            a.absolute ?? "",
+            a.maAbove == null ? "" : a.maAbove ? "1" : "0",
+            fmt(a.maGap),
+            fmt(a.highProximity),
+          ].join(",")
+        );
+      }
+    }
+
+    const blob = new Blob([lines.join("\r\n")], {
+      type: "text/csv;charset=utf-8",
+    });
+    const url = URL.createObjectURL(blob);
+    const stamp = data.generatedAt.slice(0, 10);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `dual-momentum-metrikler-${stamp}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }, [data]);
+
   const gem = data?.gem;
   const isCash = gem?.positionKey === "cash";
   const bt = data?.backtest;
@@ -880,6 +1021,14 @@ export default function Home() {
           </p>
         </div>
         <div className="header-right">
+          <button
+            className="refresh-btn ghost"
+            onClick={exportCsv}
+            disabled={!data}
+            title="Metrikleri ve sinyalleri CSV olarak indir"
+          >
+            ⭳ CSV
+          </button>
           <button
             className="refresh-btn ghost"
             onClick={exportJson}
@@ -932,6 +1081,9 @@ export default function Home() {
             </div>
             <p className="hero-rationale">{gem.rationale}</p>
           </div>
+
+          {/* Metodoloji açıklaması */}
+          <MethodologyPanel />
 
           {/* Varlık Sinyal Panosu */}
           {data.signals && <SignalBoard board={data.signals} />}

@@ -477,6 +477,76 @@ table.metrics tr.row-hl .left {
   margin-bottom: 8px;
   letter-spacing: 0.02em;
 }
+.chart-help {
+  font-size: 11.5px;
+  line-height: 1.55;
+  color: var(--text-faint);
+  margin: -2px 0 12px;
+  max-width: 80ch;
+}
+.chart-help b {
+  color: var(--text-dim);
+  font-weight: 600;
+}
+
+/* Metodoloji paneli */
+.howto {
+  background: var(--card);
+  border: 1px solid var(--border-soft);
+  border-radius: 14px;
+  margin-bottom: 14px;
+  overflow: hidden;
+}
+.howto-head {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 14px 16px;
+  color: var(--text);
+  font-size: 14px;
+  font-weight: 600;
+  text-align: left;
+}
+.howto-head:hover {
+  background: rgba(255, 255, 255, 0.02);
+}
+.howto-body {
+  padding: 4px 18px 18px;
+  font-size: 13px;
+  line-height: 1.65;
+  color: var(--text-dim);
+  border-top: 1px solid var(--border-soft);
+}
+.howto-body p {
+  margin: 12px 0;
+}
+.howto-body ol {
+  margin: 12px 0;
+  padding-left: 22px;
+}
+.howto-body li {
+  margin: 8px 0;
+}
+.howto-body b {
+  color: var(--text);
+}
+.howto-body code {
+  background: var(--border-soft);
+  padding: 1px 6px;
+  border-radius: 5px;
+  font-size: 12px;
+}
+.howto-note {
+  font-size: 12px;
+  color: var(--text-faint);
+  border-left: 2px solid var(--accent);
+  padding-left: 12px;
+}
 .equity-svg {
   width: 100%;
   height: auto;
@@ -800,4 +870,83 @@ table.heatmap .lb-tbill td {
   margin-top: 12px;
   font-size: 11.5px;
   color: var(--text-faint);
+}
+
+/* ---- Responsive (telefon/tablet) ---- */
+@media (max-width: 640px) {
+  .wrap {
+    padding: 22px 13px 60px;
+  }
+  .header {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 14px;
+    margin-bottom: 20px;
+  }
+  .header-right {
+    flex-direction: row;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .header-right .timestamp {
+    width: 100%;
+  }
+  .title {
+    font-size: 21px;
+  }
+  .subtitle {
+    font-size: 13px;
+  }
+  .refresh-btn {
+    padding: 9px 14px;
+    font-size: 13px;
+    flex: 1 1 auto;
+  }
+  .refresh-btn.ghost {
+    flex: 0 0 auto;
+  }
+  .hero {
+    padding: 20px 16px;
+    border-radius: 14px;
+  }
+  .hero-asset {
+    font-size: 27px;
+  }
+  .hero-position {
+    gap: 10px;
+  }
+  .hero-rationale {
+    font-size: 14px;
+  }
+  .badge.lg {
+    font-size: 11px;
+  }
+  .section-label {
+    margin: 24px 0 12px;
+    font-size: 12px;
+  }
+  .section-head {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+  .chart-card {
+    padding: 13px 12px 10px;
+  }
+  .chart-help {
+    font-size: 11px;
+  }
+  /* Grafikler viewBox ile ölçeklenir; tablolar zaten .table-scroll içinde */
+  .method-head {
+    padding: 13px 14px;
+  }
+  .howto-head {
+    font-size: 13px;
+    padding: 13px 14px;
+  }
+  .howto-body {
+    font-size: 12.5px;
+    padding: 4px 14px 16px;
+  }
 }
