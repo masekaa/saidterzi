@@ -776,6 +776,15 @@ table.heatmap .lb-tbill td {
 .pill-no {
   color: var(--text-faint);
 }
+.earnings-off {
+  border-style: dashed;
+}
+.eo-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-dim);
+  margin-bottom: 6px;
+}
 .chart-legend {
   display: flex;
   flex-wrap: wrap;

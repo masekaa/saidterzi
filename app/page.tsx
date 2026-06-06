@@ -5,6 +5,7 @@ import type {
   AnalysisResult,
   AssetMethodResult,
   BacktestResult,
+  EarningsMomentum as EarningsData,
   FactorAlpha,
   LookbackMatrix as LookbackData,
   MethodResult,
@@ -261,6 +262,80 @@ function StockMomentumBoard({ data }: { data: StockMomentumData }) {
         şu an <b>{selectedCount}</b> hisse seçili. Dual momentum portföyü bu
         seçili hisselere eşit ağırlık verir; hiçbiri geçemezse nakitte kalınır.
         İvme = son 12 ayın log-fiyat kavisi (hızlanan trend daha kalıcı olur).
+      </p>
+    </>
+  );
+}
+
+function EarningsMomentumPanel({ data }: { data: EarningsData }) {
+  if (!data.enabled) {
+    return (
+      <>
+        <div className="section-label">
+          Earnings / Revenue Momentum (Chen 2014) — temel veri momentumu
+        </div>
+        <div className="chart-card earnings-off">
+          <div className="eo-title">🔒 Etkinleştirmek için API anahtarı gerekli</div>
+          <p className="chart-help">
+            {data.reason} Adımlar: (1){" "}
+            <b>financialmodelingprep.com</b> üzerinden ücretsiz API anahtarı al
+            (250 istek/gün). (2) Vercel → proje → Settings → Environment
+            Variables → <code>FMP_API_KEY</code> ekle. (3) Yeniden deploy et.
+            Sonra her hissenin <b>çeyreklik gelir ve net kâr YoY büyümesi</b>{" "}
+            çekilip momentum sıralaması burada görünür.
+          </p>
+        </div>
+      </>
+    );
+  }
+  const selectedCount = data.stocks.filter((s) => s.selected).length;
+  return (
+    <>
+      <div className="section-label">
+        Earnings / Revenue Momentum — gelir &amp; net kâr YoY büyümesi sıralaması
+      </div>
+      <div className="table-scroll">
+        <table className="metrics stockboard">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th className="left">Hisse</th>
+              <th>Gelir YoY</th>
+              <th>Net Kâr YoY</th>
+              <th>Seçim</th>
+            </tr>
+          </thead>
+          <tbody>
+            {data.stocks.map((s) => (
+              <tr key={s.key} className={s.selected ? "row-hl" : ""}>
+                <td className="rank">{s.rank ?? "—"}</td>
+                <td className="left">
+                  {s.name}
+                  <span className="sb-ticker">{s.ticker}</span>
+                </td>
+                <td className={s.revenueYoY != null && s.revenueYoY < 0 ? "neg" : ""}>
+                  {pct(s.revenueYoY)}
+                </td>
+                <td className={s.earningsYoY != null && s.earningsYoY < 0 ? "neg" : ""}>
+                  {pct(s.earningsYoY)}
+                </td>
+                <td>
+                  {s.selected ? (
+                    <span className="pill-sel">★ SEÇİLDİ</span>
+                  ) : (
+                    <span className="pill-no">—</span>
+                  )}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      <p className="table-note">
+        Gelir ve net kâr YoY büyümesinin sıra-ortalamasına göre birleşik
+        momentum; en güçlü {data.topN} hisse seçilir ({selectedCount} seçili).
+        Fiyat momentumu ile birlikte değerlendirildiğinde daha sağlam sinyal
+        verir (Chen et al. 2014).
       </p>
     </>
   );
@@ -1534,6 +1609,9 @@ export default function Home() {
 
           {/* Hisse Momentum Panosu */}
           {data.stocks && <StockMomentumBoard data={data.stocks} />}
+
+          {/* Earnings / Revenue Momentum (FMP anahtarı ile) */}
+          {data.earnings && <EarningsMomentumPanel data={data.earnings} />}
 
           {/* Backtest & Metrikler */}
           {bt && (

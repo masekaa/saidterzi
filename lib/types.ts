@@ -185,4 +185,17 @@ export interface GemRecommendation {
 }
 
 // --- Tüm analiz çıktısı ---
-export interfac
+export interface AnalysisResult {
+  generatedAt: string;
+  lookbackMonths: number;
+  tbill: { ticker: string; ret12m: number | null; currentPrice: number };
+  gem: GemRecommendation;
+  signals: SignalBoard; // varlık-bazlı sinyal özeti
+  lookback: LookbackMatrix; // look-back duyarlılık matrisi
+  stocks: StockMomentum; // bireysel hisse momentum panosu
+  earnings: EarningsMomentum; // earnings/revenue momentum (FMP anahtarı ile)
+  factorAlpha: FactorAlpha | null; // Fama-French 3 faktör alpha (null = veri yok)
+  methods: MethodResult[]; // tüm yöntemler (şeffaf)
+  backtest: BacktestResult | null;
+  warnings: string[];
+}

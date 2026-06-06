@@ -19,6 +19,7 @@ import {
   buildStockMomentum,
 } from "@/lib/methods";
 import { buildFactorAlpha } from "@/lib/factors";
+import { buildEarningsMomentum } from "@/lib/fundamentals";
 import { runBacktest } from "@/lib/backtest";
 import { trailingReturn } from "@/lib/calc";
 import type { AnalysisResult, RawSeries } from "@/lib/types";
@@ -73,6 +74,19 @@ export async function GET() {
     const lookback = buildLookbackMatrix(coreRaw, tbillRaw);
     const stocks = buildStockMomentum(stockRaw, tbillRaw);
 
+    // Earnings/revenue momentum (FMP, anahtar-bağlı, non-fatal).
+    let earnings;
+    try {
+      earnings = await buildEarningsMomentum();
+    } catch {
+      earnings = {
+        enabled: false,
+        reason: "Earnings verisi alınamadı.",
+        topN: 5,
+        stocks: [],
+      };
+    }
+
     // Fama-French 3 faktör alpha (Ken French verisi, anahtarsız, non-fatal).
     // GEM aylık getirilerini equity curve'den türet (growth[i]/growth[i-1]-1).
     let factorAlpha = null;
@@ -116,6 +130,7 @@ export async function GET() {
       signals,
       lookback,
       stocks,
+      earnings,
       factorAlpha,
       methods,
       backtest,
