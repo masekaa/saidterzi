@@ -11,7 +11,7 @@ import {
   allTickers,
   LOOKBACK_MONTHS,
 } from "@/lib/universe";
-import { buildAllMethods } from "@/lib/methods";
+import { buildAllMethods, buildSignalBoard } from "@/lib/methods";
 import { runBacktest } from "@/lib/backtest";
 import { trailingReturn } from "@/lib/calc";
 import type { AnalysisResult, RawSeries } from "@/lib/types";
@@ -61,6 +61,7 @@ export async function GET() {
     );
 
     const backtest = runBacktest(coreRaw, tbillRaw);
+    const signals = buildSignalBoard(coreRaw, tbillRaw, gem.relativeWinnerKey);
 
     const warnings: string[] = [];
     if (errors.length) warnings.push(...errors.map((e) => `Veri hatası — ${e}`));
@@ -77,6 +78,7 @@ export async function GET() {
         currentPrice: tbillRaw.currentPrice,
       },
       gem,
+      signals,
       methods,
       backtest,
       warnings,

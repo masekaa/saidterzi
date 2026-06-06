@@ -84,6 +84,25 @@ export interface BacktestResult {
   note: string;
 }
 
+// --- Sinyal panosu (varlık-bazlı özet) ---
+export interface AssetSignal {
+  key: string;
+  name: string;
+  ticker: string;
+  ret12m: number | null; // 12 aylık total return
+  excessVsTbill: number | null; // ret12m - T-Bill 12m (mutlak momentum girdisi)
+  absolute: Signal | null; // LONG (excess>0) / CASH
+  maAbove: boolean | null; // fiyat >= 12-ay SMA
+  maGap: number | null; // fiyat/SMA - 1
+  highProximity: number | null; // fiyat / 12-ay en yüksek (0..1)
+  isGemWinner?: boolean; // göreceli momentum kazananı
+}
+
+export interface SignalBoard {
+  tbillRet12m: number | null;
+  assets: AssetSignal[];
+}
+
 // --- GEM önerisi (çekirdek) ---
 export interface GemRecommendation {
   relativeWinnerKey: string;
@@ -101,6 +120,7 @@ export interface AnalysisResult {
   lookbackMonths: number;
   tbill: { ticker: string; ret12m: number | null; currentPrice: number };
   gem: GemRecommendation;
+  signals: SignalBoard; // varlık-bazlı sinyal özeti
   methods: MethodResult[]; // tüm yöntemler (şeffaf)
   backtest: BacktestResult | null;
   warnings: string[];

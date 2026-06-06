@@ -22,11 +22,13 @@ import {
 } from "./universe";
 import type {
   AssetMethodResult,
+  AssetSignal,
   CalcStep,
   GemRecommendation,
   MethodResult,
   RawSeries,
   Signal,
+  SignalBoard,
 } from "./types";
 
 // ---- Formatlayıcılar ----
@@ -634,6 +636,57 @@ export function buildAllMethods(
     methodDMSR(sectorRaw, spy, tbill),
   ];
   return { methods, gem };
+}
+
+// Varlık-bazlı konsolide sinyal panosu: her çekirdek varlık için
+// 12-ay momentum, T-Bill'e karşı excess (mutlak), 12-ay MA trendi, 52-hafta yakınlığı.
+export function buildSignalBoard(
+  core: RawMap,
+  tbill: RawSeries,
+  gemWinnerKey: string | null
+): SignalBoard {
+  const tRet = tbillRet12(tbill);
+  const MA = MA_LENGTHS.includes(12) ? 12 : MA_LENGTHS[MA_LENGTHS.length - 1];
+
+  const assets: AssetSignal[] = CORE_ASSETS.map((a) => {
+    const raw = core[a.key];
+    const ret12m = raw ? trailingReturn(raw.series, LOOKBACK_MONTHS).ret : null;
+    const excess =
+      ret12m != null && tRet != null ? ret12m - tRet : null;
+    const absolute: Signal | null =
+      excess != null ? (excess > 0 ? "LONG" : "CASH") : null;
+
+    const maRes = raw ? sma(raw.series, MA) : { value: null, price: null };
+    const maAbove =
+      maRes.price != null && maRes.value != null
+        ? maRes.price >= maRes.value
+        : null;
+    const maGap =
+      maRes.price != null && maRes.value != null && maRes.value !== 0
+        ? maRes.price / maRes.value - 1
+        : null;
+
+    const hi = raw ? highestClose(raw.series, LOOKBACK_MONTHS) : { high: null, price: null };
+    const highProximity =
+      hi.price != null && hi.high != null && hi.high !== 0
+        ? hi.price / hi.high
+        : null;
+
+    return {
+      key: a.key,
+      name: a.name,
+      ticker: a.ticker,
+      ret12m,
+      excessVsTbill: excess,
+      absolute,
+      maAbove,
+      maGap,
+      highProximity,
+      isGemWinner: gemWinnerKey != null && a.key === gemWinnerKey,
+    };
+  });
+
+  return { tbillRet12m: tRet, assets };
 }
 
 export type { Instrument };

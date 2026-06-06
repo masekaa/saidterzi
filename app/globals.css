@@ -551,6 +551,32 @@ table.heatmap .hm-tot {
   fill: #22d3a6;
   font-weight: 700;
 }
+.signalboard .sb-ticker {
+  display: inline-block;
+  margin-left: 8px;
+  font-size: 10.5px;
+  color: var(--text-faint);
+  font-weight: 500;
+}
+.signalboard .sb-winner {
+  display: inline-block;
+  margin-left: 8px;
+  font-size: 10.5px;
+  color: var(--accent);
+  font-weight: 700;
+}
+.signalboard .sb-up {
+  color: var(--success, #22d3a6);
+  font-weight: 600;
+}
+.signalboard .sb-down {
+  color: var(--danger);
+  font-weight: 600;
+}
+.signalboard .sb-gap {
+  color: var(--text-faint);
+  font-weight: 500;
+}
 .chart-legend {
   display: flex;
   flex-wrap: wrap;

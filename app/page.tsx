@@ -6,6 +6,7 @@ import type {
   AssetMethodResult,
   BacktestResult,
   MethodResult,
+  SignalBoard as SignalBoardData,
   StrategyMetrics,
 } from "@/lib/types";
 
@@ -56,6 +57,74 @@ function SignalBadge({ signal }: { signal?: "LONG" | "CASH" }) {
       <span className="dot" />
       {isLong ? "AL / TUT" : "NAKİT"}
     </span>
+  );
+}
+
+function SignalBoard({ board }: { board: SignalBoardData }) {
+  if (!board?.assets?.length) return null;
+  return (
+    <>
+      <div className="section-label">
+        Varlık Sinyal Panosu — her varlığın anahtar momentum sinyalleri
+      </div>
+      <div className="table-scroll">
+        <table className="metrics signalboard">
+          <thead>
+            <tr>
+              <th className="left">Varlık</th>
+              <th>12-Ay Getiri</th>
+              <th>T-Bill&apos;e Karşı (excess)</th>
+              <th>Mutlak Sinyal</th>
+              <th>Trend (12-Ay MA)</th>
+              <th>52-Hafta Yakınlık</th>
+            </tr>
+          </thead>
+          <tbody>
+            {board.assets.map((a) => (
+              <tr key={a.key} className={a.isGemWinner ? "row-hl" : ""}>
+                <td className="left">
+                  {a.name}
+                  <span className="sb-ticker">{a.ticker}</span>
+                  {a.isGemWinner && <span className="sb-winner">★ en güçlü</span>}
+                </td>
+                <td className={a.ret12m != null && a.ret12m < 0 ? "neg" : ""}>
+                  {pct(a.ret12m)}
+                </td>
+                <td className={a.excessVsTbill != null && a.excessVsTbill < 0 ? "neg" : ""}>
+                  {pct(a.excessVsTbill)}
+                </td>
+                <td>
+                  <SignalBadge signal={a.absolute ?? undefined} />
+                </td>
+                <td>
+                  {a.maAbove == null ? (
+                    "—"
+                  ) : (
+                    <span className={a.maAbove ? "sb-up" : "sb-down"}>
+                      {a.maAbove ? "▲ üstünde" : "▼ altında"}
+                      {a.maGap != null && (
+                        <span className="sb-gap"> ({pct(a.maGap)})</span>
+                      )}
+                    </span>
+                  )}
+                </td>
+                <td>
+                  {a.highProximity != null
+                    ? `%${(a.highProximity * 100).toFixed(0)}`
+                    : "—"}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      <p className="table-note">
+        Excess = 12-ay getiri − T-Bill 12-ay getirisi (
+        {pct(board.tbillRet12m)}). Mutlak sinyal excess&gt;0 ise AL/TUT. Trend:
+        ay-sonu fiyat 12-ay basit hareketli ortalamanın üstünde mi. 52-hafta
+        yakınlık: güncel fiyat / son 12 ayın en yüksek ay-sonu kapanışı.
+      </p>
+    </>
   );
 }
 
@@ -807,6 +876,9 @@ export default function Home() {
             </div>
             <p className="hero-rationale">{gem.rationale}</p>
           </div>
+
+          {/* Varlık Sinyal Panosu */}
+          {data.signals && <SignalBoard board={data.signals} />}
 
           {/* Backtest & Metrikler */}
           {bt && (
