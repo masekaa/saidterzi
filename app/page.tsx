@@ -84,15 +84,16 @@ function MethodRow({ a }: { a: AssetMethodResult }) {
 
 function MethodCard({
   m,
-  defaultOpen,
+  open,
+  onToggle,
 }: {
   m: MethodResult;
-  defaultOpen?: boolean;
+  open: boolean;
+  onToggle: () => void;
 }) {
-  const [open, setOpen] = useState(!!defaultOpen);
   return (
     <div className="method">
-      <button className="method-head" onClick={() => setOpen((o) => !o)}>
+      <button className="method-head" onClick={onToggle}>
         <div className="method-head-left">
           <span className="method-title">{m.title}</span>
           <span className="method-cat">{m.category}</span>
@@ -634,6 +635,69 @@ function MetricsTable({ rows }: { rows: StrategyMetrics[] }) {
   );
 }
 
+function MethodsSection({ methods }: { methods: MethodResult[] }) {
+  // İlk yöntem varsayılan açık.
+  const [openIds, setOpenIds] = useState<Set<string>>(
+    () => new Set(methods.length ? [methods[0].id] : [])
+  );
+  const toggle = (id: string) =>
+    setOpenIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  const openAll = () => setOpenIds(new Set(methods.map((m) => m.id)));
+  const closeAll = () => setOpenIds(new Set());
+
+  // Kategoriye göre grupla (ilk görülme sırasını koru).
+  const groups: { category: string; items: MethodResult[] }[] = [];
+  for (const m of methods) {
+    let g = groups.find((x) => x.category === m.category);
+    if (!g) {
+      g = { category: m.category, items: [] };
+      groups.push(g);
+    }
+    g.items.push(m);
+  }
+
+  return (
+    <>
+      <div className="section-head">
+        <div className="section-label">
+          Yöntem Hesaplamaları (formül + adımlar şeffaf) · {methods.length} yöntem
+        </div>
+        <div className="section-actions">
+          <button className="mini-btn" onClick={openAll}>
+            Tümünü aç
+          </button>
+          <button className="mini-btn" onClick={closeAll}>
+            Tümünü kapat
+          </button>
+        </div>
+      </div>
+      {groups.map((g) => (
+        <div className="method-group" key={g.category}>
+          <div className="method-group-head">
+            {g.category}
+            <span className="method-group-count">{g.items.length}</span>
+          </div>
+          <div className="methods">
+            {g.items.map((m) => (
+              <MethodCard
+                key={m.id}
+                m={m}
+                open={openIds.has(m.id)}
+                onToggle={() => toggle(m.id)}
+              />
+            ))}
+          </div>
+        </div>
+      ))}
+    </>
+  );
+}
+
 export default function Home() {
   const [data, setData] = useState<AnalysisResult | null>(null);
   const [loading, setLoading] = useState(true);
@@ -660,6 +724,22 @@ export default function Home() {
     load();
   }, [load]);
 
+  const exportJson = useCallback(() => {
+    if (!data) return;
+    const blob = new Blob([JSON.stringify(data, null, 2)], {
+      type: "application/json",
+    });
+    const url = URL.createObjectURL(blob);
+    const stamp = data.generatedAt.slice(0, 10);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `dual-momentum-analiz-${stamp}.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }, [data]);
+
   const gem = data?.gem;
   const isCash = gem?.positionKey === "cash";
   const bt = data?.backtest;
@@ -675,6 +755,14 @@ export default function Home() {
           </p>
         </div>
         <div className="header-right">
+          <button
+            className="refresh-btn ghost"
+            onClick={exportJson}
+            disabled={!data}
+            title="Tüm analizi JSON olarak indir"
+          >
+            ⭳ JSON
+          </button>
           <button className="refresh-btn" onClick={load} disabled={loading}>
             {loading ? "Yükleniyor…" : "↻ Yenile"}
           </button>
@@ -746,15 +834,8 @@ export default function Home() {
             </>
           )}
 
-          {/* Tüm Yöntemler */}
-          <div className="section-label">
-            Yöntem Hesaplamaları (formül + adımlar şeffaf)
-          </div>
-          <div className="methods">
-            {data.methods.map((m, i) => (
-              <MethodCard key={m.id} m={m} defaultOpen={i === 0} />
-            ))}
-          </div>
+          {/* Tüm Yöntemler — kategoriye göre gruplu */}
+          <MethodsSection methods={data.methods} />
 
           {data.warnings.length > 0 && (
             <div className="warnings">

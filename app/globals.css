@@ -91,6 +91,16 @@ body {
   opacity: 0.5;
   cursor: default;
 }
+.refresh-btn.ghost {
+  background: transparent;
+  color: var(--text-dim);
+  border: 1px solid var(--border-soft);
+}
+.refresh-btn.ghost:hover {
+  color: var(--text);
+  border-color: var(--accent);
+  opacity: 1;
+}
 .timestamp {
   font-size: 12px;
   color: var(--text-faint);
@@ -167,6 +177,57 @@ body {
   letter-spacing: 0.1em;
   color: var(--text-faint);
   margin: 32px 0 14px;
+}
+.section-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.section-head .section-label {
+  margin-bottom: 10px;
+}
+.section-actions {
+  display: flex;
+  gap: 8px;
+}
+.mini-btn {
+  background: transparent;
+  color: var(--text-dim);
+  border: 1px solid var(--border-soft);
+  border-radius: 8px;
+  padding: 5px 11px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: color 0.15s, border-color 0.15s;
+}
+.mini-btn:hover {
+  color: var(--text);
+  border-color: var(--accent);
+}
+.method-group {
+  margin-bottom: 18px;
+}
+.method-group-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--accent);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin: 14px 2px 8px;
+}
+.method-group-count {
+  background: var(--border-soft);
+  color: var(--text-dim);
+  border-radius: 999px;
+  padding: 1px 8px;
+  font-size: 11px;
+  font-weight: 600;
 }
 .grid {
   display: grid;
