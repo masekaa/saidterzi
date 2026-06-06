@@ -612,6 +612,59 @@ table.metrics tr.row-hl .left {
 .box-hl .box-median {
   stroke: #22d3a6;
 }
+.fa-grid {
+  display: grid;
+  grid-template-columns: 1.4fr 1fr 1fr 1fr 0.8fr;
+  gap: 12px;
+  margin-bottom: 6px;
+}
+.fa-cell {
+  background: var(--panel);
+  border: 1px solid var(--border-soft);
+  border-radius: 10px;
+  padding: 12px 14px;
+}
+.fa-cell.fa-hero {
+  border-color: var(--accent);
+}
+.fa-label {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-faint);
+  margin-bottom: 6px;
+}
+.fa-big {
+  font-size: 28px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+}
+.fa-big.pos {
+  color: var(--success, #22d3a6);
+}
+.fa-big.neg {
+  color: var(--danger);
+}
+.fa-val {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--text);
+  font-variant-numeric: tabular-nums;
+}
+.fa-sub {
+  font-size: 11px;
+  color: var(--text-faint);
+  margin-top: 4px;
+}
+@media (max-width: 640px) {
+  .fa-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+  .fa-cell.fa-hero {
+    grid-column: 1 / -1;
+  }
+}
 .equity-svg.scatter {
   max-width: 460px;
   margin: 0 auto;

@@ -16,6 +16,7 @@ import {
   buildSignalBoard,
   buildLookbackMatrix,
 } from "@/lib/methods";
+import { buildFactorAlpha } from "@/lib/factors";
 import { runBacktest } from "@/lib/backtest";
 import { trailingReturn } from "@/lib/calc";
 import type { AnalysisResult, RawSeries } from "@/lib/types";
@@ -68,6 +69,31 @@ export async function GET() {
     const signals = buildSignalBoard(coreRaw, tbillRaw, gem.relativeWinnerKey);
     const lookback = buildLookbackMatrix(coreRaw, tbillRaw);
 
+    // Fama-French 3 faktör alpha (Ken French verisi, anahtarsız, non-fatal).
+    // GEM aylık getirilerini equity curve'den türet (growth[i]/growth[i-1]-1).
+    let factorAlpha = null;
+    if (backtest) {
+      const gemCurve =
+        backtest.equityCurves.find((c) => c.highlight) ??
+        backtest.equityCurves[0];
+      if (gemCurve) {
+        const gemMonthly: { ym: string; ret: number }[] = [];
+        for (let i = 1; i < gemCurve.growth.length; i++) {
+          const ym = backtest.dates[i]?.slice(0, 7);
+          if (ym)
+            gemMonthly.push({
+              ym,
+              ret: gemCurve.growth[i] / gemCurve.growth[i - 1] - 1,
+            });
+        }
+        try {
+          factorAlpha = await buildFactorAlpha(gemMonthly);
+        } catch {
+          factorAlpha = null;
+        }
+      }
+    }
+
     const warnings: string[] = [];
     if (errors.length) warnings.push(...errors.map((e) => `Veri hatası — ${e}`));
     for (const a of CORE_ASSETS)
@@ -85,6 +111,7 @@ export async function GET() {
       gem,
       signals,
       lookback,
+      factorAlpha,
       methods,
       backtest,
       warnings,

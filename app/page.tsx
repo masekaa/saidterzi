@@ -5,6 +5,7 @@ import type {
   AnalysisResult,
   AssetMethodResult,
   BacktestResult,
+  FactorAlpha,
   LookbackMatrix as LookbackData,
   MethodResult,
   SignalBoard as SignalBoardData,
@@ -1063,6 +1064,55 @@ function BoxPlot({ bt }: { bt: BacktestResult }) {
   );
 }
 
+function FactorAlphaPanel({ fa }: { fa: FactorAlpha }) {
+  const sig = Math.abs(fa.alphaTStat) >= 2;
+  return (
+    <>
+      <div className="section-label">
+        Faktör-Model Alpha (Fama-French 3) — risk-ayarlı fazla getiri
+      </div>
+      <div className="chart-card">
+        <div className="fa-grid">
+          <div className="fa-cell fa-hero">
+            <div className="fa-label">Yıllık Alpha (α)</div>
+            <div className={`fa-big ${fa.alphaAnnual >= 0 ? "pos" : "neg"}`}>
+              {pct(fa.alphaAnnual)}
+            </div>
+            <div className="fa-sub">
+              t = {num(fa.alphaTStat, 2)}{" "}
+              {sig ? "(anlamlı, |t|≥2)" : "(zayıf, |t|<2)"}
+            </div>
+          </div>
+          <div className="fa-cell">
+            <div className="fa-label">Market β (Mkt-RF)</div>
+            <div className="fa-val">{num(fa.betaMkt, 2)}</div>
+          </div>
+          <div className="fa-cell">
+            <div className="fa-label">Size β (SMB)</div>
+            <div className="fa-val">{num(fa.betaSmb, 2)}</div>
+          </div>
+          <div className="fa-cell">
+            <div className="fa-label">Value β (HML)</div>
+            <div className="fa-val">{num(fa.betaHml, 2)}</div>
+          </div>
+          <div className="fa-cell">
+            <div className="fa-label">R²</div>
+            <div className="fa-val">{(fa.rSquared * 100).toFixed(0)}%</div>
+          </div>
+        </div>
+        <p className="chart-help">
+          GEM&apos;in aylık fazla getirisi 3 faktöre regrese edildi ({fa.nMonths}{" "}
+          ay). <b>Alpha&gt;0</b> = faktörlerle açıklanamayan, stratejiye özgü
+          getiri (Antonacci&apos;nin asıl iddiası). <b>Market β</b> piyasa
+          duyarlılığı; GEM nakde kaçtığı için tipik olarak 1&apos;in altındadır.{" "}
+          <b>R²</b> getirinin ne kadarının faktörlerce açıklandığı. Kaynak:{" "}
+          {fa.source}.
+        </p>
+      </div>
+    </>
+  );
+}
+
 function MetricsTable({ rows }: { rows: StrategyMetrics[] }) {
   return (
     <div className="table-scroll">
@@ -1428,6 +1478,7 @@ export default function Home() {
                 </p>
               )}
               <AdvancedMetricsTable rows={bt.strategies} />
+              {data.factorAlpha && <FactorAlphaPanel fa={data.factorAlpha} />}
             </>
           )}
 

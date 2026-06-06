@@ -121,6 +121,19 @@ export interface LookbackMatrix {
   }[];
 }
 
+// --- Faktör-model alpha (Fama-French 3) ---
+export interface FactorAlpha {
+  source: string;
+  nMonths: number;
+  alphaMonthly: number; // aylık kesişim (ondalık)
+  alphaAnnual: number; // (1+α)^12 − 1
+  alphaTStat: number;
+  betaMkt: number;
+  betaSmb: number;
+  betaHml: number;
+  rSquared: number;
+}
+
 // --- GEM önerisi (çekirdek) ---
 export interface GemRecommendation {
   relativeWinnerKey: string;
@@ -140,6 +153,7 @@ export interface AnalysisResult {
   gem: GemRecommendation;
   signals: SignalBoard; // varlık-bazlı sinyal özeti
   lookback: LookbackMatrix; // look-back duyarlılık matrisi
+  factorAlpha: FactorAlpha | null; // Fama-French 3 faktör alpha (null = veri yok)
   methods: MethodResult[]; // tüm yöntemler (şeffaf)
   backtest: BacktestResult | null;
   warnings: string[];
