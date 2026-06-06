@@ -194,6 +194,9 @@ export interface AnalysisResult {
   signals: SignalBoard; // varlık-bazlı sinyal özeti
   lookback: LookbackMatrix; // look-back duyarlılık matrisi
   stocks: StockMomentum; // bireysel hisse momentum panosu
+  stockSignals: SignalBoard; // hisse evreni sinyal panosu (ETF ile aynı)
+  stockLookback: LookbackMatrix; // hisse evreni look-back matrisi
+  stockMethods: MethodResult[]; // hisse evreni şeffaf yöntem kartları
   earnings: EarningsMomentum; // earnings/revenue momentum (FMP anahtarı ile)
   factorAlpha: FactorAlpha | null; // Fama-French 3 faktör alpha (null = veri yok)
   methods: MethodResult[]; // tüm yöntemler (şeffaf)

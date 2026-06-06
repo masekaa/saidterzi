@@ -55,8 +55,11 @@ function tbillRet12(tbill: RawSeries): number | null {
 // 1) TRAILING GETİRİ — Çoklu look-back (robustluk)
 //    Kapsam: 01 §3, 05 (Tablo 8.5 / B.1). r(L) = P_t / P_{t−L} − 1
 // ===========================================================================
-export function methodTrailing(core: RawMap): MethodResult {
-  const assets: AssetMethodResult[] = CORE_ASSETS.map((a) => {
+export function methodTrailing(
+  core: RawMap,
+  universe: Instrument[] = CORE_ASSETS
+): MethodResult {
+  const assets: AssetMethodResult[] = universe.map((a) => {
     const raw = core[a.key];
     const steps: CalcStep[] = [];
     let r12: number | null = null;
@@ -95,9 +98,13 @@ export function methodTrailing(core: RawMap): MethodResult {
 // 2) ABSOLUTE MOMENTUM — excess return vs T-Bill
 //    Kapsam: 02 §2.2, 01 §4. excess = r12 − r_tbill ; >0 → LONG
 // ===========================================================================
-export function methodAbsolute(core: RawMap, tbill: RawSeries): MethodResult {
+export function methodAbsolute(
+  core: RawMap,
+  tbill: RawSeries,
+  universe: Instrument[] = CORE_ASSETS
+): MethodResult {
   const thr = tbillRet12(tbill) ?? 0;
-  const assets: AssetMethodResult[] = CORE_ASSETS.map((a) => {
+  const assets: AssetMethodResult[] = universe.map((a) => {
     const raw = core[a.key];
     const tr = raw ? trailingReturn(raw.series, LOOKBACK_MONTHS) : { ret: null };
     const r = tr.ret;
@@ -134,11 +141,14 @@ export function methodAbsolute(core: RawMap, tbill: RawSeries): MethodResult {
 // 3) RELATIVE MOMENTUM — sıralama
 //    Kapsam: 02 §2.1, 01 §4. En yüksek r12'li varlığı seçer.
 // ===========================================================================
-export function methodRelative(core: RawMap): {
+export function methodRelative(
+  core: RawMap,
+  universe: Instrument[] = CORE_ASSETS
+): {
   method: MethodResult;
   rankedKeys: { key: string; name: string; ret: number }[];
 } {
-  const rows = CORE_ASSETS.map((a) => {
+  const rows = universe.map((a) => {
     const raw = core[a.key];
     const tr = raw ? trailingReturn(raw.series, LOOKBACK_MONTHS) : { ret: null };
     return { a, ret: tr.ret };
@@ -272,8 +282,11 @@ export function buildGem(core: RawMap, tbill: RawSeries): {
 // 5) HAREKETLİ ORTALAMA FİLTRESİ (SMA 10 / 12 ay)
 //    Kapsam: 06 §1.2, 05 (Tablo 9.1). Fiyat > SMA_N ⇒ LONG
 // ===========================================================================
-export function methodMovingAverage(core: RawMap): MethodResult {
-  const assets: AssetMethodResult[] = CORE_ASSETS.map((a) => {
+export function methodMovingAverage(
+  core: RawMap,
+  universe: Instrument[] = CORE_ASSETS
+): MethodResult {
+  const assets: AssetMethodResult[] = universe.map((a) => {
     const raw = core[a.key];
     const steps: CalcStep[] = [];
     let lastSignal: Signal = "CASH";
@@ -319,8 +332,11 @@ export function methodMovingAverage(core: RawMap): MethodResult {
 // 6) 52-HAFTA ZİRVEYE YAKINLIK
 //    Kapsam: 06 §2.1 (George-Hwang 2004). oran = P / 52h-zirve
 // ===========================================================================
-export function methodFiftyTwoWeekHigh(core: RawMap): MethodResult {
-  const assets: AssetMethodResult[] = CORE_ASSETS.map((a) => {
+export function methodFiftyTwoWeekHigh(
+  core: RawMap,
+  universe: Instrument[] = CORE_ASSETS
+): MethodResult {
+  const assets: AssetMethodResult[] = universe.map((a) => {
     const raw = core[a.key];
     let ratio: number | null = null;
     const steps: CalcStep[] = [];
@@ -360,8 +376,11 @@ export function methodFiftyTwoWeekHigh(core: RawMap): MethodResult {
 // 7) İVMELENEN MOMENTUM (Kuadratik kavis)
 //    Kapsam: 06 §2.3 (Chen-Yu 2013). log P'yi t²'ye regrese et; c>0 konveks.
 // ===========================================================================
-export function methodAccelerating(core: RawMap): MethodResult {
-  const assets: AssetMethodResult[] = CORE_ASSETS.map((a) => {
+export function methodAccelerating(
+  core: RawMap,
+  universe: Instrument[] = CORE_ASSETS
+): MethodResult {
+  const assets: AssetMethodResult[] = universe.map((a) => {
     const raw = core[a.key];
     let c: number | null = null;
     const steps: CalcStep[] = [];
@@ -405,8 +424,11 @@ export function methodAccelerating(core: RawMap): MethodResult {
 //    Kapsam: 06 §2.4 (Chen-Kadan-Kose 2009).
 //    Son 12 ay güçlü AMA önceki 12 ay zayıf = "taze kazanan".
 // ===========================================================================
-export function methodFreshStale(core: RawMap): MethodResult {
-  const assets: AssetMethodResult[] = CORE_ASSETS.map((a) => {
+export function methodFreshStale(
+  core: RawMap,
+  universe: Instrument[] = CORE_ASSETS
+): MethodResult {
+  const assets: AssetMethodResult[] = universe.map((a) => {
     const raw = core[a.key];
     let recent: number | null = null;
     let prior: number | null = null;
@@ -457,9 +479,12 @@ export function methodFreshStale(core: RawMap): MethodResult {
 //    Kapsam: 06 §2.3 (Docherty-Hurst 2014).
 //    Kısa vadeli aylık getiri > 12-ay geometrik aylık ortalama ⇒ hızlanan.
 // ===========================================================================
-export function methodTrendSalience(core: RawMap): MethodResult {
+export function methodTrendSalience(
+  core: RawMap,
+  universe: Instrument[] = CORE_ASSETS
+): MethodResult {
   const SHORT = 3;
-  const assets: AssetMethodResult[] = CORE_ASSETS.map((a) => {
+  const assets: AssetMethodResult[] = universe.map((a) => {
     const raw = core[a.key];
     let shortM: number | null = null;
     let longM: number | null = null;
@@ -624,8 +649,11 @@ export function methodDMSR(
 //  TREND-LINE t-STATISTIC (Baltas-Kosowski 2012) — absolute momentum alt.
 //  Kapsam: 06 §1.1. log(P)'yi zamana regresle; eğimin t-istatistiği.
 // ===========================================================================
-export function methodTrendT(core: RawMap): MethodResult {
-  const assets: AssetMethodResult[] = CORE_ASSETS.map((a) => {
+export function methodTrendT(
+  core: RawMap,
+  universe: Instrument[] = CORE_ASSETS
+): MethodResult {
+  const assets: AssetMethodResult[] = universe.map((a) => {
     const raw = core[a.key];
     const res = raw ? trendTStat(raw.series, LOOKBACK_MONTHS) : null;
     const steps: CalcStep[] = [];
@@ -675,9 +703,13 @@ export function methodTrendT(core: RawMap): MethodResult {
 //  RISK PARITY + ABSOLUTE MOMENTUM (Appendix B) — ters-volatilite ağırlık
 //  Kapsam: 06 §5. w_i = (1/σ_i)/Σ(1/σ_j) ; absolute filtresine takılan → nakit.
 // ===========================================================================
-export function methodRiskParity(core: RawMap, tbill: RawSeries): MethodResult {
+export function methodRiskParity(
+  core: RawMap,
+  tbill: RawSeries,
+  universe: Instrument[] = CORE_ASSETS
+): MethodResult {
   const thr = tbillRet12(tbill) ?? 0;
-  const info = CORE_ASSETS.map((a) => {
+  const info = universe.map((a) => {
     const raw = core[a.key];
     const rets = raw ? toMonthlyReturns(raw.series) : [];
     const vol = raw ? annualVolatility(rets) : null;
@@ -759,12 +791,13 @@ export function buildAllMethods(
 export function buildSignalBoard(
   core: RawMap,
   tbill: RawSeries,
-  gemWinnerKey: string | null
+  gemWinnerKey: string | null,
+  universe: Instrument[] = CORE_ASSETS
 ): SignalBoard {
   const tRet = tbillRet12(tbill);
   const MA = MA_LENGTHS.includes(12) ? 12 : MA_LENGTHS[MA_LENGTHS.length - 1];
 
-  const assets: AssetSignal[] = CORE_ASSETS.map((a) => {
+  const assets: AssetSignal[] = universe.map((a) => {
     const raw = core[a.key];
     const ret12m = raw ? trailingReturn(raw.series, LOOKBACK_MONTHS).ret : null;
     const excess =
@@ -809,11 +842,12 @@ export function buildSignalBoard(
 // pencerelerinde (LOOKBACK_VARIANTS) total return + her pencerede T-Bill eşiği.
 export function buildLookbackMatrix(
   core: RawMap,
-  tbill: RawSeries
+  tbill: RawSeries,
+  universe: Instrument[] = CORE_ASSETS
 ): LookbackMatrix {
   const windows = [...LOOKBACK_VARIANTS];
   const tbillRets = windows.map((w) => trailingReturn(tbill.series, w).ret);
-  const assets = CORE_ASSETS.map((a) => {
+  const assets = universe.map((a) => {
     const raw = core[a.key];
     return {
       key: a.key,
@@ -886,6 +920,27 @@ export function buildStockMomentum(
   });
 
   return { topN: STOCK_TOP_N, tbillRet12m: thr, stocks };
+}
+
+// Hisse evreni için uygulanabilir şeffaf yöntem kartları (fiyat-bazlı olanlar).
+// GBM/DMSR/GEM çıkarıldı (varlık-sınıfı / sektör / endeks-spesifik).
+export function buildStockMethods(
+  stockRaw: RawMap,
+  tbill: RawSeries
+): MethodResult[] {
+  const u = STOCK_UNIVERSE;
+  return [
+    methodRelative(stockRaw, u).method,
+    methodTrailing(stockRaw, u),
+    methodAbsolute(stockRaw, tbill, u),
+    methodMovingAverage(stockRaw, u),
+    methodTrendT(stockRaw, u),
+    methodFiftyTwoWeekHigh(stockRaw, u),
+    methodAccelerating(stockRaw, u),
+    methodFreshStale(stockRaw, u),
+    methodTrendSalience(stockRaw, u),
+    methodRiskParity(stockRaw, tbill, u),
+  ];
 }
 
 export type { Instrument };

@@ -17,6 +17,7 @@ import {
   buildSignalBoard,
   buildLookbackMatrix,
   buildStockMomentum,
+  buildStockMethods,
 } from "@/lib/methods";
 import { fetchFamaFrench3, alphaFromFactors } from "@/lib/factors";
 import { buildEarningsMomentum } from "@/lib/fundamentals";
@@ -73,6 +74,14 @@ export async function GET() {
     const signals = buildSignalBoard(coreRaw, tbillRaw, gem.relativeWinnerKey);
     const lookback = buildLookbackMatrix(coreRaw, tbillRaw);
     const stocks = buildStockMomentum(stockRaw, tbillRaw);
+    const stockSignals = buildSignalBoard(
+      stockRaw,
+      tbillRaw,
+      stocks.stocks.find((s) => s.rank === 1)?.key ?? null,
+      STOCK_UNIVERSE
+    );
+    const stockLookback = buildLookbackMatrix(stockRaw, tbillRaw, STOCK_UNIVERSE);
+    const stockMethods = buildStockMethods(stockRaw, tbillRaw);
 
     // Earnings/revenue momentum (FMP, anahtar-bağlı, non-fatal).
     let earnings;
@@ -143,6 +152,9 @@ export async function GET() {
       backtest,
       stockBacktest,
       stockFactorAlpha,
+      stockSignals,
+      stockLookback,
+      stockMethods,
       warnings,
     };
 

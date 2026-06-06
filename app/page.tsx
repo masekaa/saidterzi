@@ -65,13 +65,17 @@ function SignalBadge({ signal }: { signal?: "LONG" | "CASH" }) {
   );
 }
 
-function SignalBoard({ board }: { board: SignalBoardData }) {
+function SignalBoard({
+  board,
+  title = "Varlık Sinyal Panosu — her varlığın anahtar momentum sinyalleri",
+}: {
+  board: SignalBoardData;
+  title?: string;
+}) {
   if (!board?.assets?.length) return null;
   return (
     <>
-      <div className="section-label">
-        Varlık Sinyal Panosu — her varlığın anahtar momentum sinyalleri
-      </div>
+      <div className="section-label">{title}</div>
       <div className="table-scroll">
         <table className="metrics signalboard">
           <thead>
@@ -1657,6 +1661,17 @@ export default function Home() {
           {/* Hisse Momentum Panosu (relative + absolute sıralama) */}
           {data.stocks && <StockMomentumBoard data={data.stocks} />}
 
+          {/* Hisse Sinyal Panosu (ETF sinyal panosunun hisse karşılığı) */}
+          {data.stockSignals && (
+            <SignalBoard
+              board={data.stockSignals}
+              title="Hisse Sinyal Panosu — her hissenin anahtar momentum sinyalleri (12-ay, excess, MA trendi, 52-hafta)"
+            />
+          )}
+
+          {/* Hisse Look-back Duyarlılık Matrisi */}
+          {data.stockLookback && <LookbackHeatmap data={data.stockLookback} />}
+
           {/* Hisse Momentum Rotasyon Backtest'i + tüm görseller */}
           {data.stockBacktest && (
             <>
@@ -1698,6 +1713,11 @@ export default function Home() {
                 />
               )}
             </>
+          )}
+
+          {/* Hisse Evreni Şeffaf Yöntem Kartları */}
+          {data.stockMethods && data.stockMethods.length > 0 && (
+            <MethodsSection methods={data.stockMethods} />
           )}
 
           {/* Earnings / Revenue Momentum (FMP anahtarı ile) */}
