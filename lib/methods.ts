@@ -9,6 +9,8 @@ import {
   quadraticFit,
   geometricMeanMonthly,
   toMonthlyReturns,
+  trendTStat,
+  annualVolatility,
 } from "./calc";
 import {
   CORE_ASSETS,
@@ -614,6 +616,113 @@ export function methodDMSR(
 }
 
 // Tüm yöntemleri tek listede üret.
+// ===========================================================================
+//  TREND-LINE t-STATISTIC (Baltas-Kosowski 2012) — absolute momentum alt.
+//  Kapsam: 06 §1.1. log(P)'yi zamana regresle; eğimin t-istatistiği.
+// ===========================================================================
+export function methodTrendT(core: RawMap): MethodResult {
+  const assets: AssetMethodResult[] = CORE_ASSETS.map((a) => {
+    const raw = core[a.key];
+    const res = raw ? trendTStat(raw.series, LOOKBACK_MONTHS) : null;
+    const steps: CalcStep[] = [];
+    let signal: Signal | undefined;
+    if (res) {
+      steps.push(
+        { label: "Aylık log-eğim (b)", value: num(res.slope, 4) },
+        { label: "t-istatistik", value: num(res.t, 2) },
+        { label: "Örneklem (n ay)", value: String(res.n) }
+      );
+      signal = res.t > 0 ? "LONG" : "CASH";
+    }
+    const significant = res != null && Math.abs(res.t) >= 2;
+    return {
+      assetKey: a.key,
+      assetName: a.name,
+      ticker: a.ticker,
+      steps,
+      result: res != null ? `t = ${num(res.t, 2)}` : "—",
+      resultRaw: res?.t ?? null,
+      signal,
+      note:
+        res == null
+          ? undefined
+          : significant
+          ? res.t > 0
+            ? "İstatistiksel olarak anlamlı yukarı trend (|t|≥2)"
+            : "İstatistiksel olarak anlamlı aşağı trend (|t|≥2)"
+          : "Trend zayıf/belirsiz (|t|<2)",
+    };
+  });
+  return {
+    id: "trendt",
+    title: "Trend-line t-istatistik (Baltas-Kosowski)",
+    category: "Trend / Alternatif",
+    bookRef: "Kapsam 06 §1.1 (Baltas-Kosowski 2012)",
+    formula: "ln(P_t) = a + b·t + e ;  t_b = b / SE(b) ;  t_b > 0 ⇒ yukarı trend",
+    description:
+      "Absolute momentuma alternatif trend belirleme. Son 12 ayın log-fiyatı zamana doğrusal regresle; eğimin t-istatistiği trendin yönünü ve gücünü verir. |t|≥2 istatistiksel anlamlılık eşiğidir. Avantajı: tek bir uç-değere daha az duyarlı.",
+    assets,
+    summary:
+      "Trend-line t-stat, gürültüyü tüm 12-ay penceresine yayarak değerlendirir; absolute momentum (tek nokta P_t/P_{t−12}) ile genelde aynı yönü gösterir ama daha pürüzsüzdür.",
+  };
+}
+
+// ===========================================================================
+//  RISK PARITY + ABSOLUTE MOMENTUM (Appendix B) — ters-volatilite ağırlık
+//  Kapsam: 06 §5. w_i = (1/σ_i)/Σ(1/σ_j) ; absolute filtresine takılan → nakit.
+// ===========================================================================
+export function methodRiskParity(core: RawMap, tbill: RawSeries): MethodResult {
+  const thr = tbillRet12(tbill) ?? 0;
+  const info = CORE_ASSETS.map((a) => {
+    const raw = core[a.key];
+    const rets = raw ? toMonthlyReturns(raw.series) : [];
+    const vol = raw ? annualVolatility(rets) : null;
+    const r12 = raw ? trailingReturn(raw.series, LOOKBACK_MONTHS).ret : null;
+    const passes = r12 != null && r12 > thr;
+    const invVol = vol != null && vol > 0 ? 1 / vol : null;
+    return { a, vol, r12, passes, invVol };
+  });
+  const totalInv = info.reduce((s, x) => s + (x.invVol ?? 0), 0);
+  let cashWeight = 0;
+
+  const assets: AssetMethodResult[] = info.map((x) => {
+    const rpWeight = x.invVol != null && totalInv > 0 ? x.invVol / totalInv : 0;
+    const finalWeight = x.passes ? rpWeight : 0;
+    if (!x.passes) cashWeight += rpWeight;
+    const steps: CalcStep[] = [
+      { label: "Yıllık volatilite (σ)", value: pct(x.vol) },
+      { label: "1/σ", value: x.invVol != null ? num(x.invVol, 2) : "—" },
+      { label: "Risk-parity ağırlık", value: `%${(rpWeight * 100).toFixed(1)}` },
+      { label: "r₁₂ > T-Bill?", value: x.passes ? "Evet ✓" : "Hayır → nakit" },
+    ];
+    return {
+      assetKey: x.a.key,
+      assetName: x.a.name,
+      ticker: x.a.ticker,
+      steps,
+      result: `Hedef ağırlık %${(finalWeight * 100).toFixed(1)}`,
+      resultRaw: finalWeight,
+      signal: x.passes ? "LONG" : "CASH",
+      highlight: finalWeight > 0,
+    };
+  });
+
+  return {
+    id: "riskparity",
+    title: "Risk Parity + Absolute Momentum",
+    category: "Varyasyon",
+    bookRef: "Kapsam 06 §5 (Appendix B)",
+    formula:
+      "w_i = (1/σ_i)/Σ(1/σ_j) ;  r₁₂(i) ≤ T-Bill ⇒ w_i payı NAKDE aktarılır",
+    description:
+      "Varlıklar eşit-ağırlık yerine ters-volatilite ile tartılır (düşük oynaklığa daha çok ağırlık → dengeli risk katkısı). Absolute momentum bir overlay'dir: 12-ay getirisi T-Bill'i geçemeyen varlığın payı nakde kaçar. Tek varlık yerine çeşitlendirilmiş, risk-dengeli bir portföy üretir.",
+    assets,
+    summary: `Mevcut hedef: nakit ağırlığı ≈ %${(cashWeight * 100).toFixed(
+      1
+    )}. Risk parity, GEM'in 'kazanana %100' yaklaşımına göre daha düşük oynaklık hedefler; absolute momentum filtresi düşüş korumasını korur.`,
+  };
+}
+
 export function buildAllMethods(
   core: RawMap,
   tbill: RawSeries,
@@ -629,10 +738,12 @@ export function buildAllMethods(
     methodAbsolute(core, tbill),
     rel.method,
     methodMovingAverage(core),
+    methodTrendT(core),
     methodFiftyTwoWeekHigh(core),
     methodAccelerating(core),
     methodFreshStale(core),
     methodTrendSalience(core),
+    methodRiskParity(core, tbill),
     methodGBM(bondRaw, tbill),
     methodDMSR(sectorRaw, spy, tbill),
   ];

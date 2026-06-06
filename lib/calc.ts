@@ -209,6 +209,160 @@ export function totalReturn(monthlyReturns: number[]): number | null {
 }
 
 // ---------------------------------------------------------------------------
+//  Sortino oranı (kapsam: 04 §1 — Sortino alternatifi)
+//  Sadece aşağı-yön (downside) sapması cezalandırılır.
+//  DD = √( mean( min(excess,0)² ) ) ;  Sortino = (mean(excess)/DD) × √12
+// ---------------------------------------------------------------------------
+export function sortinoRatio(
+  monthlyReturns: number[],
+  rfMonthly: number[]
+): number | null {
+  const n = Math.min(monthlyReturns.length, rfMonthly.length);
+  if (n < 2) return null;
+  const ex: number[] = [];
+  for (let i = 0; i < n; i++) ex.push(monthlyReturns[i] - rfMonthly[i]);
+  const mean = ex.reduce((s, r) => s + r, 0) / n;
+  const downSq = ex.reduce((s, r) => s + (r < 0 ? r * r : 0), 0) / n;
+  const dd = Math.sqrt(downSq);
+  if (dd === 0) return null;
+  return (mean / dd) * Math.sqrt(12);
+}
+
+// ---------------------------------------------------------------------------
+//  Çarpıklık (skewness) — dağılımın asimetrisi (kapsam: 04 §4)
+//  skew = (1/n) Σ ((r−μ)/σ)³   (σ: popülasyon std)
+//  < 0: sol kuyruk (büyük kayıp riski), > 0: sağ kuyruk.
+// ---------------------------------------------------------------------------
+export function skewness(returns: number[]): number | null {
+  const n = returns.length;
+  if (n < 3) return null;
+  const mean = returns.reduce((s, r) => s + r, 0) / n;
+  const m2 = returns.reduce((s, r) => s + (r - mean) ** 2, 0) / n;
+  const sd = Math.sqrt(m2);
+  if (sd === 0) return null;
+  const m3 = returns.reduce((s, r) => s + (r - mean) ** 3, 0) / n;
+  return m3 / sd ** 3;
+}
+
+// ---------------------------------------------------------------------------
+//  Fazla basıklık (excess kurtosis) — kuyruk kalınlığı (kapsam: 04 §4)
+//  kurt = (1/n) Σ ((r−μ)/σ)⁴ − 3   (>0: fat tails / leptokurtic)
+// ---------------------------------------------------------------------------
+export function kurtosis(returns: number[]): number | null {
+  const n = returns.length;
+  if (n < 4) return null;
+  const mean = returns.reduce((s, r) => s + r, 0) / n;
+  const m2 = returns.reduce((s, r) => s + (r - mean) ** 2, 0) / n;
+  const sd = Math.sqrt(m2);
+  if (sd === 0) return null;
+  const m4 = returns.reduce((s, r) => s + (r - mean) ** 4, 0) / n;
+  return m4 / sd ** 4 - 3;
+}
+
+// ---------------------------------------------------------------------------
+//  CVaR / Expected Shortfall (kapsam: 04 §4)
+//  En kötü α-kuantil aylık getirilerin ortalaması (varsayılan α=%5).
+//  Negatif bir aylık getiri olarak döner (beklenen kuyruk kaybı).
+// ---------------------------------------------------------------------------
+export function cvar(returns: number[], alpha = 0.05): number | null {
+  const n = returns.length;
+  if (n === 0) return null;
+  const sorted = [...returns].sort((a, b) => a - b);
+  const k = Math.max(1, Math.ceil(alpha * n));
+  const worst = sorted.slice(0, k);
+  return worst.reduce((s, r) => s + r, 0) / worst.length;
+}
+
+// ---------------------------------------------------------------------------
+//  Trend-line t-statistic (kapsam: 06 §1.1, Baltas-Kosowski 2012)
+//  log(fiyat)'ı zamana (t = 0..n-1) OLS ile regresle; eğimin t-istatistiği.
+//  t > 0 → istatistiksel olarak yukarı trend (absolute momentum alternatifi).
+//  SE(b) = √( (Σe²/(n−2)) / Σ(t−t̄)² ) ;  t = b / SE(b)
+// ---------------------------------------------------------------------------
+export function trendTStat(
+  series: MonthlyPoint[],
+  months: number
+): { t: number; slope: number; n: number } | null {
+  const window = series.slice(Math.max(0, series.length - months));
+  const pts = window.filter((p) => p.close > 0);
+  const n = pts.length;
+  if (n < 3) return null;
+  const ys = pts.map((p) => Math.log(p.close));
+  const xbar = (n - 1) / 2; // 0..n-1 ortalaması
+  const ybar = ys.reduce((s, y) => s + y, 0) / n;
+  let sxx = 0;
+  let sxy = 0;
+  for (let i = 0; i < n; i++) {
+    const dx = i - xbar;
+    sxx += dx * dx;
+    sxy += dx * (ys[i] - ybar);
+  }
+  if (sxx === 0) return null;
+  const b = sxy / sxx;
+  const a = ybar - b * xbar;
+  let sse = 0;
+  for (let i = 0; i < n; i++) {
+    const e = ys[i] - (a + b * i);
+    sse += e * e;
+  }
+  if (n <= 2) return null;
+  const seB = Math.sqrt(sse / (n - 2) / sxx);
+  if (seB === 0) return null;
+  return { t: b / seB, slope: b, n };
+}
+
+// ---------------------------------------------------------------------------
+//  Maksimum drawdown — derinlik + süre + toparlanma (kapsam: 04 §2)
+//  depth: en derin tepe-dip; durationMonths: tepeden dibe ay sayısı;
+//  recoveryMonths: dipten yeni tepeye dönüş (null = henüz toparlanmadı).
+// ---------------------------------------------------------------------------
+export function maxDrawdownDetail(monthlyReturns: number[]): {
+  depth: number;
+  durationMonths: number;
+  recoveryMonths: number | null;
+  recovered: boolean;
+} | null {
+  const n = monthlyReturns.length;
+  if (n === 0) return null;
+  // Eşitlik serisi (1 başlangıç çapası dahil)
+  const eq: number[] = [1];
+  for (const r of monthlyReturns) eq.push(eq[eq.length - 1] * (1 + r));
+
+  let peak = eq[0];
+  let peakIdx = 0;
+  let maxDD = 0;
+  let ddPeakIdx = 0;
+  let ddTroughIdx = 0;
+  for (let i = 1; i < eq.length; i++) {
+    if (eq[i] > peak) {
+      peak = eq[i];
+      peakIdx = i;
+    }
+    const dd = eq[i] / peak - 1;
+    if (dd < maxDD) {
+      maxDD = dd;
+      ddPeakIdx = peakIdx;
+      ddTroughIdx = i;
+    }
+  }
+  const peakValue = eq[ddPeakIdx];
+  // Dipten sonra tepeye dönüş
+  let recoveryMonths: number | null = null;
+  for (let i = ddTroughIdx + 1; i < eq.length; i++) {
+    if (eq[i] >= peakValue) {
+      recoveryMonths = i - ddTroughIdx;
+      break;
+    }
+  }
+  return {
+    depth: maxDD,
+    durationMonths: ddTroughIdx - ddPeakIdx,
+    recoveryMonths,
+    recovered: recoveryMonths != null,
+  };
+}
+
+// ---------------------------------------------------------------------------
 //  Seri hizalama: birden çok sembolü ortak ay tarihlerinde eşle.
 //  Backtest ve relative momentum için tüm varlıklar aynı tarih eksenine oturur.
 // ---------------------------------------------------------------------------

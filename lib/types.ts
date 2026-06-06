@@ -56,6 +56,12 @@ export interface StrategyMetrics {
   maxDrawdown: number | null;
   pctProfitMonths: number | null;
   totalReturn: number | null;
+  sortino: number | null; // aşağı-yön riskine göre getiri
+  skewness: number | null; // dağılım asimetrisi
+  kurtosis: number | null; // fazla basıklık (fat tails)
+  cvar5: number | null; // %5 CVaR (beklenen kuyruk kaybı, aylık)
+  ddDurationMonths?: number | null; // max DD tepe→dip süre
+  ddRecoveryMonths?: number | null; // dip→toparlanma süre (null = toparlanmadı)
   switchesPerYear?: number | null;
   timeInAsset?: Record<string, number>; // her varlıkta geçirilen zaman %
 }

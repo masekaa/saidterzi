@@ -753,6 +753,213 @@ function RiskReturnChart({ rows }: { rows: StrategyMetrics[] }) {
   );
 }
 
+function AdvancedMetricsTable({ rows }: { rows: StrategyMetrics[] }) {
+  return (
+    <>
+      <div className="section-label">
+        Gelişmiş Risk Metrikleri (Sortino · çarpıklık · basıklık · CVaR ·
+        drawdown süreleri)
+      </div>
+      <div className="table-scroll">
+        <table className="metrics">
+          <thead>
+            <tr>
+              <th className="left">Strateji</th>
+              <th>Sortino</th>
+              <th>Çarpıklık</th>
+              <th>Basıklık</th>
+              <th>CVaR %5 (aylık)</th>
+              <th>DD Süre (ay)</th>
+              <th>Toparlanma (ay)</th>
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map((s, i) => (
+              <tr key={i} className={i === 0 ? "row-hl" : ""}>
+                <td className="left">{s.name}</td>
+                <td className="strong">{num(s.sortino)}</td>
+                <td>{num(s.skewness)}</td>
+                <td>{num(s.kurtosis)}</td>
+                <td className="neg">{pct(s.cvar5)}</td>
+                <td>{s.ddDurationMonths != null ? s.ddDurationMonths : "—"}</td>
+                <td>
+                  {s.ddRecoveryMonths != null ? (
+                    s.ddRecoveryMonths
+                  ) : (
+                    <span className="neg" title="Henüz eski zirveye dönülmedi">
+                      toparlanmadı
+                    </span>
+                  )}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      <p className="table-note">
+        <b>Sortino:</b> getiriyi yalnızca aşağı-yön oynaklığına böler (Sharpe&apos;ın
+        ceza vermediği yukarı oynaklığı görmezden gelir). <b>Çarpıklık&lt;0</b>{" "}
+        sol kuyruk (ani büyük kayıp) riskine işaret eder. <b>Basıklık&gt;0</b>{" "}
+        kalın kuyruklar (fat tails). <b>CVaR %5:</b> en kötü %5&apos;lik ayların
+        ortalama getirisi (beklenen kuyruk kaybı). <b>DD süre/toparlanma:</b> en
+        derin düşüşün tepe→dip ve dip→eski zirve ay sayısı.
+      </p>
+    </>
+  );
+}
+
+function RollingReturnsChart({ bt }: { bt: BacktestResult }) {
+  const gem = bt.equityCurves.find((c) => c.highlight) ?? bt.equityCurves[0];
+  const g = gem?.growth;
+  const WIN = 12;
+  if (!g || g.length < WIN + 2) return null;
+
+  const vals: { i: number; r: number }[] = [];
+  for (let i = WIN; i < g.length; i++) vals.push({ i, r: g[i] / g[i - WIN] - 1 });
+  if (!vals.length) return null;
+
+  const W = 820;
+  const H = 220;
+  const padL = 52;
+  const padR = 16;
+  const padT = 14;
+  const padB = 26;
+  const innerW = W - padL - padR;
+  const innerH = H - padT - padB;
+  const n = g.length;
+
+  const rs = vals.map((v) => v.r);
+  const yMin = Math.min(0, ...rs);
+  const yMax = Math.max(0, ...rs);
+  const ySpan = yMax - yMin || 1;
+  const X = (i: number) => padL + (innerW * i) / Math.max(1, n - 1);
+  const Y = (v: number) => padT + innerH * (1 - (v - yMin) / ySpan);
+
+  const line = vals
+    .map((v, k) => `${k === 0 ? "M" : "L"}${X(v.i).toFixed(1)},${Y(v.r).toFixed(1)}`)
+    .join(" ");
+
+  const yTicks: number[] = [];
+  for (let p = Math.ceil(yMin * 5) / 5; p <= yMax; p += 0.2) yTicks.push(p);
+
+  const xTicks: { i: number; label: string }[] = [];
+  let lastYear = "";
+  bt.dates.forEach((d, i) => {
+    const yr = d.slice(0, 4);
+    if (yr !== lastYear) {
+      xTicks.push({ i, label: yr });
+      lastYear = yr;
+    }
+  });
+  const step = Math.ceil(xTicks.length / 10);
+  const shown = xTicks.filter((_, idx) => idx % step === 0);
+
+  return (
+    <div className="chart-card">
+      <div className="chart-title">
+        GEM 12-Ay Rolling Getiri — kayan 1 yıllık pencere getirisi
+      </div>
+      <div className="chart-help">
+        Her nokta o aydan geriye 12 ayın getirisi. 0 çizgisinin altına inen
+        bölgeler = GEM&apos;in 1 yıllık kayıpta olduğu dönemler (nadir ve sığ
+        olması beklenir).
+      </div>
+      <svg className="equity-svg" viewBox={`0 0 ${W} ${H}`} role="img">
+        {yTicks.map((v, i) => (
+          <g key={i}>
+            <line
+              x1={padL}
+              x2={W - padR}
+              y1={Y(v)}
+              y2={Y(v)}
+              className={Math.abs(v) < 1e-9 ? "grid-line zero" : "grid-line"}
+            />
+            <text x={padL - 8} y={Y(v) + 3} className="axis-label" textAnchor="end">
+              {(v * 100).toFixed(0)}%
+            </text>
+          </g>
+        ))}
+        <path d={line} className="equity-line equity-hl" stroke="#22d3a6" />
+        {shown.map((t, idx) => (
+          <text key={idx} x={X(t.i)} y={H - 8} className="axis-label" textAnchor="middle">
+            {t.label}
+          </text>
+        ))}
+      </svg>
+    </div>
+  );
+}
+
+function ScatterGemVsBench({ bt }: { bt: BacktestResult }) {
+  const gem = bt.equityCurves.find((c) => c.highlight);
+  const bench =
+    bt.equityCurves.find((c) => c.name.startsWith("S&P")) ??
+    bt.equityCurves.find((c) => !c.highlight);
+  if (!gem || !bench || gem.growth.length < 3) return null;
+
+  const m = Math.min(gem.growth.length, bench.growth.length);
+  const pts: { x: number; y: number }[] = [];
+  for (let i = 1; i < m; i++) {
+    pts.push({
+      x: bench.growth[i] / bench.growth[i - 1] - 1,
+      y: gem.growth[i] / gem.growth[i - 1] - 1,
+    });
+  }
+  if (pts.length < 3) return null;
+
+  const W = 460;
+  const H = 380;
+  const pad = 44;
+  const innerW = W - pad * 2;
+  const innerH = H - pad * 2;
+  const lim =
+    Math.max(...pts.map((p) => Math.max(Math.abs(p.x), Math.abs(p.y)))) * 1.05 ||
+    0.1;
+  const X = (v: number) => pad + innerW * ((v + lim) / (2 * lim));
+  const Y = (v: number) => pad + innerH * (1 - (v + lim) / (2 * lim));
+
+  const benchName = bench.name.replace(" (Al-Tut)", "");
+
+  return (
+    <div className="chart-card">
+      <div className="chart-title">
+        Aylık Getiri Dağılımı — GEM (y) vs {benchName} (x)
+      </div>
+      <div className="chart-help">
+        Her nokta bir ay. Köşegen (kesikli) = eşit getiri. <b>Sol-alt
+        çeyrekte</b> (ikisi de düşüşte) GEM noktalarının köşegenin{" "}
+        <b>üstünde</b> kalması = GEM&apos;in düşüş aylarında daha az kaybetmesi
+        (downside koruması).
+      </div>
+      <svg
+        className="equity-svg scatter"
+        viewBox={`0 0 ${W} ${H}`}
+        preserveAspectRatio="xMidYMid meet"
+        role="img"
+      >
+        <line x1={X(0)} y1={pad} x2={X(0)} y2={H - pad} className="grid-line zero" />
+        <line x1={pad} y1={Y(0)} x2={W - pad} y2={Y(0)} className="grid-line zero" />
+        <line
+          x1={X(-lim)}
+          y1={Y(-lim)}
+          x2={X(lim)}
+          y2={Y(lim)}
+          className="diag-line"
+        />
+        {pts.map((p, i) => (
+          <circle key={i} cx={X(p.x)} cy={Y(p.y)} r={2.6} className="scatter-dot" />
+        ))}
+        <text x={W - pad} y={Y(0) - 6} className="axis-label" textAnchor="end">
+          {benchName} aylık →
+        </text>
+        <text x={X(0) + 6} y={pad + 4} className="axis-label" textAnchor="start">
+          ↑ GEM aylık
+        </text>
+      </svg>
+    </div>
+  );
+}
+
 function MetricsTable({ rows }: { rows: StrategyMetrics[] }) {
   return (
     <div className="table-scroll">
@@ -1103,6 +1310,8 @@ export default function Home() {
               <UnderwaterChart bt={bt} />
               <MonthlyHeatmap bt={bt} />
               <RiskReturnChart rows={bt.strategies} />
+              <RollingReturnsChart bt={bt} />
+              <ScatterGemVsBench bt={bt} />
               <MetricsTable rows={bt.strategies} />
               <p className="table-note">{bt.note}</p>
               {bt.strategies[0]?.timeInAsset && (
@@ -1114,6 +1323,7 @@ export default function Home() {
                   · Yıllık ~{num(bt.strategies[0].switchesPerYear ?? null)} geçiş
                 </p>
               )}
+              <AdvancedMetricsTable rows={bt.strategies} />
             </>
           )}
 

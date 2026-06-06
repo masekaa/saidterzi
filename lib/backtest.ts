@@ -11,6 +11,11 @@ import {
   maxDrawdown,
   pctProfitableMonths,
   totalReturn,
+  sortinoRatio,
+  skewness,
+  kurtosis,
+  cvar,
+  maxDrawdownDetail,
 } from "./calc";
 import { CORE_ASSETS, TBILL, LOOKBACK_MONTHS } from "./universe";
 import type { BacktestResult, RawSeries, StrategyMetrics } from "./types";
@@ -23,6 +28,7 @@ function buildMetrics(
   rf: number[],
   extra?: { switchesPerYear?: number; timeInAsset?: Record<string, number> }
 ): StrategyMetrics {
+  const ddDetail = maxDrawdownDetail(rets);
   return {
     name,
     annualReturnArith: annualReturnArithmetic(rets),
@@ -32,6 +38,12 @@ function buildMetrics(
     maxDrawdown: maxDrawdown(rets),
     pctProfitMonths: pctProfitableMonths(rets),
     totalReturn: totalReturn(rets),
+    sortino: sortinoRatio(rets, rf),
+    skewness: skewness(rets),
+    kurtosis: kurtosis(rets),
+    cvar5: cvar(rets, 0.05),
+    ddDurationMonths: ddDetail?.durationMonths ?? null,
+    ddRecoveryMonths: ddDetail?.recoveryMonths ?? null,
     switchesPerYear: extra?.switchesPerYear ?? null,
     timeInAsset: extra?.timeInAsset,
   };
@@ -98,11 +110,16 @@ export function runBacktest(core: RawMap, tbill: RawSeries): BacktestResult | nu
   for (const k of Object.keys(timeInAsset))
     timeInAsset[k] = +((timeInAsset[k] / positions.length) * 100).toFixed(1);
 
+  // Kaldıraçlı GEM (Appendix B): r_lev = L·r_gem − (L−1)·rf  (borç maliyeti rf)
+  const LEV = 1.5;
+  const gemLevRets = gemRets.map((r, i) => LEV * r - (LEV - 1) * rf[i]);
+
   const strategies: StrategyMetrics[] = [
     buildMetrics("GEM (Dual Momentum)", gemRets, rf, {
       switchesPerYear: +(switches / years).toFixed(2),
       timeInAsset,
     }),
+    buildMetrics(`GEM ${LEV}× Kaldıraçlı`, gemLevRets, rf),
     ...CORE_ASSETS.map((a) =>
       buildMetrics(`${a.name} (Al-Tut)`, bh[a.key], rf)
     ),
@@ -129,6 +146,7 @@ export function runBacktest(core: RawMap, tbill: RawSeries): BacktestResult | nu
   }));
   const equityCurves = [
     { name: "GEM (Dual Momentum)", growth: toGrowth(gemRets), highlight: true },
+    { name: `GEM ${LEV}× Kaldıraçlı`, growth: toGrowth(gemLevRets) },
     ...CORE_ASSETS.map((a) => ({
       name: `${a.name} (Al-Tut)`,
       growth: toGrowth(bh[a.key]),
