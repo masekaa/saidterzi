@@ -785,6 +785,11 @@ table.heatmap .lb-tbill td {
   color: var(--text-dim);
   margin-bottom: 6px;
 }
+.eo-note {
+  border-left: 2px solid var(--accent);
+  padding-left: 10px;
+  margin-bottom: 10px;
+}
 .chart-legend {
   display: flex;
   flex-wrap: wrap;

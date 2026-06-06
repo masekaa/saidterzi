@@ -281,7 +281,7 @@ function EarningsMomentumPanel({ data }: { data: EarningsData }) {
             <b>financialmodelingprep.com</b> üzerinden ücretsiz API anahtarı al
             (250 istek/gün). (2) Vercel → proje → Settings → Environment
             Variables → <code>FMP_API_KEY</code> ekle. (3) Yeniden deploy et.
-            Sonra her hissenin <b>çeyreklik gelir ve net kâr YoY büyümesi</b>{" "}
+            Sonra her hissenin <b>yıllık gelir ve net kâr YoY büyümesi</b>{" "}
             çekilip momentum sıralaması burada görünür.
           </p>
         </div>
@@ -292,16 +292,18 @@ function EarningsMomentumPanel({ data }: { data: EarningsData }) {
   return (
     <>
       <div className="section-label">
-        Earnings / Revenue Momentum — gelir &amp; net kâr YoY büyümesi sıralaması
+        Earnings / Revenue Momentum — yıllık gelir &amp; net kâr YoY büyümesi
+        sıralaması
       </div>
+      {data.note && <p className="table-note eo-note">ℹ️ {data.note}</p>}
       <div className="table-scroll">
         <table className="metrics stockboard">
           <thead>
             <tr>
               <th>#</th>
               <th className="left">Hisse</th>
-              <th>Gelir YoY</th>
-              <th>Net Kâr YoY</th>
+              <th>Gelir YoY (yıllık)</th>
+              <th>Net Kâr YoY (yıllık)</th>
               <th>Seçim</th>
             </tr>
           </thead>

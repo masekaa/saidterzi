@@ -156,6 +156,7 @@ export interface EarningsSignal {
 export interface EarningsMomentum {
   enabled: boolean; // FMP anahtarı var mı
   reason?: string; // devre dışıysa açıklama
+  note?: string; // etkinken bilgilendirme (örn. yıllık veri / kısmi veri)
   topN: number;
   stocks: EarningsSignal[];
 }

@@ -8,18 +8,23 @@
 import { STOCK_UNIVERSE, STOCK_TOP_N } from "./universe";
 import type { EarningsMomentum, EarningsSignal } from "./types";
 
-interface IncomeQuarter {
+interface IncomeRow {
   date: string;
   revenue: number;
   netIncome: number;
 }
 
+// FMP ücretsiz katman YALNIZCA yıllık (/stable, period=annual) veriye izin verir.
+// Çeyreklik (period=quarter) 402 Ödeme Gerekli, eski /api/v3 ise 403 Yasak döner.
+// Bu yüzden doğrudan stable+annual çekiyoruz; YoY = son mali yıl / önceki yıl.
 async function fetchIncome(
   ticker: string,
   apiKey: string
-): Promise<IncomeQuarter[] | null> {
+): Promise<IncomeRow[] | null> {
   try {
-    const url = `https://financialmodelingprep.com/api/v3/income-statement/${ticker}?period=quarter&limit=8&apikey=${apiKey}`;
+    const url = `https://financialmodelingprep.com/stable/income-statement?symbol=${encodeURIComponent(
+      ticker
+    )}&period=annual&limit=5&apikey=${apiKey}`;
     const res = await fetch(url, { cache: "no-store" });
     if (!res.ok) return null;
     const json = (await res.json()) as unknown;
@@ -39,11 +44,11 @@ async function fetchIncome(
   }
 }
 
-// YoY büyüme: son çeyrek vs 4 çeyrek önce (q[0] en güncel).
-function yoy(q: IncomeQuarter[], pick: (x: IncomeQuarter) => number): number | null {
-  if (q.length < 5) return null;
-  const now = pick(q[0]);
-  const past = pick(q[4]);
+// YoY büyüme (yıllık): son mali yıl vs önceki yıl (rows[0] en güncel).
+function yoy(rows: IncomeRow[], pick: (x: IncomeRow) => number): number | null {
+  if (rows.length < 2) return null;
+  const now = pick(rows[0]);
+  const past = pick(rows[1]);
   if (!isFinite(now) || !isFinite(past) || past === 0) return null;
   return now / Math.abs(past) - 1;
 }
@@ -106,5 +111,11 @@ export async function buildEarningsMomentum(): Promise<EarningsMomentum> {
     };
   });
 
-  return { enabled: true, topN: STOCK_TOP_N, stocks };
+  const succeeded = stocks.filter((s) => s.rank != null).length;
+  const note =
+    succeeded === 0
+      ? "FMP anahtarı çalışıyor ama hiçbir hisse için veri alınamadı (oran limiti veya plan kısıtı olabilir)."
+      : `Yıllık veri (FMP ücretsiz katman çeyrekliği desteklemez): YoY = son mali yıl / önceki yıl. ${succeeded}/${stocks.length} hisse için veri alındı.`;
+
+  return { enabled: true, note, topN: STOCK_TOP_N, stocks };
 }
