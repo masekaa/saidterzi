@@ -60,11 +60,27 @@ export interface StrategyMetrics {
   timeInAsset?: Record<string, number>; // her varlıkta geçirilen zaman %
 }
 
+// Kümülatif büyüme eğrisi (1$ başlangıç) — equity curve
+export interface EquityCurve {
+  name: string;
+  growth: number[]; // her ay sonu kümülatif çarpan (1.0'dan başlar)
+  highlight?: boolean; // GEM stratejisi vurgusu
+}
+
+// GEM'in her ay tuttuğu pozisyon (varlık anahtarı veya "cash")
+export interface PositionPoint {
+  date: string; // realize getirinin ait olduğu ay (YYYY-MM-DD)
+  key: string; // varlık anahtarı veya t-bill anahtarı
+}
+
 export interface BacktestResult {
   startDate: string;
   endDate: string;
   months: number;
   strategies: StrategyMetrics[]; // GEM + buy&hold benchmark'lar
+  dates: string[]; // equity curve x-ekseni (YYYY-MM-DD)
+  equityCurves: EquityCurve[]; // GEM + benchmark kümülatif büyüme
+  timeline: PositionPoint[]; // GEM aylık pozisyon geçmişi
   note: string;
 }
 

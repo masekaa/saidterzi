@@ -402,6 +402,102 @@ table.metrics tr.row-hl td {
 table.metrics tr.row-hl .left {
   color: var(--accent);
 }
+.chart-card {
+  background: var(--card);
+  border: 1px solid var(--border-soft);
+  border-radius: 14px;
+  padding: 16px 16px 12px;
+  margin-bottom: 14px;
+}
+.chart-title {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--text-dim);
+  margin-bottom: 8px;
+  letter-spacing: 0.02em;
+}
+.equity-svg {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+.equity-svg .grid-line {
+  stroke: var(--border-soft);
+  stroke-width: 1;
+  stroke-dasharray: 2 4;
+}
+.equity-svg .axis-label {
+  fill: var(--text-faint);
+  font-size: 10px;
+  font-variant-numeric: tabular-nums;
+}
+.equity-line {
+  fill: none;
+  stroke-width: 1.4;
+  opacity: 0.85;
+}
+.equity-line.equity-hl {
+  stroke-width: 2.6;
+  opacity: 1;
+}
+.underwater-area {
+  fill: rgba(239, 68, 68, 0.18);
+  stroke: var(--danger);
+  stroke-width: 1.3;
+}
+table.heatmap {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 11px;
+  min-width: 640px;
+  font-variant-numeric: tabular-nums;
+}
+table.heatmap th,
+table.heatmap td {
+  padding: 5px 4px;
+  text-align: center;
+  color: var(--text-dim);
+  border: 1px solid var(--bg);
+}
+table.heatmap th {
+  color: var(--text-faint);
+  font-size: 10px;
+  font-weight: 600;
+}
+table.heatmap .hm-year {
+  text-align: right;
+  color: var(--text);
+  font-weight: 600;
+  padding-right: 8px;
+}
+table.heatmap .hm-tot {
+  font-weight: 700;
+  color: var(--text);
+}
+.chart-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 16px;
+  margin-top: 10px;
+  font-size: 11.5px;
+  color: var(--text-dim);
+}
+.legend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.legend-swatch {
+  width: 11px;
+  height: 11px;
+  border-radius: 3px;
+  display: inline-block;
+}
+.legend-val {
+  color: var(--text);
+  font-variant-numeric: tabular-nums;
+}
+
 .table-note {
   font-size: 11.5px;
   color: var(--text-faint);

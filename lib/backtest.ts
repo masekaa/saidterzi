@@ -109,11 +109,41 @@ export function runBacktest(core: RawMap, tbill: RawSeries): BacktestResult | nu
     buildMetrics("Eşit Ağırlık (Al-Tut)", ew, rf),
   ];
 
+  // Equity curve: getiri serisinden 1$ baslangicli kumulatif buyume.
+  const toGrowth = (rets: number[]): number[] => {
+    const g: number[] = [1];
+    let acc = 1;
+    for (const r of rets) {
+      acc *= 1 + r;
+      g.push(acc);
+    }
+    return g;
+  };
+  const curveDates: string[] = [dates[LOOKBACK_MONTHS]];
+  for (let t = LOOKBACK_MONTHS; t <= n - 2; t++) curveDates.push(dates[t + 1]);
+
+  // GEM pozisyon zaman serisi: positions[i] -> realize ayi dates[L+1+i]
+  const timeline = positions.map((key, i) => ({
+    date: dates[LOOKBACK_MONTHS + 1 + i],
+    key,
+  }));
+  const equityCurves = [
+    { name: "GEM (Dual Momentum)", growth: toGrowth(gemRets), highlight: true },
+    ...CORE_ASSETS.map((a) => ({
+      name: `${a.name} (Al-Tut)`,
+      growth: toGrowth(bh[a.key]),
+    })),
+    { name: strategies[strategies.length - 1].name, growth: toGrowth(ew) },
+  ];
+
   return {
     startDate: dates[LOOKBACK_MONTHS + 1] ?? dates[LOOKBACK_MONTHS],
     endDate: dates[n - 1],
     months: gemRets.length,
     strategies,
+    dates: curveDates,
+    equityCurves,
+    timeline,
     note:
       "Ortak veri periyodunda (tüm varlıkların geçmişi mevcut olduğu tarihten itibaren) aylık simülasyon. Sinyal t-sonu, getiri t+1 (lookahead bias yok). İşlem maliyeti dahil değildir.",
   };
