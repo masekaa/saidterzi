@@ -15,8 +15,15 @@ Deploy için → [`DEPLOY.md`](DEPLOY.md). Veri: Yahoo Finance (keyless). Strate
 
 | Yol | İçerik |
 |-----|--------|
-| `app/` | Next.js App Router — `page.tsx` (dashboard), `api/analysis/` (serverless route) |
-| `lib/` | `yahoo.ts` (veri çekme), `momentum.ts` (GEM/dual momentum hesabı), `types.ts` |
+| `app/` | Next.js App Router — `page.tsx` (dashboard + görseller), `api/analysis/` (serverless route) |
+| `lib/` | `yahoo.ts` (veri çekme) · `calc.ts` (formül-belgeli finansal primitifler) · `universe.ts` (varlık evreni + parametreler) · `methods.ts` (11 şeffaf yöntem hesaplayıcısı) · `backtest.ts` (GEM simülasyonu) · `types.ts` |
+
+### Dashboard ne gösterir
+
+- **GEM önerisi:** Bu ay tutulacak pozisyon (hisse/nakit) + gerekçe.
+- **Görsel analiz katmanı:** Kümülatif büyüme (equity curve, log ölçek) · GEM pozisyon geçmişi bandı · drawdown (underwater) eğrisi · aylık getiri ısı haritası · risk–getiri dağılımı.
+- **Backtest & risk metrikleri:** CAGR, volatilite, Sharpe, max drawdown, % kârlı ay — GEM + al-tut benchmark'lar.
+- **Şeffaf yöntem kartları:** Kapsam dokümanındaki her yöntem için formül + ara adımlar + sonuç + sinyal (look-back duyarlılığı, MA filtresi, 52-hafta yakınlığı, hızlanan momentum, GBM, DMSR, vb.).
 
 ## 📂 Yapı
 
