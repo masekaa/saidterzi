@@ -103,6 +103,18 @@ export interface SignalBoard {
   assets: AssetSignal[];
 }
 
+// --- Look-back duyarlılık matrisi ---
+export interface LookbackMatrix {
+  windows: number[]; // geri-bakış pencereleri (ay), örn. [1,3,6,9,12]
+  tbillRets: (number | null)[]; // her pencere için T-Bill getirisi (eşik)
+  assets: {
+    key: string;
+    name: string;
+    ticker: string;
+    rets: (number | null)[]; // her pencere için total return
+  }[];
+}
+
 // --- GEM önerisi (çekirdek) ---
 export interface GemRecommendation {
   relativeWinnerKey: string;
@@ -121,6 +133,7 @@ export interface AnalysisResult {
   tbill: { ticker: string; ret12m: number | null; currentPrice: number };
   gem: GemRecommendation;
   signals: SignalBoard; // varlık-bazlı sinyal özeti
+  lookback: LookbackMatrix; // look-back duyarlılık matrisi
   methods: MethodResult[]; // tüm yöntemler (şeffaf)
   backtest: BacktestResult | null;
   warnings: string[];

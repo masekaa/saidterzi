@@ -11,7 +11,11 @@ import {
   allTickers,
   LOOKBACK_MONTHS,
 } from "@/lib/universe";
-import { buildAllMethods, buildSignalBoard } from "@/lib/methods";
+import {
+  buildAllMethods,
+  buildSignalBoard,
+  buildLookbackMatrix,
+} from "@/lib/methods";
 import { runBacktest } from "@/lib/backtest";
 import { trailingReturn } from "@/lib/calc";
 import type { AnalysisResult, RawSeries } from "@/lib/types";
@@ -62,6 +66,7 @@ export async function GET() {
 
     const backtest = runBacktest(coreRaw, tbillRaw);
     const signals = buildSignalBoard(coreRaw, tbillRaw, gem.relativeWinnerKey);
+    const lookback = buildLookbackMatrix(coreRaw, tbillRaw);
 
     const warnings: string[] = [];
     if (errors.length) warnings.push(...errors.map((e) => `Veri hatası — ${e}`));
@@ -79,6 +84,7 @@ export async function GET() {
       },
       gem,
       signals,
+      lookback,
       methods,
       backtest,
       warnings,

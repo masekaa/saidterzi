@@ -535,6 +535,14 @@ table.heatmap .hm-tot {
   font-weight: 700;
   color: var(--text);
 }
+table.heatmap.lookback .hm-year {
+  min-width: 120px;
+}
+table.heatmap .lb-tbill td {
+  border-top: 2px solid var(--border);
+  color: var(--text-faint);
+  font-style: italic;
+}
 .rr-dot {
   fill: var(--text-faint);
   opacity: 0.85;

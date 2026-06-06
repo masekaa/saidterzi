@@ -25,6 +25,7 @@ import type {
   AssetSignal,
   CalcStep,
   GemRecommendation,
+  LookbackMatrix,
   MethodResult,
   RawSeries,
   Signal,
@@ -687,6 +688,28 @@ export function buildSignalBoard(
   });
 
   return { tbillRet12m: tRet, assets };
+}
+
+// Look-back duyarlılık matrisi: her çekirdek varlık için farklı geri-bakış
+// pencerelerinde (LOOKBACK_VARIANTS) total return + her pencerede T-Bill eşiği.
+export function buildLookbackMatrix(
+  core: RawMap,
+  tbill: RawSeries
+): LookbackMatrix {
+  const windows = [...LOOKBACK_VARIANTS];
+  const tbillRets = windows.map((w) => trailingReturn(tbill.series, w).ret);
+  const assets = CORE_ASSETS.map((a) => {
+    const raw = core[a.key];
+    return {
+      key: a.key,
+      name: a.name,
+      ticker: a.ticker,
+      rets: windows.map((w) =>
+        raw ? trailingReturn(raw.series, w).ret : null
+      ),
+    };
+  });
+  return { windows, tbillRets, assets };
 }
 
 export type { Instrument };

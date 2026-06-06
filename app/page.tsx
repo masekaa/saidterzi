@@ -5,6 +5,7 @@ import type {
   AnalysisResult,
   AssetMethodResult,
   BacktestResult,
+  LookbackMatrix as LookbackData,
   MethodResult,
   SignalBoard as SignalBoardData,
   StrategyMetrics,
@@ -124,6 +125,61 @@ function SignalBoard({ board }: { board: SignalBoardData }) {
         ay-sonu fiyat 12-ay basit hareketli ortalamanın üstünde mi. 52-hafta
         yakınlık: güncel fiyat / son 12 ayın en yüksek ay-sonu kapanışı.
       </p>
+    </>
+  );
+}
+
+function LookbackHeatmap({ data }: { data: LookbackData }) {
+  if (!data?.assets?.length) return null;
+  return (
+    <>
+      <div className="section-label">
+        Look-back Duyarlılık — farklı geri-bakış pencerelerinde 12→1 ay getiri
+      </div>
+      <div className="chart-card">
+        <div className="table-scroll">
+          <table className="heatmap lookback">
+            <thead>
+              <tr>
+                <th className="hm-year">Varlık</th>
+                {data.windows.map((w) => (
+                  <th key={w}>{w} ay</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {data.assets.map((a) => (
+                <tr key={a.key}>
+                  <td className="hm-year">
+                    {a.name}
+                    <span className="sb-ticker">{a.ticker}</span>
+                  </td>
+                  {a.rets.map((r, i) => (
+                    <td
+                      key={i}
+                      style={r != null ? { background: heatColor(r) } : undefined}
+                      title={r != null ? pct(r, 1) : ""}
+                    >
+                      {r != null ? (r * 100).toFixed(1) : "—"}
+                    </td>
+                  ))}
+                </tr>
+              ))}
+              <tr className="lb-tbill">
+                <td className="hm-year">T-Bill (eşik)</td>
+                {data.tbillRets.map((r, i) => (
+                  <td key={i}>{r != null ? (r * 100).toFixed(1) : "—"}</td>
+                ))}
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <p className="table-note">
+          Her hücre o penceredeki total return (%). Mutlak momentum için varlık
+          getirisi T-Bill eşik satırını geçmeli; göreceli momentum için aynı
+          sütunda en yüksek varlık seçilir. Yeşil pozitif, kırmızı negatif.
+        </p>
+      </div>
     </>
   );
 }
@@ -879,6 +935,9 @@ export default function Home() {
 
           {/* Varlık Sinyal Panosu */}
           {data.signals && <SignalBoard board={data.signals} />}
+
+          {/* Look-back Duyarlılık Matrisi */}
+          {data.lookback && <LookbackHeatmap data={data.lookback} />}
 
           {/* Backtest & Metrikler */}
           {bt && (
