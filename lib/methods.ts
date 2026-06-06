@@ -16,6 +16,8 @@ import {
   CORE_ASSETS,
   GBM_BONDS,
   DMSR_SECTORS,
+  STOCK_UNIVERSE,
+  STOCK_TOP_N,
   LOOKBACK_MONTHS,
   LOOKBACK_VARIANTS,
   MA_LENGTHS,
@@ -32,6 +34,8 @@ import type {
   RawSeries,
   Signal,
   SignalBoard,
+  StockMomentum,
+  StockSignal,
 } from "./types";
 
 // ---- Formatlayıcılar ----
@@ -821,6 +825,67 @@ export function buildLookbackMatrix(
     };
   });
   return { windows, tbillRets, assets };
+}
+
+// ===========================================================================
+//  HİSSE MOMENTUM PANOSU (bireysel hisse evreni)
+//  Relative momentum: 12-ay getiriye göre sırala → top-N.
+//  Absolute momentum: r₁₂ > T-Bill (seçim için ek koşul).
+//  + 52-hafta yakınlık ve ivmelenme (kavis) ek sinyalleri.
+// ===========================================================================
+export function buildStockMomentum(
+  stockRaw: RawMap,
+  tbill: RawSeries
+): StockMomentum {
+  const thr = tbillRet12(tbill) ?? 0;
+
+  // 1) Ham sinyaller
+  const raw0 = STOCK_UNIVERSE.map((s) => {
+    const raw = stockRaw[s.key];
+    const ret12m = raw ? trailingReturn(raw.series, LOOKBACK_MONTHS).ret : null;
+    const hi = raw ? highestClose(raw.series, LOOKBACK_MONTHS) : { high: null, price: null };
+    const highProximity =
+      hi.price != null && hi.high != null && hi.high !== 0 ? hi.price / hi.high : null;
+    // İvmelenme: son 12+1 ayın log-fiyatına kuadratik uyum, c işareti.
+    let accelerating: boolean | null = null;
+    if (raw && raw.series.length >= LOOKBACK_MONTHS + 1) {
+      const win = raw.series.slice(raw.series.length - (LOOKBACK_MONTHS + 1));
+      const fit = quadraticFit(win.map((p) => Math.log(p.close)));
+      if (fit) accelerating = fit.c > 0;
+    }
+    return { s, ret12m, highProximity, accelerating };
+  });
+
+  // 2) 12-ay getiriye göre azalan sırala (null'lar sona)
+  const ordered = [...raw0].sort((a, b) => {
+    const av = a.ret12m ?? -Infinity;
+    const bv = b.ret12m ?? -Infinity;
+    return bv - av;
+  });
+
+  // 3) Sıra + seçim (top-N VE absolute pozitif)
+  const stocks: StockSignal[] = ordered.map((x, i) => {
+    const rank = x.ret12m != null ? i + 1 : null;
+    const excess = x.ret12m != null ? x.ret12m - thr : null;
+    const absolute: Signal | null =
+      excess != null ? (excess > 0 ? "LONG" : "CASH") : null;
+    const selected = rank != null && rank <= STOCK_TOP_N && excess != null && excess > 0;
+    return {
+      key: x.s.key,
+      name: x.s.name,
+      ticker: x.s.ticker,
+      sector: x.s.note ?? "",
+      ret12m: x.ret12m,
+      excessVsTbill: excess,
+      absolute,
+      rank,
+      selected,
+      highProximity: x.highProximity,
+      accelerating: x.accelerating,
+    };
+  });
+
+  return { topN: STOCK_TOP_N, tbillRet12m: thr, stocks };
 }
 
 export type { Instrument };

@@ -49,6 +49,38 @@ export const DMSR_SECTORS: Instrument[] = [
   { key: "xlv", name: "Sağlık", ticker: "XLV" },
 ];
 
+// --- Hisse evreni (bireysel hisse momentumu) ---
+// Sektörel olarak çeşitlendirilmiş ~24 büyük-cap ABD hissesi. Relative momentum
+// bu evren içinde sıralama yapar; absolute momentum T-Bill eşiğini uygular.
+// Kitap: 06 §2 (bireysel hisse momentumu) — earnings/revenue momentum buraya uygulanır.
+export const STOCK_UNIVERSE: Instrument[] = [
+  { key: "aapl", name: "Apple", ticker: "AAPL", note: "Teknoloji" },
+  { key: "msft", name: "Microsoft", ticker: "MSFT", note: "Teknoloji" },
+  { key: "nvda", name: "NVIDIA", ticker: "NVDA", note: "Yarı iletken" },
+  { key: "amzn", name: "Amazon", ticker: "AMZN", note: "Tüketici/Bulut" },
+  { key: "googl", name: "Alphabet", ticker: "GOOGL", note: "İletişim" },
+  { key: "meta", name: "Meta", ticker: "META", note: "İletişim" },
+  { key: "tsla", name: "Tesla", ticker: "TSLA", note: "Otomotiv" },
+  { key: "avgo", name: "Broadcom", ticker: "AVGO", note: "Yarı iletken" },
+  { key: "amd", name: "AMD", ticker: "AMD", note: "Yarı iletken" },
+  { key: "nflx", name: "Netflix", ticker: "NFLX", note: "İletişim" },
+  { key: "crm", name: "Salesforce", ticker: "CRM", note: "Yazılım" },
+  { key: "jpm", name: "JPMorgan", ticker: "JPM", note: "Finans" },
+  { key: "v", name: "Visa", ticker: "V", note: "Finans/Ödeme" },
+  { key: "ma", name: "Mastercard", ticker: "MA", note: "Finans/Ödeme" },
+  { key: "unh", name: "UnitedHealth", ticker: "UNH", note: "Sağlık" },
+  { key: "jnj", name: "Johnson & Johnson", ticker: "JNJ", note: "Sağlık" },
+  { key: "lly", name: "Eli Lilly", ticker: "LLY", note: "İlaç" },
+  { key: "xom", name: "ExxonMobil", ticker: "XOM", note: "Enerji" },
+  { key: "cvx", name: "Chevron", ticker: "CVX", note: "Enerji" },
+  { key: "wmt", name: "Walmart", ticker: "WMT", note: "Perakende" },
+  { key: "cost", name: "Costco", ticker: "COST", note: "Perakende" },
+  { key: "pg", name: "Procter & Gamble", ticker: "PG", note: "Tüketici defansif" },
+  { key: "ko", name: "Coca-Cola", ticker: "KO", note: "Tüketici defansif" },
+  { key: "hd", name: "Home Depot", ticker: "HD", note: "Tüketici döngüsel" },
+];
+export const STOCK_TOP_N = 5; // relative momentum'da seçilecek hisse sayısı
+
 // DMSR güvenli liman + trend referansı
 export const AGG: Instrument = {
   key: "agg",
@@ -65,6 +97,7 @@ export function allTickers(): string[] {
     TBILL,
     ...GBM_BONDS,
     ...DMSR_SECTORS,
+    ...STOCK_UNIVERSE,
     AGG,
   ].forEach((i) => set.add(i.ticker));
   return Array.from(set);

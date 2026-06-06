@@ -121,6 +121,45 @@ export interface LookbackMatrix {
   }[];
 }
 
+// --- Hisse momentum panosu (bireysel hisse evreni) ---
+export interface StockSignal {
+  key: string;
+  name: string;
+  ticker: string;
+  sector: string; // universe note
+  ret12m: number | null;
+  excessVsTbill: number | null;
+  absolute: Signal | null; // r₁₂ > T-Bill ?
+  rank: number | null; // göreceli momentum sırası (1 = en güçlü)
+  selected: boolean; // top-N içinde VE absolute pozitif
+  highProximity: number | null; // fiyat / 12-ay zirve
+  accelerating: boolean | null; // kuadratik kavis c>0
+}
+
+export interface StockMomentum {
+  topN: number;
+  tbillRet12m: number | null;
+  stocks: StockSignal[]; // 12-ay getiriye göre azalan sıralı
+}
+
+// --- Earnings/Revenue momentum (temel veri, FMP — anahtar gerekir) ---
+export interface EarningsSignal {
+  key: string;
+  name: string;
+  ticker: string;
+  revenueYoY: number | null; // son çeyrek geliri / 4 çeyrek önce − 1
+  earningsYoY: number | null; // net kâr YoY
+  rank: number | null; // birleşik momentum sırası
+  selected: boolean; // top-N
+}
+
+export interface EarningsMomentum {
+  enabled: boolean; // FMP anahtarı var mı
+  reason?: string; // devre dışıysa açıklama
+  topN: number;
+  stocks: EarningsSignal[];
+}
+
 // --- Faktör-model alpha (Fama-French 3) ---
 export interface FactorAlpha {
   source: string;
@@ -146,15 +185,4 @@ export interface GemRecommendation {
 }
 
 // --- Tüm analiz çıktısı ---
-export interface AnalysisResult {
-  generatedAt: string;
-  lookbackMonths: number;
-  tbill: { ticker: string; ret12m: number | null; currentPrice: number };
-  gem: GemRecommendation;
-  signals: SignalBoard; // varlık-bazlı sinyal özeti
-  lookback: LookbackMatrix; // look-back duyarlılık matrisi
-  factorAlpha: FactorAlpha | null; // Fama-French 3 faktör alpha (null = veri yok)
-  methods: MethodResult[]; // tüm yöntemler (şeffaf)
-  backtest: BacktestResult | null;
-  warnings: string[];
-}
+export interfac

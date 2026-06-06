@@ -8,6 +8,7 @@ import {
   TBILL,
   GBM_BONDS,
   DMSR_SECTORS,
+  STOCK_UNIVERSE,
   allTickers,
   LOOKBACK_MONTHS,
 } from "@/lib/universe";
@@ -15,6 +16,7 @@ import {
   buildAllMethods,
   buildSignalBoard,
   buildLookbackMatrix,
+  buildStockMomentum,
 } from "@/lib/methods";
 import { buildFactorAlpha } from "@/lib/factors";
 import { runBacktest } from "@/lib/backtest";
@@ -50,6 +52,7 @@ export async function GET() {
     const coreRaw = mapBy(CORE_ASSETS);
     const bondRaw = mapBy(GBM_BONDS);
     const sectorRaw = mapBy(DMSR_SECTORS);
+    const stockRaw = mapBy(STOCK_UNIVERSE);
     const tbillRaw =
       byTicker[TBILL.ticker] ??
       ({ ticker: TBILL.ticker, currency: "USD", currentPrice: NaN, series: [] } as RawSeries);
@@ -68,6 +71,7 @@ export async function GET() {
     const backtest = runBacktest(coreRaw, tbillRaw);
     const signals = buildSignalBoard(coreRaw, tbillRaw, gem.relativeWinnerKey);
     const lookback = buildLookbackMatrix(coreRaw, tbillRaw);
+    const stocks = buildStockMomentum(stockRaw, tbillRaw);
 
     // Fama-French 3 faktör alpha (Ken French verisi, anahtarsız, non-fatal).
     // GEM aylık getirilerini equity curve'den türet (growth[i]/growth[i-1]-1).
@@ -111,6 +115,7 @@ export async function GET() {
       gem,
       signals,
       lookback,
+      stocks,
       factorAlpha,
       methods,
       backtest,

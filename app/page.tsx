@@ -9,6 +9,7 @@ import type {
   LookbackMatrix as LookbackData,
   MethodResult,
   SignalBoard as SignalBoardData,
+  StockMomentum as StockMomentumData,
   StrategyMetrics,
 } from "@/lib/types";
 
@@ -181,6 +182,86 @@ function LookbackHeatmap({ data }: { data: LookbackData }) {
           sütunda en yüksek varlık seçilir. Yeşil pozitif, kırmızı negatif.
         </p>
       </div>
+    </>
+  );
+}
+
+function StockMomentumBoard({ data }: { data: StockMomentumData }) {
+  if (!data?.stocks?.length) return null;
+  const selectedCount = data.stocks.filter((s) => s.selected).length;
+  return (
+    <>
+      <div className="section-label">
+        Hisse Momentum Panosu — {data.stocks.length} büyük-cap hisse, göreceli
+        sıralama (en güçlü top-{data.topN} seçilir)
+      </div>
+      <div className="table-scroll">
+        <table className="metrics stockboard">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th className="left">Hisse</th>
+              <th className="left">Sektör</th>
+              <th>12-Ay Getiri</th>
+              <th>T-Bill&apos;e Karşı</th>
+              <th>Mutlak</th>
+              <th>52-Hafta</th>
+              <th>İvme</th>
+              <th>Seçim</th>
+            </tr>
+          </thead>
+          <tbody>
+            {data.stocks.map((s) => (
+              <tr key={s.key} className={s.selected ? "row-hl" : ""}>
+                <td className="rank">{s.rank ?? "—"}</td>
+                <td className="left">
+                  {s.name}
+                  <span className="sb-ticker">{s.ticker}</span>
+                </td>
+                <td className="left sector">{s.sector}</td>
+                <td className={s.ret12m != null && s.ret12m < 0 ? "neg" : ""}>
+                  {pct(s.ret12m)}
+                </td>
+                <td className={s.excessVsTbill != null && s.excessVsTbill < 0 ? "neg" : ""}>
+                  {pct(s.excessVsTbill)}
+                </td>
+                <td>
+                  <SignalBadge signal={s.absolute ?? undefined} />
+                </td>
+                <td>
+                  {s.highProximity != null
+                    ? `%${(s.highProximity * 100).toFixed(0)}`
+                    : "—"}
+                </td>
+                <td>
+                  {s.accelerating == null ? (
+                    "—"
+                  ) : s.accelerating ? (
+                    <span className="sb-up">▲ hızlanıyor</span>
+                  ) : (
+                    <span className="sb-down">▼ yavaşlıyor</span>
+                  )}
+                </td>
+                <td>
+                  {s.selected ? (
+                    <span className="pill-sel">★ SEÇİLDİ</span>
+                  ) : (
+                    <span className="pill-no">—</span>
+                  )}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      <p className="table-note">
+        <b>Göreceli momentum:</b> hisseler 12-ay getiriye göre sıralanır, en
+        güçlü {data.topN} tanesi aday olur. <b>Mutlak momentum:</b> aday ancak
+        12-ay getirisi T-Bill&apos;i ({pct(data.tbillRet12m)}) geçerse seçilir —
+        şu an <b>{selectedCount}</b> hisse seçili. Dual momentum portföyü bu
+        seçili hisselere eşit ağırlık verir; hiçbiri geçemezse nakitte kalınır.
+        İvme = son 12 ayın log-fiyat kavisi (hızlanan trend daha kalıcı olur).
+      </p>
     </>
   );
 }
@@ -1450,6 +1531,9 @@ export default function Home() {
 
           {/* Look-back Duyarlılık Matrisi */}
           {data.lookback && <LookbackHeatmap data={data.lookback} />}
+
+          {/* Hisse Momentum Panosu */}
+          {data.stocks && <StockMomentumBoard data={data.stocks} />}
 
           {/* Backtest & Metrikler */}
           {bt && (
