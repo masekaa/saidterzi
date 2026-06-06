@@ -960,6 +960,109 @@ function ScatterGemVsBench({ bt }: { bt: BacktestResult }) {
   );
 }
 
+function quantile(sorted: number[], q: number): number {
+  if (sorted.length === 1) return sorted[0];
+  const pos = (sorted.length - 1) * q;
+  const lo = Math.floor(pos);
+  const hi = Math.ceil(pos);
+  if (lo === hi) return sorted[lo];
+  return sorted[lo] + (sorted[hi] - sorted[lo]) * (pos - lo);
+}
+
+function BoxPlot({ bt }: { bt: BacktestResult }) {
+  const curves = bt.equityCurves;
+  if (!curves?.length) return null;
+
+  const stats = curves.map((c) => {
+    const rets: number[] = [];
+    for (let i = 1; i < c.growth.length; i++)
+      rets.push(c.growth[i] / c.growth[i - 1] - 1);
+    rets.sort((a, b) => a - b);
+    return {
+      name: c.name,
+      hl: !!c.highlight,
+      min: rets[0],
+      q1: quantile(rets, 0.25),
+      med: quantile(rets, 0.5),
+      q3: quantile(rets, 0.75),
+      max: rets[rets.length - 1],
+    };
+  });
+  if (!stats.length) return null;
+
+  const W = 820;
+  const rowH = 34;
+  const padL = 150;
+  const padR = 20;
+  const padT = 24;
+  const padB = 28;
+  const H = padT + padB + stats.length * rowH;
+  const innerW = W - padL - padR;
+
+  const lo = Math.min(...stats.map((s) => s.min));
+  const hi = Math.max(...stats.map((s) => s.max));
+  const span = hi - lo || 1;
+  const X = (v: number) => padL + (innerW * (v - lo)) / span;
+
+  const xTicks: number[] = [];
+  for (let p = Math.ceil(lo * 10) / 10; p <= hi; p += 0.1) xTicks.push(p);
+
+  return (
+    <div className="chart-card">
+      <div className="chart-title">
+        Aylık Getiri Dağılımı (Box Plot) — kutu: Q1–Q3, çizgi: medyan, bıyık:
+        min–max
+      </div>
+      <div className="chart-help">
+        Her satır bir strateji. Kutu ne kadar <b>dar</b>sa aylık getiriler o
+        kadar istikrarlı. Kutunun ve bıyıkların sola uzanması (negatif bölge) =
+        kayıp ayların büyüklüğü. GEM&apos;in kutusunu hisse al-tut ile
+        karşılaştır.
+      </div>
+      <svg className="equity-svg" viewBox={`0 0 ${W} ${H}`} role="img">
+        {xTicks.map((v, i) => (
+          <g key={i}>
+            <line
+              x1={X(v)}
+              x2={X(v)}
+              y1={padT - 6}
+              y2={H - padB}
+              className={Math.abs(v) < 1e-9 ? "grid-line zero" : "grid-line"}
+            />
+            <text x={X(v)} y={H - padB + 16} className="axis-label" textAnchor="middle">
+              {(v * 100).toFixed(0)}%
+            </text>
+          </g>
+        ))}
+        {stats.map((s, i) => {
+          const cy = padT + i * rowH + rowH / 2;
+          return (
+            <g key={i} className={s.hl ? "box-hl" : ""}>
+              <text x={padL - 10} y={cy + 3} className="axis-label" textAnchor="end">
+                {s.name.replace(" (Al-Tut)", "").replace(" (Dual Momentum)", "")}
+              </text>
+              {/* bıyık */}
+              <line x1={X(s.min)} x2={X(s.max)} y1={cy} y2={cy} className="box-whisker" />
+              <line x1={X(s.min)} x2={X(s.min)} y1={cy - 5} y2={cy + 5} className="box-whisker" />
+              <line x1={X(s.max)} x2={X(s.max)} y1={cy - 5} y2={cy + 5} className="box-whisker" />
+              {/* kutu */}
+              <rect
+                x={X(s.q1)}
+                y={cy - 9}
+                width={Math.max(1, X(s.q3) - X(s.q1))}
+                height={18}
+                className="box-rect"
+              />
+              {/* medyan */}
+              <line x1={X(s.med)} x2={X(s.med)} y1={cy - 9} y2={cy + 9} className="box-median" />
+            </g>
+          );
+        })}
+      </svg>
+    </div>
+  );
+}
+
 function MetricsTable({ rows }: { rows: StrategyMetrics[] }) {
   return (
     <div className="table-scroll">
@@ -1312,6 +1415,7 @@ export default function Home() {
               <RiskReturnChart rows={bt.strategies} />
               <RollingReturnsChart bt={bt} />
               <ScatterGemVsBench bt={bt} />
+              <BoxPlot bt={bt} />
               <MetricsTable rows={bt.strategies} />
               <p className="table-note">{bt.note}</p>
               {bt.strategies[0]?.timeInAsset && (
