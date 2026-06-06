@@ -13,6 +13,16 @@ npm run dev      # http://localhost:3000
 
 Deploy için → [`DEPLOY.md`](DEPLOY.md). Veri: Yahoo Finance (keyless). Strateji: 12-ay look-back, T-Bill eşikli GEM rotasyonu + varlık-bazlı sinyaller.
 
+### Veri Kaynakları
+
+| Kaynak | Anahtar | Kullanım |
+|--------|---------|----------|
+| **Yahoo Finance** (v8 chart) | Yok | Fiyat/total-return serileri (ETF + hisse evreni) |
+| **Ken French Data Library** | Yok | Fama-French 3 faktör → faktör-model alpha (`lib/factors.ts`, ZIP doğrudan çekilir) |
+| **Financial Modeling Prep** (FMP) | **Opsiyonel** | Earnings/revenue momentum (çeyreklik gelir+net kâr). `FMP_API_KEY` env ile etkinleşir |
+
+**Earnings momentum'u açmak için:** [financialmodelingprep.com](https://site.financialmodelingprep.com/developer/docs) ücretsiz anahtar al → Vercel → Settings → Environment Variables → `FMP_API_KEY` ekle → redeploy. Anahtar yoksa uygulama bu paneli "kapalı" gösterir, geri kalan her şey çalışır.
+
 | Yol | İçerik |
 |-----|--------|
 | `app/` | Next.js App Router — `page.tsx` (dashboard + görseller), `api/analysis/` (serverless route) |
