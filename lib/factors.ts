@@ -140,21 +140,29 @@ export function regressFactors(
 
 // ---- 4) Uçtan uca: GEM aylık getirilerini çek+hizala+regresle ----
 // gemMonthly: { ym:"YYYY-MM", ret: aylık GEM getirisi (ondalık) }
-export async function buildFactorAlpha(
-  gemMonthly: { ym: string; ret: number }[]
-): Promise<FactorAlpha | null> {
-  const factors = await fetchFamaFrench3();
-  if (!factors) return null;
+// Önceden çekilmiş faktörlerle hizala + regresle (FF tek çekimde paylaşılır).
+export function alphaFromFactors(
+  monthly: { ym: string; ret: number }[],
+  factors: FactorRow[]
+): FactorAlpha | null {
   const fmap = new Map(factors.map((f) => [f.ym, f]));
   const exc: number[] = [];
   const X: { mktRF: number; smb: number; hml: number }[] = [];
-  for (const g of gemMonthly) {
+  for (const g of monthly) {
     const f = fmap.get(g.ym);
     if (!f) continue;
     exc.push(g.ret - f.rf);
     X.push({ mktRF: f.mktRF, smb: f.smb, hml: f.hml });
   }
   return regressFactors(exc, X);
+}
+
+export async function buildFactorAlpha(
+  gemMonthly: { ym: string; ret: number }[]
+): Promise<FactorAlpha | null> {
+  const factors = await fetchFamaFrench3();
+  if (!factors) return null;
+  return alphaFromFactors(gemMonthly, factors);
 }
 
 // (XᵀX)⁻¹'in [0][0] elemanı — alpha standart hatası için.

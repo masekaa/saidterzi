@@ -17,7 +17,13 @@ import {
   cvar,
   maxDrawdownDetail,
 } from "./calc";
-import { CORE_ASSETS, TBILL, LOOKBACK_MONTHS } from "./universe";
+import {
+  CORE_ASSETS,
+  TBILL,
+  LOOKBACK_MONTHS,
+  STOCK_UNIVERSE,
+  STOCK_TOP_N,
+} from "./universe";
 import type { BacktestResult, RawSeries, StrategyMetrics } from "./types";
 
 type RawMap = Record<string, RawSeries>;
@@ -164,5 +170,117 @@ export function runBacktest(core: RawMap, tbill: RawSeries): BacktestResult | nu
     timeline,
     note:
       "Ortak veri periyodunda (tüm varlıkların geçmişi mevcut olduğu tarihten itibaren) aylık simülasyon. Sinyal t-sonu, getiri t+1 (lookahead bias yok). İşlem maliyeti dahil değildir.",
+  };
+}
+
+// ===========================================================================
+//  HİSSE MOMENTUM ROTASYON BACKTEST'İ
+//  Her ay: 12-ay getiriye göre top-N hisse seç (T-Bill'i geçenler), eşit ağırlık;
+//  hiçbiri geçemezse nakit. Benchmark: tüm hisselerin eşit-ağırlık al-tut'u.
+//  ETF GEM backtest'iyle aynı BacktestResult şekli → tüm grafikler yeniden kullanılır.
+// ===========================================================================
+export function runStockBacktest(
+  stockRaw: RawMap,
+  tbill: RawSeries
+): BacktestResult | null {
+  const keys = STOCK_UNIVERSE.map((s) => s.key).filter((k) => stockRaw[k]);
+  if (keys.length < 3) return null;
+
+  const seriesMap: Record<string, RawSeries["series"]> = {};
+  for (const k of keys) seriesMap[k] = stockRaw[k].series;
+  seriesMap[TBILL.key] = tbill.series;
+
+  const { dates, closes } = alignSeries(seriesMap);
+  const n = dates.length;
+  if (n < LOOKBACK_MONTHS + 3) return null;
+
+  const TOPN = STOCK_TOP_N;
+  const stratRets: number[] = [];
+  const ewRets: number[] = [];
+  const rf: number[] = [];
+  const positions: string[] = []; // "stocks" | "bil"
+
+  for (let t = LOOKBACK_MONTHS; t <= n - 2; t++) {
+    const tbill12 =
+      closes[TBILL.key][t] / closes[TBILL.key][t - LOOKBACK_MONTHS] - 1;
+    const ranked = keys
+      .map((k) => ({
+        k,
+        r: closes[k][t] / closes[k][t - LOOKBACK_MONTHS] - 1,
+      }))
+      .sort((a, b) => b.r - a.r);
+    const picks = ranked.slice(0, TOPN).filter((x) => x.r > tbill12);
+
+    const rfNext = closes[TBILL.key][t + 1] / closes[TBILL.key][t] - 1;
+    rf.push(rfNext);
+
+    if (picks.length > 0) {
+      let s = 0;
+      for (const p of picks) s += closes[p.k][t + 1] / closes[p.k][t] - 1;
+      stratRets.push(s / picks.length);
+      positions.push("stocks");
+    } else {
+      stratRets.push(rfNext);
+      positions.push("bil");
+    }
+
+    let es = 0;
+    for (const k of keys) es += closes[k][t + 1] / closes[k][t] - 1;
+    ewRets.push(es / keys.length);
+  }
+
+  // Pozisyon istatistikleri (yatırımda vs nakit)
+  let switches = 0;
+  for (let i = 1; i < positions.length; i++)
+    if (positions[i] !== positions[i - 1]) switches++;
+  const years = positions.length / 12;
+  const timeInAsset: Record<string, number> = {};
+  for (const p of positions) timeInAsset[p] = (timeInAsset[p] ?? 0) + 1;
+  for (const k of Object.keys(timeInAsset))
+    timeInAsset[k] = +((timeInAsset[k] / positions.length) * 100).toFixed(1);
+
+  const strategies: StrategyMetrics[] = [
+    buildMetrics(`Hisse Momentum (Top-${TOPN})`, stratRets, rf, {
+      switchesPerYear: +(switches / years).toFixed(2),
+      timeInAsset,
+    }),
+    buildMetrics("Eşit Ağırlık (Tüm Hisseler)", ewRets, rf),
+  ];
+
+  const toGrowth = (rets: number[]): number[] => {
+    const g: number[] = [1];
+    let acc = 1;
+    for (const r of rets) {
+      acc *= 1 + r;
+      g.push(acc);
+    }
+    return g;
+  };
+  const curveDates: string[] = [dates[LOOKBACK_MONTHS]];
+  for (let t = LOOKBACK_MONTHS; t <= n - 2; t++) curveDates.push(dates[t + 1]);
+
+  const timeline = positions.map((key, i) => ({
+    date: dates[LOOKBACK_MONTHS + 1 + i],
+    key,
+  }));
+
+  const equityCurves = [
+    {
+      name: `Hisse Momentum (Top-${TOPN})`,
+      growth: toGrowth(stratRets),
+      highlight: true,
+    },
+    { name: "Eşit Ağırlık (Tüm Hisseler)", growth: toGrowth(ewRets) },
+  ];
+
+  return {
+    startDate: dates[LOOKBACK_MONTHS + 1] ?? dates[LOOKBACK_MONTHS],
+    endDate: dates[n - 1],
+    months: stratRets.length,
+    strategies,
+    dates: curveDates,
+    equityCurves,
+    timeline,
+    note: `${keys.length} hisseli evrende top-${TOPN} relative+absolute momentum rotasyonu (aylık, eşit ağırlık). Sinyal t-sonu, getiri t+1 (lookahead bias yok). İşlem maliyeti dahil değildir.`,
   };
 }

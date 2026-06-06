@@ -29,6 +29,7 @@ const POS_META: Record<string, { label: string; color: string }> = {
   qqq: { label: "NASDAQ 100", color: "#c084fc" },
   gld: { label: "Altın", color: "#f59e0b" },
   bil: { label: "Nakit (T-Bill)", color: "#64748b" },
+  stocks: { label: "Hisse Sepeti (Top-N)", color: "#22d3a6" },
 };
 function posMeta(key: string): { label: string; color: string } {
   return POS_META[key] ?? { label: key.toUpperCase(), color: "#94a3b8" };
@@ -541,7 +542,7 @@ function EquityChart({ bt }: { bt: BacktestResult }) {
   );
 }
 
-function PositionTimeline({ bt }: { bt: BacktestResult }) {
+function PositionTimeline({ bt, label = "GEM" }: { bt: BacktestResult; label?: string }) {
   const tl = bt.timeline;
   if (!tl?.length) return null;
   const W = 820;
@@ -571,7 +572,7 @@ function PositionTimeline({ bt }: { bt: BacktestResult }) {
   return (
     <div className="chart-card">
       <div className="chart-title">
-        GEM Pozisyon Geçmişi — her ay hangi varlıkta tutuldu
+        {label} Pozisyon Geçmişi — her ay hangi varlıkta tutuldu
       </div>
       <div className="chart-help">
         Her dikey dilim bir ay; renk o ay tutulan varlık. Renk değişimi =
@@ -624,7 +625,7 @@ function PositionTimeline({ bt }: { bt: BacktestResult }) {
   );
 }
 
-function UnderwaterChart({ bt }: { bt: BacktestResult }) {
+function UnderwaterChart({ bt, label = "GEM" }: { bt: BacktestResult; label?: string }) {
   const gem = bt.equityCurves.find((c) => c.highlight) ?? bt.equityCurves[0];
   if (!gem?.growth?.length) return null;
 
@@ -675,7 +676,7 @@ function UnderwaterChart({ bt }: { bt: BacktestResult }) {
   return (
     <div className="chart-card">
       <div className="chart-title">
-        GEM Drawdown (Underwater) — zirveden düşüş · en kötü {pct(minDD, 1)}
+        {label} Drawdown (Underwater) — zirveden düşüş · en kötü {pct(minDD, 1)}
       </div>
       <div className="chart-help">
         0 çizgisi = yeni zirve (yatırımcı en yüksek noktasında). Eğri ne kadar
@@ -734,7 +735,7 @@ function heatColor(r: number): string {
   return `rgba(239, 68, 68, ${(0.12 + 0.55 * -t).toFixed(3)})`;
 }
 
-function MonthlyHeatmap({ bt }: { bt: BacktestResult }) {
+function MonthlyHeatmap({ bt, label = "GEM" }: { bt: BacktestResult; label?: string }) {
   const gem = bt.equityCurves.find((c) => c.highlight) ?? bt.equityCurves[0];
   const g = gem?.growth;
   if (!g || g.length < 2 || bt.dates.length < 2) return null;
@@ -772,7 +773,7 @@ function MonthlyHeatmap({ bt }: { bt: BacktestResult }) {
   return (
     <div className="chart-card">
       <div className="chart-title">
-        GEM Aylık Getiri Isı Haritası — yıl × ay (yeşil: kâr, kırmızı: zarar)
+        {label} Aylık Getiri Isı Haritası — yıl × ay (yeşil: kâr, kırmızı: zarar)
       </div>
       <div className="chart-help">
         Her hücre o ayın GEM getirisi (%). Renk yoğunluğu büyüklüğü gösterir:
@@ -967,7 +968,7 @@ function AdvancedMetricsTable({ rows }: { rows: StrategyMetrics[] }) {
   );
 }
 
-function RollingReturnsChart({ bt }: { bt: BacktestResult }) {
+function RollingReturnsChart({ bt, label = "GEM" }: { bt: BacktestResult; label?: string }) {
   const gem = bt.equityCurves.find((c) => c.highlight) ?? bt.equityCurves[0];
   const g = gem?.growth;
   const WIN = 12;
@@ -1016,7 +1017,7 @@ function RollingReturnsChart({ bt }: { bt: BacktestResult }) {
   return (
     <div className="chart-card">
       <div className="chart-title">
-        GEM 12-Ay Rolling Getiri — kayan 1 yıllık pencere getirisi
+        {label} 12-Ay Rolling Getiri — kayan 1 yıllık pencere getirisi
       </div>
       <div className="chart-help">
         Her nokta o aydan geriye 12 ayın getirisi. 0 çizgisinin altına inen
@@ -1049,7 +1050,7 @@ function RollingReturnsChart({ bt }: { bt: BacktestResult }) {
   );
 }
 
-function ScatterGemVsBench({ bt }: { bt: BacktestResult }) {
+function ScatterGemVsBench({ bt, label = "GEM" }: { bt: BacktestResult; label?: string }) {
   const gem = bt.equityCurves.find((c) => c.highlight);
   const bench =
     bt.equityCurves.find((c) => c.name.startsWith("S&P")) ??
@@ -1082,7 +1083,7 @@ function ScatterGemVsBench({ bt }: { bt: BacktestResult }) {
   return (
     <div className="chart-card">
       <div className="chart-title">
-        Aylık Getiri Dağılımı — GEM (y) vs {benchName} (x)
+        Aylık Getiri Dağılımı — {label} (y) vs {benchName} (x)
       </div>
       <div className="chart-help">
         Her nokta bir ay. Köşegen (kesikli) = eşit getiri. <b>Sol-alt
@@ -1222,7 +1223,7 @@ function BoxPlot({ bt }: { bt: BacktestResult }) {
   );
 }
 
-function FactorAlphaPanel({ fa }: { fa: FactorAlpha }) {
+function FactorAlphaPanel({ fa, subject = "GEM" }: { fa: FactorAlpha; subject?: string }) {
   const sig = Math.abs(fa.alphaTStat) >= 2;
   return (
     <>
@@ -1259,10 +1260,11 @@ function FactorAlphaPanel({ fa }: { fa: FactorAlpha }) {
           </div>
         </div>
         <p className="chart-help">
-          GEM&apos;in aylık fazla getirisi 3 faktöre regrese edildi ({fa.nMonths}{" "}
-          ay). <b>Alpha&gt;0</b> = faktörlerle açıklanamayan, stratejiye özgü
-          getiri (Antonacci&apos;nin asıl iddiası). <b>Market β</b> piyasa
-          duyarlılığı; GEM nakde kaçtığı için tipik olarak 1&apos;in altındadır.{" "}
+          {subject}&apos;in aylık fazla getirisi 3 faktöre regrese edildi (
+          {fa.nMonths} ay). <b>Alpha&gt;0</b> = faktörlerle açıklanamayan,
+          stratejiye özgü getiri (Antonacci&apos;nin asıl iddiası).{" "}
+          <b>Market β</b> piyasa duyarlılığı; strateji nakde kaçtığı için tipik
+          olarak 1&apos;in altındadır.{" "}
           <b>R²</b> getirinin ne kadarının faktörlerce açıklandığı. Kaynak:{" "}
           {fa.source}.
         </p>
@@ -1609,12 +1611,6 @@ export default function Home() {
           {/* Look-back Duyarlılık Matrisi */}
           {data.lookback && <LookbackHeatmap data={data.lookback} />}
 
-          {/* Hisse Momentum Panosu */}
-          {data.stocks && <StockMomentumBoard data={data.stocks} />}
-
-          {/* Earnings / Revenue Momentum (FMP anahtarı ile) */}
-          {data.earnings && <EarningsMomentumPanel data={data.earnings} />}
-
           {/* Backtest & Metrikler */}
           {bt && (
             <>
@@ -1648,6 +1644,64 @@ export default function Home() {
 
           {/* Tüm Yöntemler — kategoriye göre gruplu */}
           <MethodsSection methods={data.methods} />
+
+          {/* ====================== HİSSE SENEDİ EVRENİ ====================== */}
+          <div className="universe-divider">
+            <span>📈 Hisse Senedi Evreni</span>
+            <small>
+              Çekirdek ETF&apos;lere uygulanan tüm analizlerin bireysel hisse
+              evreni için tekrarı
+            </small>
+          </div>
+
+          {/* Hisse Momentum Panosu (relative + absolute sıralama) */}
+          {data.stocks && <StockMomentumBoard data={data.stocks} />}
+
+          {/* Hisse Momentum Rotasyon Backtest'i + tüm görseller */}
+          {data.stockBacktest && (
+            <>
+              <div className="section-label">
+                Hisse Momentum Backtest &amp; Risk Metrikleri (
+                {data.stockBacktest.startDate} → {data.stockBacktest.endDate},{" "}
+                {data.stockBacktest.months} ay)
+              </div>
+              <EquityChart bt={data.stockBacktest} />
+              <PositionTimeline bt={data.stockBacktest} label="Hisse Momentum" />
+              <UnderwaterChart bt={data.stockBacktest} label="Hisse Momentum" />
+              <MonthlyHeatmap bt={data.stockBacktest} label="Hisse Momentum" />
+              <RiskReturnChart rows={data.stockBacktest.strategies} />
+              <RollingReturnsChart bt={data.stockBacktest} label="Hisse Momentum" />
+              <ScatterGemVsBench bt={data.stockBacktest} label="Hisse Momentum" />
+              <BoxPlot bt={data.stockBacktest} />
+              <MetricsTable rows={data.stockBacktest.strategies} />
+              <p className="table-note">{data.stockBacktest.note}</p>
+              {data.stockBacktest.strategies[0]?.timeInAsset && (
+                <p className="table-note">
+                  Zaman dağılımı:{" "}
+                  {Object.entries(data.stockBacktest.strategies[0].timeInAsset)
+                    .map(([k, v]) => {
+                      const lbl =
+                        k === "stocks" ? "Hissede" : k === "bil" ? "Nakit" : k;
+                      return `${lbl} %${v}`;
+                    })
+                    .join(" · ")}{" "}
+                  · Yıllık ~
+                  {num(data.stockBacktest.strategies[0].switchesPerYear ?? null)}{" "}
+                  geçiş
+                </p>
+              )}
+              <AdvancedMetricsTable rows={data.stockBacktest.strategies} />
+              {data.stockFactorAlpha && (
+                <FactorAlphaPanel
+                  fa={data.stockFactorAlpha}
+                  subject="Hisse Momentum stratejisi"
+                />
+              )}
+            </>
+          )}
+
+          {/* Earnings / Revenue Momentum (FMP anahtarı ile) */}
+          {data.earnings && <EarningsMomentumPanel data={data.earnings} />}
 
           {data.warnings.length > 0 && (
             <div className="warnings">

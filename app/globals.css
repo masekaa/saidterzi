@@ -790,6 +790,31 @@ table.heatmap .lb-tbill td {
   padding-left: 10px;
   margin-bottom: 10px;
 }
+.universe-divider {
+  margin: 48px 0 20px;
+  padding: 18px 20px;
+  background: linear-gradient(
+    90deg,
+    rgba(34, 211, 166, 0.1),
+    rgba(34, 211, 166, 0.02)
+  );
+  border: 1px solid var(--border);
+  border-left: 4px solid #22d3a6;
+  border-radius: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.universe-divider span {
+  font-size: 20px;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  color: var(--text);
+}
+.universe-divider small {
+  font-size: 12.5px;
+  color: var(--text-dim);
+}
 .chart-legend {
   display: flex;
   flex-wrap: wrap;

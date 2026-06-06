@@ -198,5 +198,7 @@ export interface AnalysisResult {
   factorAlpha: FactorAlpha | null; // Fama-French 3 faktör alpha (null = veri yok)
   methods: MethodResult[]; // tüm yöntemler (şeffaf)
   backtest: BacktestResult | null;
+  stockBacktest: BacktestResult | null; // hisse momentum rotasyon backtest'i
+  stockFactorAlpha: FactorAlpha | null; // hisse stratejisi faktör alpha
   warnings: string[];
 }

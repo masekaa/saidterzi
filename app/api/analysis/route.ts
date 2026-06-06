@@ -18,9 +18,9 @@ import {
   buildLookbackMatrix,
   buildStockMomentum,
 } from "@/lib/methods";
-import { buildFactorAlpha } from "@/lib/factors";
+import { fetchFamaFrench3, alphaFromFactors } from "@/lib/factors";
 import { buildEarningsMomentum } from "@/lib/fundamentals";
-import { runBacktest } from "@/lib/backtest";
+import { runBacktest, runStockBacktest } from "@/lib/backtest";
 import { trailingReturn } from "@/lib/calc";
 import type { AnalysisResult, RawSeries } from "@/lib/types";
 
@@ -87,29 +87,36 @@ export async function GET() {
       };
     }
 
-    // Fama-French 3 faktör alpha (Ken French verisi, anahtarsız, non-fatal).
-    // GEM aylık getirilerini equity curve'den türet (growth[i]/growth[i-1]-1).
-    let factorAlpha = null;
-    if (backtest) {
-      const gemCurve =
-        backtest.equityCurves.find((c) => c.highlight) ??
-        backtest.equityCurves[0];
-      if (gemCurve) {
-        const gemMonthly: { ym: string; ret: number }[] = [];
-        for (let i = 1; i < gemCurve.growth.length; i++) {
-          const ym = backtest.dates[i]?.slice(0, 7);
-          if (ym)
-            gemMonthly.push({
-              ym,
-              ret: gemCurve.growth[i] / gemCurve.growth[i - 1] - 1,
-            });
-        }
-        try {
-          factorAlpha = await buildFactorAlpha(gemMonthly);
-        } catch {
-          factorAlpha = null;
-        }
+    // Hisse momentum rotasyon backtest'i (ETF backtest ile aynı şekil).
+    const stockBacktest = runStockBacktest(stockRaw, tbillRaw);
+
+    // Bir backtest'in vurgulanan stratejisinden aylık {ym, ret} serisi türet.
+    const monthlyFrom = (bt: typeof backtest) => {
+      if (!bt) return [];
+      const curve = bt.equityCurves.find((c) => c.highlight) ?? bt.equityCurves[0];
+      if (!curve) return [];
+      const out: { ym: string; ret: number }[] = [];
+      for (let i = 1; i < curve.growth.length; i++) {
+        const ym = bt.dates[i]?.slice(0, 7);
+        if (ym) out.push({ ym, ret: curve.growth[i] / curve.growth[i - 1] - 1 });
       }
+      return out;
+    };
+
+    // Fama-French 3 faktörü TEK kez çek, hem GEM hem hisse stratejisine uygula.
+    let factorAlpha = null;
+    let stockFactorAlpha = null;
+    try {
+      const factors = await fetchFamaFrench3();
+      if (factors) {
+        const gm = monthlyFrom(backtest);
+        const sm = monthlyFrom(stockBacktest);
+        if (gm.length) factorAlpha = alphaFromFactors(gm, factors);
+        if (sm.length) stockFactorAlpha = alphaFromFactors(sm, factors);
+      }
+    } catch {
+      factorAlpha = null;
+      stockFactorAlpha = null;
     }
 
     const warnings: string[] = [];
@@ -134,6 +141,8 @@ export async function GET() {
       factorAlpha,
       methods,
       backtest,
+      stockBacktest,
+      stockFactorAlpha,
       warnings,
     };
 
