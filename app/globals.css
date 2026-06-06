@@ -474,6 +474,22 @@ table.heatmap .hm-tot {
   font-weight: 700;
   color: var(--text);
 }
+.rr-dot {
+  fill: var(--text-faint);
+  opacity: 0.85;
+}
+.rr-dot.rr-hl {
+  fill: #22d3a6;
+  opacity: 1;
+}
+.rr-label {
+  fill: var(--text-dim);
+  font-size: 10.5px;
+}
+.rr-label.rr-label-hl {
+  fill: #22d3a6;
+  font-weight: 700;
+}
 .chart-legend {
   display: flex;
   flex-wrap: wrap;

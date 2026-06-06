@@ -514,6 +514,91 @@ function MonthlyHeatmap({ bt }: { bt: BacktestResult }) {
   );
 }
 
+function RiskReturnChart({ rows }: { rows: StrategyMetrics[] }) {
+  const pts = rows
+    .map((s) => ({
+      name: s.name,
+      x: s.annualVol,
+      y: s.cagr,
+      sharpe: s.sharpe,
+      hl: s.name.startsWith("GEM"),
+    }))
+    .filter(
+      (p): p is { name: string; x: number; y: number; sharpe: number | null; hl: boolean } =>
+        p.x != null && p.y != null && isFinite(p.x) && isFinite(p.y)
+    );
+  if (pts.length < 2) return null;
+
+  const W = 820;
+  const H = 360;
+  const padL = 52;
+  const padR = 120; // etiketler için sağ boşluk
+  const padT = 16;
+  const padB = 38;
+  const innerW = W - padL - padR;
+  const innerH = H - padT - padB;
+
+  const xMax = Math.max(...pts.map((p) => p.x)) * 1.1;
+  const yMin = Math.min(0, ...pts.map((p) => p.y));
+  const yMax = Math.max(...pts.map((p) => p.y)) * 1.1;
+  const ySpan = yMax - yMin || 1;
+
+  const X = (v: number) => padL + (innerW * v) / (xMax || 1);
+  const Y = (v: number) => padT + innerH * (1 - (v - yMin) / ySpan);
+
+  const xTicks = [0, 0.05, 0.1, 0.15, 0.2, 0.25, 0.3].filter((v) => v <= xMax);
+  const yTicks: number[] = [];
+  for (let v = Math.floor(yMin * 20) / 20; v <= yMax; v += 0.05) yTicks.push(v);
+
+  return (
+    <div className="chart-card">
+      <div className="chart-title">
+        Risk–Getiri Dağılımı — yıllık volatilite (x) vs. CAGR (y) · sol-üst daha iyi
+      </div>
+      <svg
+        className="equity-svg"
+        viewBox={`0 0 ${W} ${H}`}
+        preserveAspectRatio="xMidYMid meet"
+        role="img"
+      >
+        {yTicks.map((v, i) => (
+          <g key={`y${i}`}>
+            <line x1={padL} x2={W - padR} y1={Y(v)} y2={Y(v)} className="grid-line" />
+            <text x={padL - 8} y={Y(v) + 3} className="axis-label" textAnchor="end">
+              {(v * 100).toFixed(0)}%
+            </text>
+          </g>
+        ))}
+        {xTicks.map((v, i) => (
+          <text key={`x${i}`} x={X(v)} y={H - 14} className="axis-label" textAnchor="middle">
+            {(v * 100).toFixed(0)}%
+          </text>
+        ))}
+        <text x={(padL + W - padR) / 2} y={H - 2} className="axis-label" textAnchor="middle">
+          Volatilite (yıllık)
+        </text>
+        {pts.map((p, i) => (
+          <g key={i}>
+            <circle
+              cx={X(p.x)}
+              cy={Y(p.y)}
+              r={p.hl ? 7 : 5}
+              className={p.hl ? "rr-dot rr-hl" : "rr-dot"}
+            />
+            <text
+              x={X(p.x) + (p.hl ? 11 : 9)}
+              y={Y(p.y) + 3}
+              className={`rr-label ${p.hl ? "rr-label-hl" : ""}`}
+            >
+              {p.name.replace(" (Al-Tut)", "").replace(" (Dual Momentum)", "")}
+            </text>
+          </g>
+        ))}
+      </svg>
+    </div>
+  );
+}
+
 function MetricsTable({ rows }: { rows: StrategyMetrics[] }) {
   return (
     <div className="table-scroll">
@@ -646,6 +731,7 @@ export default function Home() {
               <PositionTimeline bt={bt} />
               <UnderwaterChart bt={bt} />
               <MonthlyHeatmap bt={bt} />
+              <RiskReturnChart rows={bt.strategies} />
               <MetricsTable rows={bt.strategies} />
               <p className="table-note">{bt.note}</p>
               {bt.strategies[0]?.timeInAsset && (
