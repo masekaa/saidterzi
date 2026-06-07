@@ -869,12 +869,14 @@ export function buildLookbackMatrix(
 // ===========================================================================
 export function buildStockMomentum(
   stockRaw: RawMap,
-  tbill: RawSeries
+  tbill: RawSeries,
+  universe: Instrument[] = STOCK_UNIVERSE,
+  topN: number = STOCK_TOP_N
 ): StockMomentum {
   const thr = tbillRet12(tbill) ?? 0;
 
   // 1) Ham sinyaller
-  const raw0 = STOCK_UNIVERSE.map((s) => {
+  const raw0 = universe.map((s) => {
     const raw = stockRaw[s.key];
     const ret12m = raw ? trailingReturn(raw.series, LOOKBACK_MONTHS).ret : null;
     const hi = raw ? highestClose(raw.series, LOOKBACK_MONTHS) : { high: null, price: null };
@@ -903,7 +905,7 @@ export function buildStockMomentum(
     const excess = x.ret12m != null ? x.ret12m - thr : null;
     const absolute: Signal | null =
       excess != null ? (excess > 0 ? "LONG" : "CASH") : null;
-    const selected = rank != null && rank <= STOCK_TOP_N && excess != null && excess > 0;
+    const selected = rank != null && rank <= topN && excess != null && excess > 0;
     return {
       key: x.s.key,
       name: x.s.name,
@@ -919,16 +921,17 @@ export function buildStockMomentum(
     };
   });
 
-  return { topN: STOCK_TOP_N, tbillRet12m: thr, stocks };
+  return { topN, tbillRet12m: thr, stocks };
 }
 
 // Hisse evreni için uygulanabilir şeffaf yöntem kartları (fiyat-bazlı olanlar).
 // GBM/DMSR/GEM çıkarıldı (varlık-sınıfı / sektör / endeks-spesifik).
 export function buildStockMethods(
   stockRaw: RawMap,
-  tbill: RawSeries
+  tbill: RawSeries,
+  universe: Instrument[] = STOCK_UNIVERSE
 ): MethodResult[] {
-  const u = STOCK_UNIVERSE;
+  const u = universe;
   return [
     methodRelative(stockRaw, u).method,
     methodTrailing(stockRaw, u),

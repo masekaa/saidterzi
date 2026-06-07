@@ -9,8 +9,12 @@ import {
   GBM_BONDS,
   DMSR_SECTORS,
   STOCK_UNIVERSE,
+  STOCK_TOP_N,
+  CRYPTO_UNIVERSE,
+  CRYPTO_TOP_N,
   allTickers,
   LOOKBACK_MONTHS,
+  type Instrument,
 } from "@/lib/universe";
 import {
   buildAllMethods,
@@ -23,7 +27,12 @@ import { fetchFamaFrench3, alphaFromFactors } from "@/lib/factors";
 import { buildEarningsMomentum } from "@/lib/fundamentals";
 import { runBacktest, runStockBacktest } from "@/lib/backtest";
 import { trailingReturn } from "@/lib/calc";
-import type { AnalysisResult, RawSeries } from "@/lib/types";
+import type {
+  AnalysisResult,
+  BacktestResult,
+  RawSeries,
+  UniverseBundle,
+} from "@/lib/types";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -75,36 +84,19 @@ export async function GET() {
     const backtest = runBacktest(coreRaw, tbillRaw);
     const signals = buildSignalBoard(coreRaw, tbillRaw, gem.relativeWinnerKey);
     const lookback = buildLookbackMatrix(coreRaw, tbillRaw);
-    const stocks = buildStockMomentum(stockRaw, tbillRaw);
-    const stockSignals = buildSignalBoard(
-      stockRaw,
-      tbillRaw,
-      stocks.stocks.find((s) => s.rank === 1)?.key ?? null,
-      STOCK_UNIVERSE
-    );
-    const stockLookback = buildLookbackMatrix(stockRaw, tbillRaw, STOCK_UNIVERSE);
-    const stockMethods = buildStockMethods(stockRaw, tbillRaw);
+    const cryptoRaw = mapBy(CRYPTO_UNIVERSE);
 
-    // Earnings/revenue momentum (FMP, anahtar-bağlı, non-fatal).
-    let earnings;
+    // Fama-French 3 faktörünü TEK kez çek (non-fatal); tüm stratejilerde paylaş.
+    let factors = null;
     try {
-      earnings = await buildEarningsMomentum();
+      factors = await fetchFamaFrench3();
     } catch {
-      earnings = {
-        enabled: false,
-        reason: "Earnings verisi alınamadı.",
-        topN: 5,
-        stocks: [],
-      };
+      factors = null;
     }
-
-    // Hisse momentum rotasyon backtest'i (ETF backtest ile aynı şekil).
-    const stockBacktest = runStockBacktest(stockRaw, tbillRaw);
-
-    // Bir backtest'in vurgulanan stratejisinden aylık {ym, ret} serisi türet.
-    const monthlyFrom = (bt: typeof backtest) => {
+    const monthlyFrom = (bt: BacktestResult | null) => {
       if (!bt) return [];
-      const curve = bt.equityCurves.find((c) => c.highlight) ?? bt.equityCurves[0];
+      const curve =
+        bt.equityCurves.find((c) => c.highlight) ?? bt.equityCurves[0];
       if (!curve) return [];
       const out: { ym: string; ret: number }[] = [];
       for (let i = 1; i < curve.growth.length; i++) {
@@ -113,21 +105,101 @@ export async function GET() {
       }
       return out;
     };
+    const alphaFor = (bt: BacktestResult | null) => {
+      if (!factors) return null;
+      const m = monthlyFrom(bt);
+      return m.length ? alphaFromFactors(m, factors) : null;
+    };
 
-    // Fama-French 3 faktörü TEK kez çek, hem GEM hem hisse stratejisine uygula.
-    let factorAlpha = null;
-    let stockFactorAlpha = null;
-    try {
-      const factors = await fetchFamaFrench3();
-      if (factors) {
-        const gm = monthlyFrom(backtest);
-        const sm = monthlyFrom(stockBacktest);
-        if (gm.length) factorAlpha = alphaFromFactors(gm, factors);
-        if (sm.length) stockFactorAlpha = alphaFromFactors(sm, factors);
+    const factorAlpha = alphaFor(backtest);
+
+    // ETF dışı evren paketlerini (hisse, kripto) tek döngüde üret.
+    const universeConfigs: {
+      id: string;
+      emoji: string;
+      label: string;
+      sublabel: string;
+      positionLabel: string;
+      benchLabel: string;
+      raw: Record<string, RawSeries>;
+      universe: Instrument[];
+      topN: number;
+      withEarnings: boolean;
+    }[] = [
+      {
+        id: "stock",
+        emoji: "📈",
+        label: "Hisse Senedi Evreni",
+        sublabel: `${STOCK_UNIVERSE.length} büyük-cap hisse`,
+        positionLabel: "Hisse Momentum",
+        benchLabel: "Eşit Ağırlık (Tüm Hisseler)",
+        raw: stockRaw,
+        universe: STOCK_UNIVERSE,
+        topN: STOCK_TOP_N,
+        withEarnings: true,
+      },
+      {
+        id: "crypto",
+        emoji: "🪙",
+        label: "Kripto Evreni",
+        sublabel: `${CRYPTO_UNIVERSE.length} kripto varlık`,
+        positionLabel: "Kripto Momentum",
+        benchLabel: "Eşit Ağırlık (Tüm Kriptolar)",
+        raw: cryptoRaw,
+        universe: CRYPTO_UNIVERSE,
+        topN: CRYPTO_TOP_N,
+        withEarnings: false,
+      },
+    ];
+
+    const universes: UniverseBundle[] = [];
+    for (const cfg of universeConfigs) {
+      const momentum = buildStockMomentum(
+        cfg.raw,
+        tbillRaw,
+        cfg.universe,
+        cfg.topN
+      );
+      const signals = buildSignalBoard(
+        cfg.raw,
+        tbillRaw,
+        momentum.stocks.find((s) => s.rank === 1)?.key ?? null,
+        cfg.universe
+      );
+      const lookback = buildLookbackMatrix(cfg.raw, tbillRaw, cfg.universe);
+      const methods = buildStockMethods(cfg.raw, tbillRaw, cfg.universe);
+      const bt = runStockBacktest(cfg.raw, tbillRaw, cfg.universe, cfg.topN, {
+        stratLabel: cfg.positionLabel,
+        benchLabel: cfg.benchLabel,
+        investedKey: cfg.id,
+      });
+      let earnings;
+      if (cfg.withEarnings) {
+        try {
+          earnings = await buildEarningsMomentum();
+        } catch {
+          earnings = {
+            enabled: false,
+            reason: "Earnings verisi alınamadı.",
+            topN: cfg.topN,
+            stocks: [],
+          };
+        }
       }
-    } catch {
-      factorAlpha = null;
-      stockFactorAlpha = null;
+      universes.push({
+        id: cfg.id,
+        emoji: cfg.emoji,
+        label: cfg.label,
+        sublabel: cfg.sublabel,
+        positionLabel: cfg.positionLabel,
+        momentum,
+        signals,
+        lookback,
+        methods,
+        backtest: bt,
+        factorAlpha: alphaFor(bt),
+        earnings,
+      });
     }
 
     const warnings: string[] = [];
@@ -147,16 +219,10 @@ export async function GET() {
       gem,
       signals,
       lookback,
-      stocks,
-      earnings,
       factorAlpha,
       methods,
       backtest,
-      stockBacktest,
-      stockFactorAlpha,
-      stockSignals,
-      stockLookback,
-      stockMethods,
+      universes,
       warnings,
     };
 

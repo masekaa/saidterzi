@@ -161,6 +161,22 @@ export interface EarningsMomentum {
   stocks: EarningsSignal[];
 }
 
+// --- Genel evren paketi (hisse, kripto, ... — ETF dışı evrenler) ---
+export interface UniverseBundle {
+  id: string; // "stock" | "crypto" ...
+  emoji: string; // sekme ikonu
+  label: string; // sekme başlığı
+  sublabel: string; // sekme alt-açıklaması
+  positionLabel: string; // grafik başlıkları ("Hisse Momentum" / "Kripto Momentum")
+  momentum: StockMomentum; // sıralama/seçim panosu
+  signals: SignalBoard; // sinyal panosu
+  lookback: LookbackMatrix; // look-back matrisi
+  methods: MethodResult[]; // şeffaf yöntem kartları
+  backtest: BacktestResult | null; // momentum rotasyon backtest'i
+  factorAlpha: FactorAlpha | null; // Fama-French faktör alpha
+  earnings?: EarningsMomentum; // sadece hisse evreninde
+}
+
 // --- Faktör-model alpha (Fama-French 3) ---
 export interface FactorAlpha {
   source: string;
@@ -193,15 +209,9 @@ export interface AnalysisResult {
   gem: GemRecommendation;
   signals: SignalBoard; // varlık-bazlı sinyal özeti
   lookback: LookbackMatrix; // look-back duyarlılık matrisi
-  stocks: StockMomentum; // bireysel hisse momentum panosu
-  stockSignals: SignalBoard; // hisse evreni sinyal panosu (ETF ile aynı)
-  stockLookback: LookbackMatrix; // hisse evreni look-back matrisi
-  stockMethods: MethodResult[]; // hisse evreni şeffaf yöntem kartları
-  earnings: EarningsMomentum; // earnings/revenue momentum (FMP anahtarı ile)
-  factorAlpha: FactorAlpha | null; // Fama-French 3 faktör alpha (null = veri yok)
-  methods: MethodResult[]; // tüm yöntemler (şeffaf)
-  backtest: BacktestResult | null;
-  stockBacktest: BacktestResult | null; // hisse momentum rotasyon backtest'i
-  stockFactorAlpha: FactorAlpha | null; // hisse stratejisi faktör alpha
+  factorAlpha: FactorAlpha | null; // ETF GEM Fama-French 3 faktör alpha
+  methods: MethodResult[]; // ETF tüm yöntemler (şeffaf)
+  backtest: BacktestResult | null; // ETF GEM backtest
+  universes: UniverseBundle[]; // ETF dışı evrenler (hisse, kripto, ...)
   warnings: string[];
 }

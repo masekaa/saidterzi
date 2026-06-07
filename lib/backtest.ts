@@ -181,9 +181,15 @@ export function runBacktest(core: RawMap, tbill: RawSeries): BacktestResult | nu
 // ===========================================================================
 export function runStockBacktest(
   stockRaw: RawMap,
-  tbill: RawSeries
+  tbill: RawSeries,
+  universe = STOCK_UNIVERSE,
+  topN: number = STOCK_TOP_N,
+  opts: { stratLabel?: string; benchLabel?: string; investedKey?: string } = {}
 ): BacktestResult | null {
-  const keys = STOCK_UNIVERSE.map((s) => s.key).filter((k) => stockRaw[k]);
+  const stratLabel = opts.stratLabel ?? "Hisse Momentum";
+  const benchLabel = opts.benchLabel ?? "Eşit Ağırlık (Tüm Hisseler)";
+  const investedKey = opts.investedKey ?? "stocks";
+  const keys = universe.map((s) => s.key).filter((k) => stockRaw[k]);
   if (keys.length < 3) return null;
 
   const seriesMap: Record<string, RawSeries["series"]> = {};
@@ -194,7 +200,7 @@ export function runStockBacktest(
   const n = dates.length;
   if (n < LOOKBACK_MONTHS + 3) return null;
 
-  const TOPN = STOCK_TOP_N;
+  const TOPN = topN;
   const stratRets: number[] = [];
   const ewRets: number[] = [];
   const rf: number[] = [];
@@ -218,7 +224,7 @@ export function runStockBacktest(
       let s = 0;
       for (const p of picks) s += closes[p.k][t + 1] / closes[p.k][t] - 1;
       stratRets.push(s / picks.length);
-      positions.push("stocks");
+      positions.push(investedKey);
     } else {
       stratRets.push(rfNext);
       positions.push("bil");
@@ -240,11 +246,11 @@ export function runStockBacktest(
     timeInAsset[k] = +((timeInAsset[k] / positions.length) * 100).toFixed(1);
 
   const strategies: StrategyMetrics[] = [
-    buildMetrics(`Hisse Momentum (Top-${TOPN})`, stratRets, rf, {
+    buildMetrics(`${stratLabel} (Top-${TOPN})`, stratRets, rf, {
       switchesPerYear: +(switches / years).toFixed(2),
       timeInAsset,
     }),
-    buildMetrics("Eşit Ağırlık (Tüm Hisseler)", ewRets, rf),
+    buildMetrics(benchLabel, ewRets, rf),
   ];
 
   const toGrowth = (rets: number[]): number[] => {
@@ -266,11 +272,11 @@ export function runStockBacktest(
 
   const equityCurves = [
     {
-      name: `Hisse Momentum (Top-${TOPN})`,
+      name: `${stratLabel} (Top-${TOPN})`,
       growth: toGrowth(stratRets),
       highlight: true,
     },
-    { name: "Eşit Ağırlık (Tüm Hisseler)", growth: toGrowth(ewRets) },
+    { name: benchLabel, growth: toGrowth(ewRets) },
   ];
 
   return {
@@ -281,6 +287,6 @@ export function runStockBacktest(
     dates: curveDates,
     equityCurves,
     timeline,
-    note: `${keys.length} hisseli evrende top-${TOPN} relative+absolute momentum rotasyonu (aylık, eşit ağırlık). Sinyal t-sonu, getiri t+1 (lookahead bias yok). İşlem maliyeti dahil değildir.`,
+    note: `${keys.length} varlıklı evrende top-${TOPN} relative+absolute momentum rotasyonu (aylık, eşit ağırlık). Sinyal t-sonu, getiri t+1 (lookahead bias yok). İşlem maliyeti dahil değildir.`,
   };
 }

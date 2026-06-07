@@ -81,6 +81,23 @@ export const STOCK_UNIVERSE: Instrument[] = [
 ];
 export const STOCK_TOP_N = 5; // relative momentum'da seçilecek hisse sayısı
 
+// --- Kripto evreni (Yahoo -USD sembolleri, keyless) ---
+// Sinyal/yöntemler tüm coinler için bağımsız hesaplanır; backtest ortak
+// geçmişle kısıtlıdır (en genç coin başlangıcı belirler).
+export const CRYPTO_UNIVERSE: Instrument[] = [
+  { key: "btc", name: "Bitcoin", ticker: "BTC-USD", note: "L1" },
+  { key: "eth", name: "Ethereum", ticker: "ETH-USD", note: "L1 / akıllı sözleşme" },
+  { key: "bnb", name: "BNB", ticker: "BNB-USD", note: "Exchange / L1" },
+  { key: "sol", name: "Solana", ticker: "SOL-USD", note: "L1" },
+  { key: "xrp", name: "XRP", ticker: "XRP-USD", note: "Ödeme" },
+  { key: "ada", name: "Cardano", ticker: "ADA-USD", note: "L1" },
+  { key: "doge", name: "Dogecoin", ticker: "DOGE-USD", note: "Meme" },
+  { key: "avax", name: "Avalanche", ticker: "AVAX-USD", note: "L1" },
+  { key: "link", name: "Chainlink", ticker: "LINK-USD", note: "Oracle" },
+  { key: "dot", name: "Polkadot", ticker: "DOT-USD", note: "L0 / interop" },
+];
+export const CRYPTO_TOP_N = 3;
+
 // DMSR güvenli liman + trend referansı
 export const AGG: Instrument = {
   key: "agg",
@@ -98,6 +115,7 @@ export function allTickers(): string[] {
     ...GBM_BONDS,
     ...DMSR_SECTORS,
     ...STOCK_UNIVERSE,
+    ...CRYPTO_UNIVERSE,
     AGG,
   ].forEach((i) => set.add(i.ticker));
   return Array.from(set);

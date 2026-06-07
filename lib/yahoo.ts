@@ -73,15 +73,22 @@ export async function fetchMonthlySeries(
     result.indicators.quote?.[0]?.close ??
     [];
 
-  const series: MonthlyPoint[] = [];
+  const rawPoints: MonthlyPoint[] = [];
   for (let i = 0; i < timestamps.length; i++) {
     const close = adj[i];
     if (close == null || !isFinite(close)) continue;
-    series.push({
+    rawPoints.push({
       date: new Date(timestamps[i] * 1000).toISOString().slice(0, 10),
       close,
     });
   }
+
+  // Yahoo bazı sembollerde (özellikle kripto) interval=1mo'yu HAFTALIK döndürür.
+  // Ay başına son gözlemi alarak gerçek aylık seriye normalize et — aksi halde
+  // trailingReturn(series, 12) "12 ay" yerine "12 hafta" olur ve momentum bozulur.
+  const byMonth = new Map<string, MonthlyPoint>();
+  for (const p of rawPoints) byMonth.set(p.date.slice(0, 7), p); // sıralı → son gözlem kalır
+  const series: MonthlyPoint[] = Array.from(byMonth.values());
 
   const currentPrice =
     result.meta.regularMarketPrice ??

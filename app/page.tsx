@@ -12,6 +12,7 @@ import type {
   SignalBoard as SignalBoardData,
   StockMomentum as StockMomentumData,
   StrategyMetrics,
+  UniverseBundle,
 } from "@/lib/types";
 
 const CURVE_COLORS = [
@@ -29,7 +30,8 @@ const POS_META: Record<string, { label: string; color: string }> = {
   qqq: { label: "NASDAQ 100", color: "#c084fc" },
   gld: { label: "Altın", color: "#f59e0b" },
   bil: { label: "Nakit (T-Bill)", color: "#64748b" },
-  stocks: { label: "Hisse Sepeti (Top-N)", color: "#22d3a6" },
+  stock: { label: "Hisse Sepeti (Top-N)", color: "#22d3a6" },
+  crypto: { label: "Kripto Sepeti (Top-N)", color: "#f7931a" },
 };
 function posMeta(key: string): { label: string; color: string } {
   return POS_META[key] ?? { label: key.toUpperCase(), color: "#94a3b8" };
@@ -1423,11 +1425,83 @@ function MethodsSection({ methods }: { methods: MethodResult[] }) {
   );
 }
 
+function UniverseSection({ u }: { u: UniverseBundle }) {
+  const bt = u.backtest;
+  return (
+    <>
+      <div className="universe-divider">
+        <span>
+          {u.emoji} {u.label}
+        </span>
+        <small>
+          Çekirdek ETF&apos;lere uygulanan tüm analizlerin {u.label} için tekrarı
+        </small>
+      </div>
+
+      {u.momentum && <StockMomentumBoard data={u.momentum} />}
+
+      {u.signals && (
+        <SignalBoard
+          board={u.signals}
+          title={`${u.label} Sinyal Panosu — her varlığın anahtar momentum sinyalleri (12-ay, excess, MA trendi, 52-hafta)`}
+        />
+      )}
+
+      {u.lookback && <LookbackHeatmap data={u.lookback} />}
+
+      {bt && (
+        <>
+          <div className="section-label">
+            {u.positionLabel} Backtest &amp; Risk Metrikleri ({bt.startDate} →{" "}
+            {bt.endDate}, {bt.months} ay)
+          </div>
+          <EquityChart bt={bt} />
+          <PositionTimeline bt={bt} label={u.positionLabel} />
+          <UnderwaterChart bt={bt} label={u.positionLabel} />
+          <MonthlyHeatmap bt={bt} label={u.positionLabel} />
+          <RiskReturnChart rows={bt.strategies} />
+          <RollingReturnsChart bt={bt} label={u.positionLabel} />
+          <ScatterGemVsBench bt={bt} label={u.positionLabel} />
+          <BoxPlot bt={bt} />
+          <MetricsTable rows={bt.strategies} />
+          <p className="table-note">{bt.note}</p>
+          {bt.strategies[0]?.timeInAsset && (
+            <p className="table-note">
+              Zaman dağılımı:{" "}
+              {Object.entries(bt.strategies[0].timeInAsset)
+                .map(([k, v]) => {
+                  const lbl =
+                    k === u.id ? "Yatırımda" : k === "bil" ? "Nakit" : k;
+                  return `${lbl} %${v}`;
+                })
+                .join(" · ")}{" "}
+              · Yıllık ~{num(bt.strategies[0].switchesPerYear ?? null)} geçiş
+            </p>
+          )}
+          <AdvancedMetricsTable rows={bt.strategies} />
+          {u.factorAlpha && (
+            <FactorAlphaPanel
+              fa={u.factorAlpha}
+              subject={`${u.positionLabel} stratejisi`}
+            />
+          )}
+        </>
+      )}
+
+      {u.methods && u.methods.length > 0 && (
+        <MethodsSection methods={u.methods} />
+      )}
+
+      {u.earnings && <EarningsMomentumPanel data={u.earnings} />}
+    </>
+  );
+}
+
 export default function Home() {
   const [data, setData] = useState<AnalysisResult | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [view, setView] = useState<"etf" | "stock">("etf");
+  const [view, setView] = useState<string>("etf");
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -1610,8 +1684,13 @@ export default function Home() {
           {/* Metodoloji açıklaması */}
           <MethodologyPanel />
 
-          {/* Evren sekmeleri */}
-          <div className="view-tabs">
+          {/* Evren sekmeleri (ETF + dinamik evrenler) */}
+          <div
+            className="view-tabs"
+            style={{
+              gridTemplateColumns: `repeat(${1 + data.universes.length}, 1fr)`,
+            }}
+          >
             <button
               className={`view-tab ${view === "etf" ? "active" : ""}`}
               onClick={() => setView("etf")}
@@ -1619,13 +1698,16 @@ export default function Home() {
               📊 Çekirdek Varlıklar (ETF)
               <small>Altın · S&amp;P 500 · NASDAQ — GEM</small>
             </button>
-            <button
-              className={`view-tab ${view === "stock" ? "active" : ""}`}
-              onClick={() => setView("stock")}
-            >
-              📈 Hisse Senedi Evreni
-              <small>{data.stocks?.stocks?.length ?? 0} büyük-cap hisse</small>
-            </button>
+            {data.universes.map((u) => (
+              <button
+                key={u.id}
+                className={`view-tab ${view === u.id ? "active" : ""}`}
+                onClick={() => setView(u.id)}
+              >
+                {u.emoji} {u.label}
+                <small>{u.sublabel}</small>
+              </button>
+            ))}
           </div>
 
           {view === "etf" && (
@@ -1672,82 +1754,10 @@ export default function Home() {
           </>
           )}
 
-          {view === "stock" && (
-          <>
-          {/* ====================== HİSSE SENEDİ EVRENİ ====================== */}
-          <div className="universe-divider">
-            <span>📈 Hisse Senedi Evreni</span>
-            <small>
-              Çekirdek ETF&apos;lere uygulanan tüm analizlerin bireysel hisse
-              evreni için tekrarı
-            </small>
-          </div>
-
-          {/* Hisse Momentum Panosu (relative + absolute sıralama) */}
-          {data.stocks && <StockMomentumBoard data={data.stocks} />}
-
-          {/* Hisse Sinyal Panosu (ETF sinyal panosunun hisse karşılığı) */}
-          {data.stockSignals && (
-            <SignalBoard
-              board={data.stockSignals}
-              title="Hisse Sinyal Panosu — her hissenin anahtar momentum sinyalleri (12-ay, excess, MA trendi, 52-hafta)"
-            />
-          )}
-
-          {/* Hisse Look-back Duyarlılık Matrisi */}
-          {data.stockLookback && <LookbackHeatmap data={data.stockLookback} />}
-
-          {/* Hisse Momentum Rotasyon Backtest'i + tüm görseller */}
-          {data.stockBacktest && (
-            <>
-              <div className="section-label">
-                Hisse Momentum Backtest &amp; Risk Metrikleri (
-                {data.stockBacktest.startDate} → {data.stockBacktest.endDate},{" "}
-                {data.stockBacktest.months} ay)
-              </div>
-              <EquityChart bt={data.stockBacktest} />
-              <PositionTimeline bt={data.stockBacktest} label="Hisse Momentum" />
-              <UnderwaterChart bt={data.stockBacktest} label="Hisse Momentum" />
-              <MonthlyHeatmap bt={data.stockBacktest} label="Hisse Momentum" />
-              <RiskReturnChart rows={data.stockBacktest.strategies} />
-              <RollingReturnsChart bt={data.stockBacktest} label="Hisse Momentum" />
-              <ScatterGemVsBench bt={data.stockBacktest} label="Hisse Momentum" />
-              <BoxPlot bt={data.stockBacktest} />
-              <MetricsTable rows={data.stockBacktest.strategies} />
-              <p className="table-note">{data.stockBacktest.note}</p>
-              {data.stockBacktest.strategies[0]?.timeInAsset && (
-                <p className="table-note">
-                  Zaman dağılımı:{" "}
-                  {Object.entries(data.stockBacktest.strategies[0].timeInAsset)
-                    .map(([k, v]) => {
-                      const lbl =
-                        k === "stocks" ? "Hissede" : k === "bil" ? "Nakit" : k;
-                      return `${lbl} %${v}`;
-                    })
-                    .join(" · ")}{" "}
-                  · Yıllık ~
-                  {num(data.stockBacktest.strategies[0].switchesPerYear ?? null)}{" "}
-                  geçiş
-                </p>
-              )}
-              <AdvancedMetricsTable rows={data.stockBacktest.strategies} />
-              {data.stockFactorAlpha && (
-                <FactorAlphaPanel
-                  fa={data.stockFactorAlpha}
-                  subject="Hisse Momentum stratejisi"
-                />
-              )}
-            </>
-          )}
-
-          {/* Hisse Evreni Şeffaf Yöntem Kartları */}
-          {data.stockMethods && data.stockMethods.length > 0 && (
-            <MethodsSection methods={data.stockMethods} />
-          )}
-
-          {/* Earnings / Revenue Momentum (FMP anahtarı ile) */}
-          {data.earnings && <EarningsMomentumPanel data={data.earnings} />}
-          </>
+          {/* ETF dışı evrenler (hisse, kripto, ...) — seçili sekmeye göre */}
+          {data.universes.map(
+            (u) =>
+              view === u.id && <UniverseSection key={u.id} u={u} />
           )}
 
           {data.warnings.length > 0 && (
