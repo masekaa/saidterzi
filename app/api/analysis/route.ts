@@ -27,6 +27,8 @@ import type { AnalysisResult, RawSeries } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
+// Çok sayıda dış istek (Yahoo + Ken French + FMP) — fonksiyon süresini uzat.
+export const maxDuration = 60;
 
 export async function GET() {
   try {

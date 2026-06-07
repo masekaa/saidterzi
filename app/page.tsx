@@ -1427,6 +1427,7 @@ export default function Home() {
   const [data, setData] = useState<AnalysisResult | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [view, setView] = useState<"etf" | "stock">("etf");
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -1609,6 +1610,26 @@ export default function Home() {
           {/* Metodoloji açıklaması */}
           <MethodologyPanel />
 
+          {/* Evren sekmeleri */}
+          <div className="view-tabs">
+            <button
+              className={`view-tab ${view === "etf" ? "active" : ""}`}
+              onClick={() => setView("etf")}
+            >
+              📊 Çekirdek Varlıklar (ETF)
+              <small>Altın · S&amp;P 500 · NASDAQ — GEM</small>
+            </button>
+            <button
+              className={`view-tab ${view === "stock" ? "active" : ""}`}
+              onClick={() => setView("stock")}
+            >
+              📈 Hisse Senedi Evreni
+              <small>{data.stocks?.stocks?.length ?? 0} büyük-cap hisse</small>
+            </button>
+          </div>
+
+          {view === "etf" && (
+          <>
           {/* Varlık Sinyal Panosu */}
           {data.signals && <SignalBoard board={data.signals} />}
 
@@ -1648,7 +1669,11 @@ export default function Home() {
 
           {/* Tüm Yöntemler — kategoriye göre gruplu */}
           <MethodsSection methods={data.methods} />
+          </>
+          )}
 
+          {view === "stock" && (
+          <>
           {/* ====================== HİSSE SENEDİ EVRENİ ====================== */}
           <div className="universe-divider">
             <span>📈 Hisse Senedi Evreni</span>
@@ -1722,6 +1747,8 @@ export default function Home() {
 
           {/* Earnings / Revenue Momentum (FMP anahtarı ile) */}
           {data.earnings && <EarningsMomentumPanel data={data.earnings} />}
+          </>
+          )}
 
           {data.warnings.length > 0 && (
             <div className="warnings">

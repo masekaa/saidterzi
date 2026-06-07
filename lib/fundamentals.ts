@@ -25,7 +25,10 @@ async function fetchIncome(
     const url = `https://financialmodelingprep.com/stable/income-statement?symbol=${encodeURIComponent(
       ticker
     )}&period=annual&limit=5&apikey=${apiKey}`;
-    const res = await fetch(url, { cache: "no-store" });
+    const res = await fetch(url, {
+      cache: "no-store",
+      signal: AbortSignal.timeout(8000),
+    });
     if (!res.ok) return null;
     const json = (await res.json()) as unknown;
     if (!Array.isArray(json)) return null;

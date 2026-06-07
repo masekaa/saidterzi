@@ -22,6 +22,7 @@ export async function fetchFamaFrench3(): Promise<FactorRow[] | null> {
     const res = await fetch(FF3_URL, {
       cache: "no-store",
       headers: { "User-Agent": "Mozilla/5.0 (dual-momentum-app)" },
+      signal: AbortSignal.timeout(12000),
     });
     if (!res.ok) return null;
     const buf = Buffer.from(await res.arrayBuffer());

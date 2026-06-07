@@ -47,6 +47,8 @@ export async function fetchMonthlySeries(
     },
     // Her istekte taze veri (Vercel edge cache'ini atla).
     cache: "no-store",
+    // Yavaş/asılı kalan istek tüm analizi bloklamasın.
+    signal: AbortSignal.timeout(10000),
   });
 
   if (!res.ok) {
