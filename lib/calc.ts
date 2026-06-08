@@ -283,6 +283,9 @@ export function trendTStat(
   series: MonthlyPoint[],
   months: number
 ): { t: number; slope: number; n: number } | null {
+  // Tam look-back penceresi yoksa hesaplama (etiket "12 ay" iken 3 ayla
+  // regresyon yapıp yanıltıcı t-stat göstermeyi önler).
+  if (series.length < months) return null;
   const window = series.slice(Math.max(0, series.length - months));
   const pts = window.filter((p) => p.close > 0);
   const n = pts.length;
