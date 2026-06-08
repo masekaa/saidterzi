@@ -4,20 +4,22 @@ Gary Antonacci'nin *Dual Momentum Investing: An Innovative Strategy for Higher R
 
 ## 🚀 Canlı Uygulama (Next.js → Vercel)
 
-Altın · S&P 500 · NASDAQ için anlık dual momentum analizi yapan dashboard.
+Dual momentum'u **dört varlık evreninde** canlı hesaplayan dashboard:
+**📊 ETF (GEM)** · **📈 Hisse** (24 büyük-cap) · **🪙 Kripto** (10 coin) · **🏭 Sektör** (11 SPDR / DMSR).
+Her evren aynı tam analiz paketini alır; üst sekmelerden geçilir.
 
 ```bash
 npm install
 npm run dev      # http://localhost:3000
 ```
 
-Deploy için → [`DEPLOY.md`](DEPLOY.md). Veri: Yahoo Finance (keyless). Strateji: 12-ay look-back, T-Bill eşikli GEM rotasyonu + varlık-bazlı sinyaller.
+Deploy için → [`DEPLOY.md`](DEPLOY.md). Veri: Yahoo Finance (keyless). Çekirdek strateji: 12-ay look-back, T-Bill eşikli dual momentum (göreceli + mutlak). Sinyal `t`-sonu, getiri `t+1` (lookahead-bias yok). Sonuçlar 10 dk sunucu önbelleğinde tutulur.
 
 ### Veri Kaynakları
 
 | Kaynak | Anahtar | Kullanım |
 |--------|---------|----------|
-| **Yahoo Finance** (v8 chart) | Yok | Fiyat/total-return serileri (ETF + hisse evreni) |
+| **Yahoo Finance** (v8 chart) | Yok | Fiyat/total-return serileri (4 evren: ETF, hisse, kripto, sektör) — aylık normalize |
 | **Ken French Data Library** | Yok | Fama-French 3 faktör → faktör-model alpha (`lib/factors.ts`, ZIP doğrudan çekilir) |
 | **Financial Modeling Prep** (FMP) | **Opsiyonel** | Earnings/revenue momentum (çeyreklik gelir+net kâr). `FMP_API_KEY` env ile etkinleşir |
 
@@ -25,15 +27,26 @@ Deploy için → [`DEPLOY.md`](DEPLOY.md). Veri: Yahoo Finance (keyless). Strate
 
 | Yol | İçerik |
 |-----|--------|
-| `app/` | Next.js App Router — `page.tsx` (dashboard + görseller), `api/analysis/` (serverless route) |
-| `lib/` | `yahoo.ts` (veri çekme) · `calc.ts` (formül-belgeli finansal primitifler) · `universe.ts` (varlık evreni + parametreler) · `methods.ts` (11 şeffaf yöntem hesaplayıcısı) · `backtest.ts` (GEM simülasyonu) · `types.ts` |
+| `app/` | Next.js App Router — `page.tsx` (dashboard + tüm görseller) · `api/analysis/` (tam analiz, 10 dk cache) · `api/backtest/` (hafif etkileşimli backtest) |
+| `lib/` | `yahoo.ts` (veri çekme + aylık normalizasyon) · `calc.ts` (formül-belgeli finansal primitifler) · `universe.ts` (4 evren + parametreler) · `methods.ts` (şeffaf yöntem hesaplayıcıları + evren-bağımsız pano/momentum üreticileri) · `backtest.ts` (momentum rotasyon simülasyonu + işlem maliyeti) · `factors.ts` (Fama-French OLS alpha) · `fundamentals.ts` (FMP earnings) · `zip.ts` (bağımlılıksız ZIP okuyucu) · `types.ts` |
 
 ### Dashboard ne gösterir
 
-- **GEM önerisi:** Bu ay tutulacak pozisyon (hisse/nakit) + gerekçe.
-- **Görsel analiz katmanı:** Kümülatif büyüme (equity curve, log ölçek) · GEM pozisyon geçmişi bandı · drawdown (underwater) eğrisi · aylık getiri ısı haritası · risk–getiri dağılımı.
-- **Backtest & risk metrikleri:** CAGR, volatilite, Sharpe, max drawdown, % kârlı ay — GEM + al-tut benchmark'lar.
-- **Şeffaf yöntem kartları:** Kapsam dokümanındaki her yöntem için formül + ara adımlar + sonuç + sinyal (look-back duyarlılığı, MA filtresi, 52-hafta yakınlığı, hızlanan momentum, GBM, DMSR, vb.).
+**Genel bakış (en üst):**
+- **Bu Ayın Sinyalleri:** 4 evrenin güncel pozisyonları tek bakışta.
+- **🎛️ Backtest Stüdyosu:** etkileşimli — *evren × look-back (1–24 ay) × top-N × işlem maliyeti (bps)* seç, equity curve + drawdown + metrikler anında güncellenir.
+- **Strateji Karşılaştırma:** tüm evrenlerin momentum stratejileri Sharpe'a göre sıralı (CAGR/Sharpe/Sortino/MaxDD).
+
+**Her evren sekmesinde (ETF/Hisse/Kripto/Sektör):**
+- **Sinyal panosu + momentum sıralaması:** 12-ay getiri, T-Bill'e karşı excess, MA trendi, 52-hafta yakınlık, seçimler.
+- **Look-back duyarlılık matrisi:** 1/3/6/9/12 ay pencerelerinde getiri ısı haritası.
+- **Görsel analiz:** equity curve (log) · pozisyon geçmişi bandı · drawdown (underwater) · aylık getiri ısı haritası · risk–getiri dağılımı · 12-ay rolling getiri · getiri scatter · box plot.
+- **Risk metrikleri:** CAGR, vol, Sharpe, Sortino, çarpıklık, basıklık, CVaR, max drawdown (derinlik+süre+toparlanma), % kârlı ay.
+- **Fama-French faktör alpha:** stratejinin risk-ayarlı fazla getirisi (alpha, market/size/value beta, R²).
+- **Şeffaf yöntem kartları:** her yöntem için formül + ara adımlar + sonuç + sinyal (trailing, relative, absolute, MA filtresi, trend-line t-stat, 52-hafta, hızlanan momentum, taze/bayat, trend salience, risk parity; ETF'de ayrıca GBM, DMSR, GEM).
+- **Earnings/Revenue momentum:** (hisse evreni, FMP anahtarı ile) yıllık gelir+net kâr YoY büyümesi sıralaması.
+
+Tüm çıktılar **JSON/CSV** olarak indirilebilir.
 
 ## 📂 Yapı
 
