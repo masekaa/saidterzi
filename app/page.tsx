@@ -2299,30 +2299,64 @@ export default function Home() {
       x == null || !isFinite(x) ? "" : x.toFixed(6);
     const lines: string[] = [];
 
-    // Bölüm 1: Strateji metrikleri
-    if (data.backtest) {
-      lines.push("# Strateji Metrikleri");
-      lines.push(
-        "Strateji,Yillik_Aritmetik,CAGR,Volatilite,Sharpe,Max_Drawdown,Yuzde_Karli_Ay,Toplam_Getiri"
-      );
-      for (const s of data.backtest.strategies) {
+    // Bölüm 1: Tüm stratejilerin karşılaştırması (ETF GEM + evrenler + bileşik)
+    lines.push("# Strateji Karsilastirmasi");
+    lines.push(
+      "Strateji,Evren,CAGR,Volatilite,Sharpe,Sortino,Carpiklik,Basiklik,CVaR5,Max_Drawdown,Toplam_Getiri,Donem_Bas,Donem_Son,Ay"
+    );
+    const pushStrat = (
+      uni: string,
+      bt: BacktestResult | null,
+      onlyFirst = true
+    ) => {
+      if (!bt) return;
+      const rows = onlyFirst ? bt.strategies.slice(0, 1) : bt.strategies;
+      for (const s of rows)
         lines.push(
           [
             `"${s.name}"`,
-            fmt(s.annualReturnArith),
+            `"${uni}"`,
             fmt(s.cagr),
             fmt(s.annualVol),
             fmt(s.sharpe),
+            fmt(s.sortino),
+            fmt(s.skewness),
+            fmt(s.kurtosis),
+            fmt(s.cvar5),
             fmt(s.maxDrawdown),
-            fmt(s.pctProfitMonths),
             fmt(s.totalReturn),
+            bt.startDate,
+            bt.endDate,
+            String(bt.months),
+          ].join(",")
+        );
+    };
+    pushStrat("ETF", data.backtest);
+    for (const u of data.universes) pushStrat(u.label, u.backtest);
+    pushStrat("Bileşik", data.composite);
+    lines.push("");
+
+    // Bölüm 2: Her evrenin güncel momentum sıralaması
+    lines.push("# Evren Momentum Siralamasi");
+    lines.push("Evren,Sira,Varlik,Ticker,Ret_12ay,Excess_vs_TBill,Secildi");
+    for (const u of data.universes) {
+      for (const s of u.momentum.stocks) {
+        lines.push(
+          [
+            `"${u.label}"`,
+            s.rank ?? "",
+            `"${s.name}"`,
+            s.ticker,
+            fmt(s.ret12m),
+            fmt(s.excessVsTbill),
+            s.selected ? "1" : "0",
           ].join(",")
         );
       }
-      lines.push("");
     }
+    lines.push("");
 
-    // Bölüm 2: Varlık sinyal panosu
+    // Bölüm 3: ETF varlık sinyal panosu
     if (data.signals?.assets?.length) {
       lines.push("# Varlik Sinyal Panosu");
       lines.push(
