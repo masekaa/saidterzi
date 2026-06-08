@@ -1427,6 +1427,27 @@ function MethodsSection({ methods }: { methods: MethodResult[] }) {
   );
 }
 
+function CollapsibleSection({
+  title,
+  children,
+  defaultOpen = true,
+}: {
+  title: ReactNode;
+  children: ReactNode;
+  defaultOpen?: boolean;
+}) {
+  const [open, setOpen] = useState(defaultOpen);
+  return (
+    <div className="csec">
+      <button className="csec-head" onClick={() => setOpen((o) => !o)}>
+        <span>{title}</span>
+        <span className={`chevron ${open ? "up" : ""}`}>▾</span>
+      </button>
+      {open && <div className="csec-body">{children}</div>}
+    </div>
+  );
+}
+
 function BackToTop() {
   const [show, setShow] = useState(false);
   useEffect(() => {
@@ -2716,12 +2737,16 @@ export default function Home() {
 
           {/* Dual Momentum Bileşik — 4 evrenin eşit-ağırlık meta-stratejisi */}
           {data.composite && (
-            <>
-              <div className="section-label">
-                🧩 Dual Momentum Bileşik — 4 evrenin eşit-ağırlık birleşimi (
-                {data.composite.startDate} → {data.composite.endDate},{" "}
-                {data.composite.months} ay)
-              </div>
+            <CollapsibleSection
+              defaultOpen
+              title={
+                <>
+                  🧩 Dual Momentum Bileşik — {data.universes.length + 1} evrenin
+                  eşit-ağırlık birleşimi ({data.composite.startDate} →{" "}
+                  {data.composite.endDate}, {data.composite.months} ay)
+                </>
+              }
+            >
               <p className="chart-help" style={{ maxWidth: "80ch" }}>
                 GEM + Hisse + Kripto + Sektör momentum stratejilerini her ay{" "}
                 <b>eşit ağırlıkla</b> birleştiren çeşitlendirilmiş meta-strateji.
@@ -2740,7 +2765,7 @@ export default function Home() {
               <AdvancedMetricsTable rows={data.composite.strategies} />
               <DiversificationStat bt={data.composite} />
               <CorrelationMatrix bt={data.composite} />
-            </>
+            </CollapsibleSection>
           )}
 
           {/* Evren sekmeleri (ETF + dinamik evrenler) */}
