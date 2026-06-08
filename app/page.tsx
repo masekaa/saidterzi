@@ -1786,6 +1786,7 @@ function StrategyLeaderboard({ data }: { data: AnalysisResult }) {
               <th>Sortino</th>
               <th>Max DD</th>
               <th>Toplam Getiri</th>
+              <th>Yıllık Geçiş</th>
               <th className="left">Dönem</th>
             </tr>
           </thead>
@@ -1801,6 +1802,11 @@ function StrategyLeaderboard({ data }: { data: AnalysisResult }) {
                 <td>{num(r.m.sortino)}</td>
                 <td className="neg">{pct(r.m.maxDrawdown)}</td>
                 <td>{pct(r.m.totalReturn, 0)}</td>
+                <td>
+                  {r.m.switchesPerYear != null
+                    ? num(r.m.switchesPerYear)
+                    : "—"}
+                </td>
                 <td className="left period-cell">
                   {r.period} ({r.months} ay)
                 </td>
