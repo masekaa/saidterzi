@@ -2808,11 +2808,15 @@ export default function Home() {
 
           {/* Backtest & Metrikler */}
           {bt && (
-            <>
-              <div className="section-label">
-                Backtest &amp; Risk Metrikleri ({bt.startDate} → {bt.endDate},{" "}
-                {bt.months} ay)
-              </div>
+            <CollapsibleSection
+              defaultOpen
+              title={
+                <>
+                  GEM Backtest &amp; Risk Metrikleri ({bt.startDate} →{" "}
+                  {bt.endDate}, {bt.months} ay)
+                </>
+              }
+            >
               <EquityChart bt={bt} />
               <PositionTimeline bt={bt} />
               <UnderwaterChart bt={bt} />
@@ -2835,7 +2839,7 @@ export default function Home() {
               )}
               <AdvancedMetricsTable rows={bt.strategies} />
               {data.factorAlpha && <FactorAlphaPanel fa={data.factorAlpha} />}
-            </>
+            </CollapsibleSection>
           )}
 
           {/* Tüm Yöntemler — kategoriye göre gruplu */}
