@@ -491,7 +491,7 @@ function EquityChart({ bt }: { bt: BacktestResult }) {
         className="equity-svg"
         viewBox={`0 0 ${W} ${H}`}
         preserveAspectRatio="xMidYMid meet"
-        role="img"
+        role="img" aria-label="Finansal analiz grafiği; açıklama hemen üstteki başlık ve metinde"
       >
         {yTicks.map((v, idx) => (
           <g key={`y${idx}`}>
@@ -591,7 +591,7 @@ function PositionTimeline({ bt, label = "GEM" }: { bt: BacktestResult; label?: s
         className="equity-svg"
         viewBox={`0 0 ${W} ${H}`}
         preserveAspectRatio="none"
-        role="img"
+        role="img" aria-label="Finansal analiz grafiği; açıklama hemen üstteki başlık ve metinde"
       >
         {tl.map((p, i) => (
           <rect
@@ -696,7 +696,7 @@ function UnderwaterChart({ bt, label = "GEM" }: { bt: BacktestResult; label?: st
         className="equity-svg"
         viewBox={`0 0 ${W} ${H}`}
         preserveAspectRatio="xMidYMid meet"
-        role="img"
+        role="img" aria-label="Finansal analiz grafiği; açıklama hemen üstteki başlık ve metinde"
       >
         {yTicks.map((v, idx) => (
           <g key={idx}>
@@ -881,7 +881,7 @@ function RiskReturnChart({ rows }: { rows: StrategyMetrics[] }) {
         className="equity-svg"
         viewBox={`0 0 ${W} ${H}`}
         preserveAspectRatio="xMidYMid meet"
-        role="img"
+        role="img" aria-label="Finansal analiz grafiği; açıklama hemen üstteki başlık ve metinde"
       >
         {yTicks.map((v, i) => (
           <g key={`y${i}`}>
@@ -1032,7 +1032,7 @@ function RollingReturnsChart({ bt, label = "GEM" }: { bt: BacktestResult; label?
         bölgeler = GEM&apos;in 1 yıllık kayıpta olduğu dönemler (nadir ve sığ
         olması beklenir).
       </div>
-      <svg className="equity-svg" viewBox={`0 0 ${W} ${H}`} role="img">
+      <svg className="equity-svg" viewBox={`0 0 ${W} ${H}`} role="img" aria-label="Finansal analiz grafiği; açıklama hemen üstteki başlık ve metinde">
         {yTicks.map((v, i) => (
           <g key={i}>
             <line
@@ -1103,7 +1103,7 @@ function ScatterGemVsBench({ bt, label = "GEM" }: { bt: BacktestResult; label?: 
         className="equity-svg scatter"
         viewBox={`0 0 ${W} ${H}`}
         preserveAspectRatio="xMidYMid meet"
-        role="img"
+        role="img" aria-label="Finansal analiz grafiği; açıklama hemen üstteki başlık ve metinde"
       >
         <line x1={X(0)} y1={pad} x2={X(0)} y2={H - pad} className="grid-line zero" />
         <line x1={pad} y1={Y(0)} x2={W - pad} y2={Y(0)} className="grid-line zero" />
@@ -1187,7 +1187,7 @@ function BoxPlot({ bt }: { bt: BacktestResult }) {
         kayıp ayların büyüklüğü. GEM&apos;in kutusunu hisse al-tut ile
         karşılaştır.
       </div>
-      <svg className="equity-svg" viewBox={`0 0 ${W} ${H}`} role="img">
+      <svg className="equity-svg" viewBox={`0 0 ${W} ${H}`} role="img" aria-label="Finansal analiz grafiği; açıklama hemen üstteki başlık ve metinde">
         {xTicks.map((v, i) => (
           <g key={i}>
             <line
@@ -1771,7 +1771,7 @@ function CrossUniverseComparison({ data }: { data: AnalysisResult }) {
           <b>doğrudan ve adil</b> karşılaştırılabilirler. En genç evren (kripto)
           başlangıcı dönemi belirler.
         </div>
-        <svg className="equity-svg" viewBox={`0 0 ${W} ${H}`} role="img">
+        <svg className="equity-svg" viewBox={`0 0 ${W} ${H}`} role="img" aria-label="Finansal analiz grafiği; açıklama hemen üstteki başlık ve metinde">
           {yTicks.map((v, i) => (
             <g key={i}>
               <line
