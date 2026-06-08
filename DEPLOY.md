@@ -1,6 +1,6 @@
 # Vercel'e Deploy Rehberi
 
-Bu uygulama **Next.js 14 (App Router)** — Vercel'in yerel framework'ü. Ekstra konfigürasyon gerekmez, API anahtarı yoktur (Yahoo Finance keyless).
+Bu uygulama **Next.js 14 (App Router)** — Vercel'in yerel framework'ü. Ekstra konfigürasyon gerekmez. Fiyat verisi (Yahoo) ve Fama-French faktörleri (Ken French) **anahtarsızdır**; yalnızca opsiyonel earnings/revenue momentum paneli için bir FMP anahtarı gerekir (aşağıya bak).
 
 ## Yöntem 1 — GitHub + Vercel Dashboard (Önerilen, en kolay)
 
@@ -12,10 +12,18 @@ Bu uygulama **Next.js 14 (App Router)** — Vercel'in yerel framework'ü. Ekstra
    - **Root Directory:** `./` (repo kökü)
    - **Build Command:** `next build` (otomatik)
    - **Output:** otomatik
-   - **Environment Variables:** GEREKMEZ
+   - **Environment Variables:** Zorunlu değil. (Opsiyonel: earnings momentum için `FMP_API_KEY`.)
 5. **Deploy**'a bas. ~1-2 dakikada canlı URL hazır (`saidterzi.vercel.app` benzeri).
 
 > Her `git push` sonrası Vercel otomatik yeniden deploy eder (CI/CD).
+
+## Opsiyonel — Earnings/Revenue Momentum (FMP)
+
+Hisse evrenindeki earnings/revenue momentum paneli, [financialmodelingprep.com](https://site.financialmodelingprep.com/developer/docs) ücretsiz anahtarıyla etkinleşir (yıllık gelir+net kâr; ücretsiz katman çeyrekliği desteklemez):
+
+1. FMP'den ücretsiz API anahtarı al (250 istek/gün).
+2. Vercel → proje → **Settings → Environment Variables** → `FMP_API_KEY` = anahtarın → **Save**.
+3. **Redeploy** et. Anahtar yoksa panel "kapalı" görünür, geri kalan her şey çalışır.
 
 ## Yöntem 2 — Vercel CLI
 
@@ -40,7 +48,7 @@ npm run build && npm start
 
 ## Notlar
 
-- **Veri tazeliği:** `/api/analysis` route'u `force-dynamic` + `no-store` ile her istekte canlı veri çeker. Vercel'de serverless function olarak çalışır.
+- **Veri tazeliği & önbellek:** `/api/analysis` ~68 sembol + Ken French + (varsa) FMP çeker; sonuç sunucu-içi **10 dk önbellekte** tutulur (Yahoo rate-limit + hız). "Yenile" butonu `?refresh=1` ile önbelleği atlar. Fonksiyon süresi `maxDuration=60` ile uzatıldı.
 - **Yahoo güvenilirliği:** Resmi olmayan endpoint; nadiren 403/değişiklik olabilir. UI hata durumunda "Yenile" ile tekrar dener. İleride dayanıklılık için ikinci bir kaynak (Stooq/Alpha Vantage) fallback eklenebilir.
 - **Bölge:** Yahoo bazı IP bölgelerinde farklı davranabilir. Sorun olursa `vercel.json` ile function region (örn. `iad1`) sabitlenebilir.
-- **Rate limit:** Tek kullanıcı için sorun yok; yüksek trafikte route'a kısa süreli cache (örn. `revalidate = 300`) eklenebilir.
+- **Rate limit:** 10 dk sunucu önbelleği sayesinde yüksek trafikte bile Yahoo'ya tekrar istek atılmaz; tek kullanıcı için zaten sorun yok.
