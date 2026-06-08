@@ -1564,6 +1564,177 @@ function StrategyLeaderboard({ data }: { data: AnalysisResult }) {
   );
 }
 
+function CrossUniverseComparison({ data }: { data: AnalysisResult }) {
+  type Ser = {
+    label: string;
+    emoji: string;
+    map: Map<string, number>;
+    dates: string[];
+  };
+  const series: Ser[] = [];
+  const add = (label: string, emoji: string, bt: BacktestResult | null) => {
+    if (!bt) return;
+    const curve = bt.equityCurves.find((c) => c.highlight) ?? bt.equityCurves[0];
+    if (!curve) return;
+    const map = new Map<string, number>();
+    const dts: string[] = [];
+    for (let i = 0; i < bt.dates.length && i < curve.growth.length; i++) {
+      const ym = bt.dates[i].slice(0, 7);
+      map.set(ym, curve.growth[i]);
+      dts.push(ym);
+    }
+    series.push({ label, emoji, map, dates: dts });
+  };
+  add("GEM (Dual Momentum)", "📊", data.backtest);
+  for (const u of data.universes) add(u.positionLabel, u.emoji, u.backtest);
+  if (series.length < 2) return null;
+
+  // Ortak ay aralığı (tüm serilerin kesişimi)
+  const common = series[0].dates
+    .filter((d) => series.every((s) => s.map.has(d)))
+    .sort();
+  if (common.length < 13) return null;
+
+  const lines = series.map((s, idx) => {
+    const base = s.map.get(common[0]) as number;
+    const growth = common.map((d) => (s.map.get(d) as number) / base);
+    const finalMult = growth[growth.length - 1];
+    const cagr = Math.pow(finalMult, 12 / (common.length - 1)) - 1;
+    return {
+      label: s.label,
+      emoji: s.emoji,
+      growth,
+      finalMult,
+      cagr,
+      color: CURVE_COLORS[idx % CURVE_COLORS.length],
+    };
+  });
+
+  const W = 820;
+  const H = 340;
+  const padL = 52;
+  const padR = 16;
+  const padT = 16;
+  const padB = 28;
+  const innerW = W - padL - padR;
+  const innerH = H - padT - padB;
+  const n = common.length;
+
+  let lo = Infinity;
+  let hi = -Infinity;
+  for (const l of lines)
+    for (const v of l.growth) {
+      if (v > 0 && v < lo) lo = v;
+      if (v > hi) hi = v;
+    }
+  if (!isFinite(lo) || lo <= 0) return null;
+  const logLo = Math.log10(lo);
+  const span = Math.log10(hi) - logLo || 1;
+  const X = (i: number) => padL + (innerW * i) / Math.max(1, n - 1);
+  const Y = (v: number) =>
+    padT + innerH * (1 - (Math.log10(Math.max(v, lo)) - logLo) / span);
+
+  const yTicks: number[] = [];
+  for (let e = Math.floor(logLo); e <= Math.ceil(Math.log10(hi)); e++)
+    for (const m of [1, 2, 5]) {
+      const val = m * Math.pow(10, e);
+      if (val >= lo * 0.95 && val <= hi * 1.05) yTicks.push(val);
+    }
+
+  const xTicks: { i: number; label: string }[] = [];
+  let lastYear = "";
+  common.forEach((d, i) => {
+    const yr = d.slice(0, 4);
+    if (yr !== lastYear) {
+      xTicks.push({ i, label: yr });
+      lastYear = yr;
+    }
+  });
+  const step = Math.ceil(xTicks.length / 10);
+  const shown = xTicks.filter((_, idx) => idx % step === 0);
+
+  return (
+    <>
+      <div className="section-label">
+        Ortak-Dönem Karşılaştırması — tüm stratejiler aynı zaman ekseninde (1$
+        → büyüme, log ölçek)
+      </div>
+      <div className="chart-card">
+        <div className="chart-help">
+          Tüm evrenlerin momentum stratejileri <b>ortak veri aralığında</b> (
+          {common[0]} → {common[n - 1]}, {n} ay) 1$&apos;dan başlatılıp yeniden
+          normalize edildi — böylece leaderboard&apos;ın aksine{" "}
+          <b>doğrudan ve adil</b> karşılaştırılabilirler. En genç evren (kripto)
+          başlangıcı dönemi belirler.
+        </div>
+        <svg className="equity-svg" viewBox={`0 0 ${W} ${H}`} role="img">
+          {yTicks.map((v, i) => (
+            <g key={i}>
+              <line
+                x1={padL}
+                x2={W - padR}
+                y1={Y(v)}
+                y2={Y(v)}
+                className="grid-line"
+              />
+              <text
+                x={padL - 8}
+                y={Y(v) + 3}
+                className="axis-label"
+                textAnchor="end"
+              >
+                {v}×
+              </text>
+            </g>
+          ))}
+          {shown.map((t, i) => (
+            <text
+              key={i}
+              x={X(t.i)}
+              y={H - 8}
+              className="axis-label"
+              textAnchor="middle"
+            >
+              {t.label}
+            </text>
+          ))}
+          {lines.map((l) => (
+            <path
+              key={l.label}
+              d={l.growth
+                .map(
+                  (v, i) =>
+                    `${i === 0 ? "M" : "L"}${X(i).toFixed(1)},${Y(v).toFixed(1)}`
+                )
+                .join(" ")}
+              className="equity-line"
+              stroke={l.color}
+              style={{ strokeWidth: 2 }}
+            />
+          ))}
+        </svg>
+        <div className="chart-legend">
+          {lines
+            .slice()
+            .sort((a, b) => b.finalMult - a.finalMult)
+            .map((l) => (
+              <span className="legend-item" key={l.label}>
+                <span
+                  className="legend-swatch"
+                  style={{ background: l.color }}
+                />
+                {l.emoji} {l.label}
+                <b className="legend-val">
+                  {l.finalMult.toFixed(1)}× · CAGR {pct(l.cagr)}
+                </b>
+              </span>
+            ))}
+        </div>
+      </div>
+    </>
+  );
+}
+
 const STUDIO_LB = [1, 3, 6, 9, 12, 18, 24];
 const STUDIO_TOPN = [1, 2, 3, 5, 8, 10];
 const STUDIO_COST = [0, 10, 25, 50];
@@ -2009,6 +2180,9 @@ export default function Home() {
 
           {/* Strateji karşılaştırma tablosu */}
           <StrategyLeaderboard data={data} />
+
+          {/* Ortak-dönem equity curve overlay (adil kıyas) */}
+          <CrossUniverseComparison data={data} />
 
           {/* Evren sekmeleri (ETF + dinamik evrenler) */}
           <div
