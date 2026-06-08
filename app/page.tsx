@@ -1427,6 +1427,27 @@ function MethodsSection({ methods }: { methods: MethodResult[] }) {
   );
 }
 
+function BackToTop() {
+  const [show, setShow] = useState(false);
+  useEffect(() => {
+    const onScroll = () => setShow(window.scrollY > 800);
+    window.addEventListener("scroll", onScroll, { passive: true });
+    onScroll();
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
+  if (!show) return null;
+  return (
+    <button
+      className="back-to-top"
+      onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
+      aria-label="Sayfa başına dön"
+      title="Başa dön"
+    >
+      ↑
+    </button>
+  );
+}
+
 function KeyInsights({ data }: { data: AnalysisResult }) {
   const insights: { icon: string; text: ReactNode }[] = [];
 
@@ -2765,6 +2786,7 @@ export default function Home() {
         (2014). · Veri: Yahoo Finance · {data?.methods.length ?? 0} yöntem canlı
         hesaplanıyor
       </div>
+      <BackToTop />
     </div>
   );
 }
