@@ -1426,6 +1426,153 @@ function MethodsSection({ methods }: { methods: MethodResult[] }) {
   );
 }
 
+const STUDIO_LB = [1, 3, 6, 9, 12, 18, 24];
+const STUDIO_TOPN = [1, 2, 3, 5, 8, 10];
+const STUDIO_UNIVERSES = [
+  { id: "etf", label: "ETF (GEM)" },
+  { id: "stock", label: "Hisse" },
+  { id: "crypto", label: "Kripto" },
+  { id: "sector", label: "Sektör" },
+];
+
+interface StudioResult {
+  backtest: BacktestResult | null;
+  label: string;
+  lookback: number;
+  topN: number;
+  universe: string;
+}
+
+function BacktestStudio() {
+  const [uni, setUni] = useState("etf");
+  const [lb, setLb] = useState(12);
+  const [topN, setTopN] = useState(5);
+  const [res, setRes] = useState<StudioResult | null>(null);
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState<string | null>(null);
+
+  useEffect(() => {
+    let cancel = false;
+    setBusy(true);
+    setErr(null);
+    const q =
+      uni === "etf"
+        ? `universe=etf&lookback=${lb}`
+        : `universe=${uni}&lookback=${lb}&topN=${topN}`;
+    fetch(`/api/backtest?${q}`, { cache: "no-store" })
+      .then((r) =>
+        r.ok
+          ? r.json()
+          : r
+              .json()
+              .catch(() => ({}))
+              .then((b) =>
+                Promise.reject(
+                  new Error(b.detail || b.error || `HTTP ${r.status}`)
+                )
+              )
+      )
+      .then((d) => {
+        if (!cancel) setRes(d as StudioResult);
+      })
+      .catch((e) => {
+        if (!cancel) setErr(e instanceof Error ? e.message : String(e));
+      })
+      .finally(() => {
+        if (!cancel) setBusy(false);
+      });
+    return () => {
+      cancel = true;
+    };
+  }, [uni, lb, topN]);
+
+  const bt = res?.backtest ?? null;
+  const isEtf = uni === "etf";
+
+  return (
+    <div className="studio">
+      <div className="studio-head">
+        <span className="studio-title">🎛️ Backtest Stüdyosu</span>
+        <span className="studio-sub">
+          Parametreleri değiştir — sonuç anında yeniden hesaplanır (sayfanın geri
+          kalanı kitap-standardı 12 ayda kalır)
+        </span>
+      </div>
+      <div className="studio-controls">
+        <div className="ctrl-group">
+          <label>Evren</label>
+          <div className="seg">
+            {STUDIO_UNIVERSES.map((u) => (
+              <button
+                key={u.id}
+                className={uni === u.id ? "on" : ""}
+                onClick={() => setUni(u.id)}
+              >
+                {u.label}
+              </button>
+            ))}
+          </div>
+        </div>
+        <div className="ctrl-group">
+          <label>Look-back (ay)</label>
+          <div className="seg">
+            {STUDIO_LB.map((v) => (
+              <button
+                key={v}
+                className={lb === v ? "on" : ""}
+                onClick={() => setLb(v)}
+              >
+                {v}
+              </button>
+            ))}
+          </div>
+        </div>
+        <div className="ctrl-group">
+          <label>Top-N {isEtf && <em>(GEM&apos;de tek varlık)</em>}</label>
+          <div className="seg">
+            {STUDIO_TOPN.map((v) => (
+              <button
+                key={v}
+                disabled={isEtf}
+                className={!isEtf && topN === v ? "on" : ""}
+                onClick={() => setTopN(v)}
+              >
+                {v}
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {busy && (
+        <div className="studio-state">
+          <div className="spinner" />
+          Backtest hesaplanıyor…
+        </div>
+      )}
+      {err && !busy && <div className="error-box">{err}</div>}
+      {!busy && !err && bt && (
+        <>
+          <div className="section-label">
+            {res?.label} — look-back {res?.lookback} ay
+            {!isEtf ? `, top-${res?.topN}` : ""} ({bt.startDate} → {bt.endDate},{" "}
+            {bt.months} ay)
+          </div>
+          <EquityChart bt={bt} />
+          <UnderwaterChart bt={bt} label={res?.label ?? "Strateji"} />
+          <MetricsTable rows={bt.strategies} />
+        </>
+      )}
+      {!busy && !err && !bt && (
+        <div className="studio-state">
+          Bu evren/parametrelerle backtest üretilemedi (yetersiz ortak geçmiş
+          olabilir).
+        </div>
+      )}
+    </div>
+  );
+}
+
 function UniverseSection({ u }: { u: UniverseBundle }) {
   const bt = u.backtest;
   return (
@@ -1696,6 +1843,9 @@ export default function Home() {
 
           {/* Metodoloji açıklaması */}
           <MethodologyPanel />
+
+          {/* Etkileşimli backtest stüdyosu */}
+          <BacktestStudio />
 
           {/* Evren sekmeleri (ETF + dinamik evrenler) */}
           <div

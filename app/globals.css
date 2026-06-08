@@ -800,6 +800,93 @@ table.heatmap .lb-tbill td {
   padding-left: 10px;
   margin-bottom: 10px;
 }
+.studio {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 18px;
+  margin-bottom: 18px;
+}
+.studio-head {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin-bottom: 14px;
+}
+.studio-title {
+  font-size: 17px;
+  font-weight: 800;
+  color: var(--text);
+}
+.studio-sub {
+  font-size: 12px;
+  color: var(--text-faint);
+}
+.studio-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px 24px;
+  margin-bottom: 6px;
+}
+.ctrl-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.ctrl-group > label {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-faint);
+  font-weight: 600;
+}
+.ctrl-group > label em {
+  text-transform: none;
+  letter-spacing: 0;
+  font-style: normal;
+  color: var(--text-faint);
+  opacity: 0.7;
+}
+.seg {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  background: var(--panel);
+  border: 1px solid var(--border-soft);
+  border-radius: 9px;
+  padding: 3px;
+}
+.seg button {
+  border: none;
+  background: transparent;
+  color: var(--text-dim);
+  font-size: 13px;
+  font-weight: 600;
+  padding: 6px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.12s, color 0.12s;
+}
+.seg button:hover:not(:disabled) {
+  color: var(--text);
+}
+.seg button.on {
+  background: var(--accent);
+  color: #fff;
+}
+.seg button:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+.studio-state {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 24px 4px;
+  color: var(--text-dim);
+  font-size: 14px;
+}
+
 .view-tabs {
   position: sticky;
   top: 0;

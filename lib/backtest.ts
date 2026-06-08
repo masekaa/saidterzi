@@ -55,7 +55,12 @@ function buildMetrics(
   };
 }
 
-export function runBacktest(core: RawMap, tbill: RawSeries): BacktestResult | null {
+export function runBacktest(
+  core: RawMap,
+  tbill: RawSeries,
+  lookback: number = LOOKBACK_MONTHS
+): BacktestResult | null {
+  const LB = Math.max(1, Math.round(lookback));
   const keys = CORE_ASSETS.map((a) => a.key);
   const seriesMap: Record<string, RawSeries["series"]> = {};
   for (const a of CORE_ASSETS) {
@@ -66,7 +71,7 @@ export function runBacktest(core: RawMap, tbill: RawSeries): BacktestResult | nu
 
   const { dates, closes } = alignSeries(seriesMap);
   const n = dates.length;
-  if (n < LOOKBACK_MONTHS + 3) return null;
+  if (n < LB + 3) return null;
 
   // Getiri serileri (her benchmark + GEM), ortak periyot: t = L .. n-2
   const gemRets: number[] = [];
@@ -77,19 +82,19 @@ export function runBacktest(core: RawMap, tbill: RawSeries): BacktestResult | nu
 
   const positions: string[] = [];
 
-  for (let t = LOOKBACK_MONTHS; t <= n - 2; t++) {
+  for (let t = LB; t <= n - 2; t++) {
     // Sinyal: t-sonu 12-ay getiriler
     let bestKey = keys[0];
     let bestRet = -Infinity;
     for (const k of keys) {
-      const r = closes[k][t] / closes[k][t - LOOKBACK_MONTHS] - 1;
+      const r = closes[k][t] / closes[k][t - LB] - 1;
       if (r > bestRet) {
         bestRet = r;
         bestKey = k;
       }
     }
     const tbillRet12 =
-      closes[TBILL.key][t] / closes[TBILL.key][t - LOOKBACK_MONTHS] - 1;
+      closes[TBILL.key][t] / closes[TBILL.key][t - LB] - 1;
     const pos = bestRet > tbillRet12 ? bestKey : TBILL.key;
     positions.push(pos);
 
@@ -142,12 +147,12 @@ export function runBacktest(core: RawMap, tbill: RawSeries): BacktestResult | nu
     }
     return g;
   };
-  const curveDates: string[] = [dates[LOOKBACK_MONTHS]];
-  for (let t = LOOKBACK_MONTHS; t <= n - 2; t++) curveDates.push(dates[t + 1]);
+  const curveDates: string[] = [dates[LB]];
+  for (let t = LB; t <= n - 2; t++) curveDates.push(dates[t + 1]);
 
   // GEM pozisyon zaman serisi: positions[i] -> realize ayi dates[L+1+i]
   const timeline = positions.map((key, i) => ({
-    date: dates[LOOKBACK_MONTHS + 1 + i],
+    date: dates[LB + 1 + i],
     key,
   }));
   const equityCurves = [
@@ -161,7 +166,7 @@ export function runBacktest(core: RawMap, tbill: RawSeries): BacktestResult | nu
   ];
 
   return {
-    startDate: dates[LOOKBACK_MONTHS + 1] ?? dates[LOOKBACK_MONTHS],
+    startDate: dates[LB + 1] ?? dates[LB],
     endDate: dates[n - 1],
     months: gemRets.length,
     strategies,
@@ -184,11 +189,17 @@ export function runStockBacktest(
   tbill: RawSeries,
   universe = STOCK_UNIVERSE,
   topN: number = STOCK_TOP_N,
-  opts: { stratLabel?: string; benchLabel?: string; investedKey?: string } = {}
+  opts: {
+    stratLabel?: string;
+    benchLabel?: string;
+    investedKey?: string;
+    lookback?: number;
+  } = {}
 ): BacktestResult | null {
   const stratLabel = opts.stratLabel ?? "Hisse Momentum";
   const benchLabel = opts.benchLabel ?? "Eşit Ağırlık (Tüm Hisseler)";
   const investedKey = opts.investedKey ?? "stocks";
+  const LB = Math.max(1, Math.round(opts.lookback ?? LOOKBACK_MONTHS));
   const keys = universe.map((s) => s.key).filter((k) => stockRaw[k]);
   if (keys.length < 3) return null;
 
@@ -198,7 +209,7 @@ export function runStockBacktest(
 
   const { dates, closes } = alignSeries(seriesMap);
   const n = dates.length;
-  if (n < LOOKBACK_MONTHS + 3) return null;
+  if (n < LB + 3) return null;
 
   const TOPN = topN;
   const stratRets: number[] = [];
@@ -206,13 +217,13 @@ export function runStockBacktest(
   const rf: number[] = [];
   const positions: string[] = []; // "stocks" | "bil"
 
-  for (let t = LOOKBACK_MONTHS; t <= n - 2; t++) {
+  for (let t = LB; t <= n - 2; t++) {
     const tbill12 =
-      closes[TBILL.key][t] / closes[TBILL.key][t - LOOKBACK_MONTHS] - 1;
+      closes[TBILL.key][t] / closes[TBILL.key][t - LB] - 1;
     const ranked = keys
       .map((k) => ({
         k,
-        r: closes[k][t] / closes[k][t - LOOKBACK_MONTHS] - 1,
+        r: closes[k][t] / closes[k][t - LB] - 1,
       }))
       .sort((a, b) => b.r - a.r);
     const picks = ranked.slice(0, TOPN).filter((x) => x.r > tbill12);
@@ -262,11 +273,11 @@ export function runStockBacktest(
     }
     return g;
   };
-  const curveDates: string[] = [dates[LOOKBACK_MONTHS]];
-  for (let t = LOOKBACK_MONTHS; t <= n - 2; t++) curveDates.push(dates[t + 1]);
+  const curveDates: string[] = [dates[LB]];
+  for (let t = LB; t <= n - 2; t++) curveDates.push(dates[t + 1]);
 
   const timeline = positions.map((key, i) => ({
-    date: dates[LOOKBACK_MONTHS + 1 + i],
+    date: dates[LB + 1 + i],
     key,
   }));
 
@@ -280,7 +291,7 @@ export function runStockBacktest(
   ];
 
   return {
-    startDate: dates[LOOKBACK_MONTHS + 1] ?? dates[LOOKBACK_MONTHS],
+    startDate: dates[LB + 1] ?? dates[LB],
     endDate: dates[n - 1],
     months: stratRets.length,
     strategies,
