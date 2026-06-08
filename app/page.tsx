@@ -2496,6 +2496,7 @@ function BacktestStudio() {
           </div>
           <EquityChart bt={bt} />
           <UnderwaterChart bt={bt} label={res?.label ?? "Strateji"} />
+          <DrawdownEpisodes bt={bt} label={res?.label ?? "Strateji"} />
           <RollingReturnsChart bt={bt} label={res?.label ?? "Strateji"} />
           <MonthlyHeatmap bt={bt} label={res?.label ?? "Strateji"} />
           <BoxPlot bt={bt} />
@@ -2994,7 +2995,15 @@ export default function Home() {
       <div className="footer">
         Kaynak metodoloji: Gary Antonacci, <i>Dual Momentum Investing</i>{" "}
         (2014). · Veri: Yahoo Finance · {data?.methods.length ?? 0} yöntem canlı
-        hesaplanıyor
+        hesaplanıyor ·{" "}
+        <a
+          href="https://github.com/masekaa/saidterzi"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="footer-link"
+        >
+          Kaynak kodu (GitHub)
+        </a>
       </div>
       <BackToTop />
     </div>

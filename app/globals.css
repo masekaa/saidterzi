@@ -881,6 +881,14 @@ table.heatmap.corr td {
   }
 }
 
+.footer-link {
+  color: var(--accent);
+  text-decoration: none;
+}
+.footer-link:hover {
+  text-decoration: underline;
+}
+
 .back-to-top {
   position: fixed;
   right: 22px;
