@@ -1967,10 +1967,36 @@ function BacktestStudio() {
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
 
+  // URL'den başlangıç parametreleri (paylaşılabilir stüdyo durumu)
+  useEffect(() => {
+    const sp = new URLSearchParams(window.location.search);
+    const u = sp.get("su");
+    if (u) setUni(u);
+    const l = Number(sp.get("slb"));
+    if (l) setLb(l);
+    const t = Number(sp.get("stn"));
+    if (t) setTopN(t);
+    const c = sp.get("scost");
+    if (c != null) setCost(Number(c) || 0);
+  }, []);
+
   useEffect(() => {
     let cancel = false;
     setBusy(true);
     setErr(null);
+    // Parametreleri URL'ye yansıt (link paylaşılabilir, hash korunur)
+    if (typeof window !== "undefined") {
+      const sp = new URLSearchParams(window.location.search);
+      sp.set("su", uni);
+      sp.set("slb", String(lb));
+      sp.set("stn", String(topN));
+      sp.set("scost", String(cost));
+      window.history.replaceState(
+        null,
+        "",
+        `?${sp.toString()}${window.location.hash}`
+      );
+    }
     const base =
       uni === "etf"
         ? `universe=etf&lookback=${lb}`
