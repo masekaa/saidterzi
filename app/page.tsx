@@ -2424,11 +2424,15 @@ function UniverseSection({ u }: { u: UniverseBundle }) {
       {u.lookback && <LookbackHeatmap data={u.lookback} />}
 
       {bt && (
-        <>
-          <div className="section-label">
-            {u.positionLabel} Backtest &amp; Risk Metrikleri ({bt.startDate} →{" "}
-            {bt.endDate}, {bt.months} ay)
-          </div>
+        <CollapsibleSection
+          defaultOpen
+          title={
+            <>
+              {u.positionLabel} Backtest &amp; Risk Metrikleri ({bt.startDate} →{" "}
+              {bt.endDate}, {bt.months} ay)
+            </>
+          }
+        >
           <EquityChart bt={bt} />
           <PositionTimeline bt={bt} label={u.positionLabel} />
           <UnderwaterChart bt={bt} label={u.positionLabel} />
@@ -2460,7 +2464,7 @@ function UniverseSection({ u }: { u: UniverseBundle }) {
               subject={`${u.positionLabel} stratejisi`}
             />
           )}
-        </>
+        </CollapsibleSection>
       )}
 
       {u.methods && u.methods.length > 0 && (
