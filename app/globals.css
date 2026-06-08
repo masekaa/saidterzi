@@ -716,6 +716,14 @@ table.heatmap .lb-tbill td {
   color: var(--text-faint);
   font-style: italic;
 }
+table.heatmap.corr th,
+table.heatmap.corr .hm-year {
+  font-size: 10px;
+  min-width: 64px;
+}
+table.heatmap.corr td {
+  font-weight: 600;
+}
 .rr-dot {
   fill: var(--text-faint);
   opacity: 0.85;

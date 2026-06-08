@@ -1735,6 +1735,103 @@ function CrossUniverseComparison({ data }: { data: AnalysisResult }) {
   );
 }
 
+function CorrelationMatrix({ bt }: { bt: BacktestResult }) {
+  const sleeves = bt.equityCurves.filter((c) => !c.highlight);
+  if (sleeves.length < 2) return null;
+  const rets = sleeves.map((c) => {
+    const r: number[] = [];
+    for (let i = 1; i < c.growth.length; i++)
+      r.push(c.growth[i] / c.growth[i - 1] - 1);
+    return r;
+  });
+  const corr = (a: number[], b: number[]) => {
+    const m = Math.min(a.length, b.length);
+    if (m < 2) return 0;
+    let sa = 0;
+    let sb = 0;
+    for (let i = 0; i < m; i++) {
+      sa += a[i];
+      sb += b[i];
+    }
+    const ma = sa / m;
+    const mb = sb / m;
+    let cov = 0;
+    let va = 0;
+    let vb = 0;
+    for (let i = 0; i < m; i++) {
+      const da = a[i] - ma;
+      const db = b[i] - mb;
+      cov += da * db;
+      va += da * da;
+      vb += db * db;
+    }
+    if (va === 0 || vb === 0) return 0;
+    return cov / Math.sqrt(va * vb);
+  };
+  const labels = sleeves.map((s) => s.name);
+  const k = sleeves.length;
+  const matrix = rets.map((a) => rets.map((b) => corr(a, b)));
+  const avgOff =
+    matrix
+      .flatMap((row, i) => row.filter((_, j) => i !== j))
+      .reduce((s, v) => s + v, 0) /
+    Math.max(1, k * (k - 1));
+
+  // Çeşitlendirme için DÜŞÜK korelasyon iyi: ~0/negatif yeşil, →1 kırmızı.
+  const cColor = (c: number) => {
+    const t = Math.max(0, Math.min(1, c)); // 0..1 (negatifler en yeşil)
+    if (c <= 0) return "rgba(34,211,166,0.28)";
+    return `rgba(239,68,68,${(0.1 + 0.5 * t).toFixed(3)})`;
+  };
+
+  return (
+    <>
+      <div className="section-label">
+        Sleeve Korelasyon Matrisi — bileşiğin çeşitlendirme temeli (düşük =
+        daha iyi)
+      </div>
+      <div className="chart-card">
+        <div className="table-scroll">
+          <table className="heatmap corr">
+            <thead>
+              <tr>
+                <th className="hm-year"></th>
+                {labels.map((l, j) => (
+                  <th key={j}>{l}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {matrix.map((row, i) => (
+                <tr key={i}>
+                  <td className="hm-year">{labels[i]}</td>
+                  {row.map((c, j) => (
+                    <td
+                      key={j}
+                      style={{
+                        background: i === j ? "var(--border-soft)" : cColor(c),
+                      }}
+                    >
+                      {c.toFixed(2)}
+                    </td>
+                  ))}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+        <p className="table-note">
+          Sleeve&apos;lerin aylık getirileri arası Pearson korelasyonu (ortak
+          dönem). Ortalama çapraz-korelasyon <b>{avgOff.toFixed(2)}</b> — 1&apos;e
+          ne kadar uzaksa çeşitlendirme o kadar güçlü, bileşiğin oynaklık-azaltma
+          faydası o kadar yüksek. Kripto genelde en düşük korelasyonlu (en iyi
+          çeşitlendirici) sleeve&apos;dir.
+        </p>
+      </div>
+    </>
+  );
+}
+
 const STUDIO_LB = [1, 3, 6, 9, 12, 18, 24];
 const STUDIO_TOPN = [1, 2, 3, 5, 8, 10];
 const STUDIO_COST = [0, 10, 25, 50];
@@ -2206,6 +2303,7 @@ export default function Home() {
               <MetricsTable rows={data.composite.strategies} />
               <p className="table-note">{data.composite.note}</p>
               <AdvancedMetricsTable rows={data.composite.strategies} />
+              <CorrelationMatrix bt={data.composite} />
             </>
           )}
 
