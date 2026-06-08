@@ -1825,6 +1825,87 @@ function StrategyLeaderboard({ data }: { data: AnalysisResult }) {
   );
 }
 
+function MomentumValueAdd({ data }: { data: AnalysisResult }) {
+  type Row = {
+    label: string;
+    emoji: string;
+    mom: StrategyMetrics;
+    bench: StrategyMetrics;
+  };
+  const rows: Row[] = [];
+  const add = (label: string, emoji: string, bt: BacktestResult | null) => {
+    if (!bt || bt.strategies.length < 2) return;
+    const mom = bt.strategies[0];
+    const bench =
+      bt.strategies.find((s) => s.name.includes("Eşit Ağırlık")) ??
+      bt.strategies[bt.strategies.length - 1];
+    if (mom && bench) rows.push({ label, emoji, mom, bench });
+  };
+  add("ETF (GEM)", "📊", data.backtest);
+  for (const u of data.universes) add(u.label, u.emoji, u.backtest);
+  if (rows.length < 2) return null;
+
+  const wins = rows.filter(
+    (r) => (r.mom.cagr ?? 0) > (r.bench.cagr ?? 0)
+  ).length;
+
+  return (
+    <>
+      <div className="section-label">
+        Momentum Al-Tut&apos;u Yeniyor mu? — her evrende momentum vs eşit-ağırlık
+        al-tut
+      </div>
+      <div className="table-scroll">
+        <table className="metrics">
+          <thead>
+            <tr>
+              <th className="left">Evren</th>
+              <th>Momentum CAGR</th>
+              <th>Al-Tut CAGR</th>
+              <th>CAGR Farkı</th>
+              <th>Momentum Sharpe</th>
+              <th>Al-Tut Sharpe</th>
+              <th>Sharpe Farkı</th>
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map((r, i) => {
+              const dC = (r.mom.cagr ?? 0) - (r.bench.cagr ?? 0);
+              const dS = (r.mom.sharpe ?? 0) - (r.bench.sharpe ?? 0);
+              return (
+                <tr key={i}>
+                  <td className="left">
+                    {r.emoji} {r.label}
+                  </td>
+                  <td>{pct(r.mom.cagr)}</td>
+                  <td>{pct(r.bench.cagr)}</td>
+                  <td className={dC >= 0 ? "pos-cell" : "neg"}>
+                    {dC >= 0 ? "+" : ""}
+                    {pct(dC)}
+                  </td>
+                  <td>{num(r.mom.sharpe)}</td>
+                  <td>{num(r.bench.sharpe)}</td>
+                  <td className={dS >= 0 ? "pos-cell strong" : "neg strong"}>
+                    {dS >= 0 ? "+" : ""}
+                    {num(dS)}
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+      <p className="table-note">
+        Dual momentum&apos;un asıl iddiası: aynı varlıkları al-tut etmekten daha
+        iyi risk-ayarlı getiri. Şu an <b>{wins}/{rows.length}</b> evrende momentum
+        al-tut&apos;u CAGR&apos;da geçiyor; <b>Sharpe farkı</b> (pozitif = momentum
+        kazanıyor) risk-ayarlı katma değeri gösterir — düşüş korumasının asıl
+        faydası burada görülür.
+      </p>
+    </>
+  );
+}
+
 function CrossUniverseComparison({ data }: { data: AnalysisResult }) {
   type Ser = {
     label: string;
@@ -2848,6 +2929,9 @@ export default function Home() {
 
           {/* Strateji karşılaştırma tablosu */}
           <StrategyLeaderboard data={data} />
+
+          {/* Momentum vs al-tut katma değeri */}
+          <MomentumValueAdd data={data} />
 
           {/* Ortak-dönem equity curve overlay (adil kıyas) */}
           <ErrorBoundary label="Ortak-dönem karşılaştırması">

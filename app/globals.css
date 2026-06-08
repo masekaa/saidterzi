@@ -466,6 +466,9 @@ table.metrics .strong {
 table.metrics .neg {
   color: var(--danger);
 }
+table.metrics .pos-cell {
+  color: var(--success, #22d3a6);
+}
 table.metrics tr.row-hl td {
   background: rgba(91, 140, 255, 0.08);
   color: var(--text);
