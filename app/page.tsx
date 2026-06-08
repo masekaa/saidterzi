@@ -2200,6 +2200,21 @@ export default function Home() {
     load();
   }, [load]);
 
+  // Sekme durumunu URL hash ile senkronla (reload/paylaşımda korunur).
+  useEffect(() => {
+    const h = window.location.hash.slice(1);
+    if (h) setView(h);
+    const onHash = () => setView(window.location.hash.slice(1) || "etf");
+    window.addEventListener("hashchange", onHash);
+    return () => window.removeEventListener("hashchange", onHash);
+  }, []);
+
+  const selectView = useCallback((id: string) => {
+    setView(id);
+    if (typeof window !== "undefined")
+      window.history.replaceState(null, "", `#${id}`);
+  }, []);
+
   const exportJson = useCallback(() => {
     if (!data) return;
     const blob = new Blob([JSON.stringify(data, null, 2)], {
@@ -2419,7 +2434,7 @@ export default function Home() {
           >
             <button
               className={`view-tab ${view === "etf" ? "active" : ""}`}
-              onClick={() => setView("etf")}
+              onClick={() => selectView("etf")}
             >
               📊 Çekirdek Varlıklar (ETF)
               <small>Altın · S&amp;P 500 · NASDAQ — GEM</small>
@@ -2428,7 +2443,7 @@ export default function Home() {
               <button
                 key={u.id}
                 className={`view-tab ${view === u.id ? "active" : ""}`}
-                onClick={() => setView(u.id)}
+                onClick={() => selectView(u.id)}
               >
                 {u.emoji} {u.label}
                 <small>{u.sublabel}</small>
