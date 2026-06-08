@@ -2130,6 +2130,63 @@ function CompositeStance({ data }: { data: AnalysisResult }) {
   );
 }
 
+function RiskParityWeights({ bt }: { bt: BacktestResult }) {
+  const sleeves = bt.equityCurves.filter(
+    (c) => !c.highlight && !c.name.includes("Bileşik")
+  );
+  if (sleeves.length < 2) return null;
+  const items = sleeves.map((c) => {
+    const r: number[] = [];
+    for (let i = 1; i < c.growth.length; i++)
+      r.push(c.growth[i] / c.growth[i - 1] - 1);
+    const n = r.length;
+    const mean = r.reduce((s, v) => s + v, 0) / Math.max(1, n);
+    const variance =
+      n > 1 ? r.reduce((s, v) => s + (v - mean) ** 2, 0) / (n - 1) : 0;
+    const vol = Math.sqrt(variance) * Math.sqrt(12);
+    return { name: c.name, vol };
+  });
+  const invs = items.map((x) => (x.vol > 0 ? 1 / x.vol : 0));
+  const tot = invs.reduce((s, v) => s + v, 0);
+  if (tot <= 0) return null;
+  const rows = items
+    .map((x, i) => ({ ...x, w: invs[i] / tot }))
+    .sort((a, b) => b.w - a.w);
+
+  return (
+    <>
+      <div className="section-label">
+        Risk-Parity Ağırlıkları — bileşikte her sleeve&apos;in ters-volatilite payı
+      </div>
+      <div className="chart-card">
+        <div className="rpw-list">
+          {rows.map((r) => (
+            <div className="rpw-row" key={r.name}>
+              <div className="rpw-name">
+                {r.name.replace(/\s*\(.*\)/, "")}
+              </div>
+              <div className="rpw-bar">
+                <div
+                  className="rpw-fill"
+                  style={{ width: `${(r.w * 100).toFixed(1)}%` }}
+                />
+              </div>
+              <div className="rpw-val">%{(r.w * 100).toFixed(1)}</div>
+              <div className="rpw-vol">σ {pct(r.vol)}</div>
+            </div>
+          ))}
+        </div>
+        <p className="table-note">
+          Risk-parity bileşik her sleeve&apos;e oynaklığıyla <b>ters orantılı</b>{" "}
+          ağırlık verir (w = (1/σ)/Σ(1/σ)). Yüksek oynaklıklı sleeve&apos;ler
+          (genelde kripto) otomatik daha az pay alır → dengeli risk katkısı,
+          eşit-ağırlık bileşiğin kripto-baskınlığını giderir.
+        </p>
+      </div>
+    </>
+  );
+}
+
 function DiversificationStat({ bt }: { bt: BacktestResult }) {
   const comp = bt.strategies.find((s) => s.name.includes("eşit ağırlık"));
   const sleeves = bt.strategies.filter((s) => !s.name.includes("Bileşik"));
@@ -2820,6 +2877,7 @@ export default function Home() {
               <p className="table-note">{data.composite.note}</p>
               <AdvancedMetricsTable rows={data.composite.strategies} />
               <DiversificationStat bt={data.composite} />
+              <RiskParityWeights bt={data.composite} />
               <CorrelationMatrix bt={data.composite} />
             </CollapsibleSection>
             </ErrorBoundary>

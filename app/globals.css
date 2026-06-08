@@ -951,6 +951,56 @@ table.heatmap.corr td {
   color: var(--text);
 }
 
+.rpw-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.rpw-row {
+  display: grid;
+  grid-template-columns: 130px 1fr 52px 70px;
+  align-items: center;
+  gap: 10px;
+  font-size: 12.5px;
+}
+.rpw-name {
+  color: var(--text);
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.rpw-bar {
+  height: 12px;
+  background: rgba(148, 163, 184, 0.15);
+  border-radius: 999px;
+  overflow: hidden;
+}
+.rpw-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #60a5fa, #22d3a6);
+  border-radius: 999px;
+}
+.rpw-val {
+  text-align: right;
+  font-weight: 700;
+  color: var(--text);
+  font-variant-numeric: tabular-nums;
+}
+.rpw-vol {
+  text-align: right;
+  color: var(--text-faint);
+  font-variant-numeric: tabular-nums;
+}
+@media (max-width: 640px) {
+  .rpw-row {
+    grid-template-columns: 90px 1fr 46px;
+  }
+  .rpw-vol {
+    display: none;
+  }
+}
+
 .divstat {
   display: flex;
   align-items: center;
