@@ -2181,6 +2181,83 @@ function DrawdownEpisodes({ bt, label }: { bt: BacktestResult; label: string }) 
   );
 }
 
+function CompositeHoldings({ data }: { data: AnalysisResult }) {
+  const sleeves = 1 + data.universes.length;
+  const w = 1 / sleeves;
+  const map = new Map<string, { label: string; weight: number }>();
+  let cash = 0;
+  const addH = (key: string, label: string, wt: number) => {
+    const cur = map.get(key);
+    if (cur) cur.weight += wt;
+    else map.set(key, { label, weight: wt });
+  };
+
+  // ETF / GEM (tek varlık)
+  const gemTick: Record<string, string> = { spy: "SPY", qqq: "QQQ", gld: "GLD" };
+  if (data.gem.positionKey === "cash") cash += w;
+  else {
+    const tk = gemTick[data.gem.positionKey] ?? data.gem.positionKey.toUpperCase();
+    addH(tk, `${data.gem.positionName} (${tk})`, w);
+  }
+
+  // Evrenler
+  for (const u of data.universes) {
+    const picks = u.momentum.stocks.filter((s) => s.selected);
+    if (picks.length === 0) cash += w;
+    else {
+      const each = w / picks.length;
+      for (const p of picks) addH(p.ticker, `${p.name} (${p.ticker})`, each);
+    }
+  }
+
+  const rows = Array.from(map.values()).sort((a, b) => b.weight - a.weight);
+  if (!rows.length && cash >= 0.999) {
+    // tamamen nakit
+  }
+
+  return (
+    <div className="chart-card">
+      <div className="chart-title">
+        🛒 Bileşiği Bu Ay Replike Et — eşit-ağırlık hedef portföy
+      </div>
+      <div className="chart-help">
+        Her sleeve (ETF + {data.universes.length} evren) bileşikte %
+        {(w * 100).toFixed(1)} pay alır; yatırımdaki sleeve&apos;in payı seçili
+        varlıklara eşit bölünür, nakitteki sleeve T-Bill&apos;de durur. Aşağıdaki
+        ağırlıklar bileşiğin <b>bu ayki hedef portföyüdür</b>.
+      </div>
+      <div className="rpw-list">
+        {rows.map((r) => (
+          <div className="rpw-row" key={r.label}>
+            <div className="rpw-name">{r.label}</div>
+            <div className="rpw-bar">
+              <div
+                className="rpw-fill"
+                style={{ width: `${Math.min(100, r.weight * 100).toFixed(1)}%` }}
+              />
+            </div>
+            <div className="rpw-val">%{(r.weight * 100).toFixed(1)}</div>
+            <div className="rpw-vol" />
+          </div>
+        ))}
+        {cash > 0.0001 && (
+          <div className="rpw-row">
+            <div className="rpw-name">💵 Nakit (T-Bill)</div>
+            <div className="rpw-bar">
+              <div
+                className="rpw-fill cash"
+                style={{ width: `${Math.min(100, cash * 100).toFixed(1)}%` }}
+              />
+            </div>
+            <div className="rpw-val">%{(cash * 100).toFixed(1)}</div>
+            <div className="rpw-vol" />
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 function CompositeStance({ data }: { data: AnalysisResult }) {
   const total = 1 + data.universes.length;
   const invested: string[] = [];
@@ -2985,6 +3062,7 @@ export default function Home() {
                 bileşik (yeşil, kalın) sleeve&apos;lerle birlikte gösterilir.
               </p>
               <CompositeStance data={data} />
+              <CompositeHoldings data={data} />
               <EquityChart bt={data.composite} />
               <UnderwaterChart bt={data.composite} label="Bileşik" />
               <DrawdownEpisodes bt={data.composite} label="Bileşik" />
