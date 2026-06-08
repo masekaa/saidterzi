@@ -1839,6 +1839,30 @@ function CrossUniverseComparison({ data }: { data: AnalysisResult }) {
   );
 }
 
+function DiversificationStat({ bt }: { bt: BacktestResult }) {
+  const comp = bt.strategies.find((s) => s.name.includes("eşit ağırlık"));
+  const sleeves = bt.strategies.filter((s) => !s.name.includes("Bileşik"));
+  if (!comp?.annualVol || sleeves.length < 2) return null;
+  const sleeveVols = sleeves
+    .map((s) => s.annualVol)
+    .filter((v): v is number => v != null);
+  if (!sleeveVols.length) return null;
+  const avgVol = sleeveVols.reduce((s, v) => s + v, 0) / sleeveVols.length;
+  if (avgVol <= 0) return null;
+  const reduction = 1 - comp.annualVol / avgVol;
+  return (
+    <div className="divstat">
+      <div className="divstat-big">{pct(reduction, 0)}</div>
+      <div className="divstat-text">
+        <b>Çeşitlendirme faydası</b> — eşit-ağırlık bileşiğin yıllık oynaklığı (
+        {pct(comp.annualVol)}) sleeve&apos;lerin ortalama oynaklığından (
+        {pct(avgVol)}) <b>{pct(reduction, 0)}</b> daha düşük. İmperfect
+        korelasyonlu stratejileri birleştirmenin somut riski-azaltma getirisi.
+      </div>
+    </div>
+  );
+}
+
 function CorrelationMatrix({ bt }: { bt: BacktestResult }) {
   const sleeves = bt.equityCurves.filter(
     (c) => !c.highlight && !c.name.includes("Bileşik")
@@ -2459,6 +2483,7 @@ export default function Home() {
               <MetricsTable rows={data.composite.strategies} />
               <p className="table-note">{data.composite.note}</p>
               <AdvancedMetricsTable rows={data.composite.strategies} />
+              <DiversificationStat bt={data.composite} />
               <CorrelationMatrix bt={data.composite} />
             </>
           )}
