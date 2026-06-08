@@ -214,4 +214,5 @@ export interface AnalysisResult {
   backtest: BacktestResult | null; // ETF GEM backtest
   universes: UniverseBundle[]; // ETF dışı evrenler (hisse, kripto, ...)
   warnings: string[];
+  fromCache?: boolean; // sonuç sunucu önbelleğinden mi geldi
 }

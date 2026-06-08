@@ -32,6 +32,7 @@ const POS_META: Record<string, { label: string; color: string }> = {
   bil: { label: "Nakit (T-Bill)", color: "#64748b" },
   stock: { label: "Hisse Sepeti (Top-N)", color: "#22d3a6" },
   crypto: { label: "Kripto Sepeti (Top-N)", color: "#f7931a" },
+  sector: { label: "Sektör Sepeti (Top-N)", color: "#a78bfa" },
 };
 function posMeta(key: string): { label: string; color: string } {
   return POS_META[key] ?? { label: key.toUpperCase(), color: "#94a3b8" };
@@ -1503,11 +1504,14 @@ export default function Home() {
   const [error, setError] = useState<string | null>(null);
   const [view, setView] = useState<string>("etf");
 
-  const load = useCallback(async () => {
+  const load = useCallback(async (force = false) => {
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch("/api/analysis", { cache: "no-store" });
+      const res = await fetch(
+        force ? "/api/analysis?refresh=1" : "/api/analysis",
+        { cache: "no-store" }
+      );
       if (!res.ok) {
         const body = await res.json().catch(() => ({}));
         throw new Error(body.detail || body.error || `HTTP ${res.status}`);
@@ -1636,12 +1640,21 @@ export default function Home() {
           >
             ⭳ JSON
           </button>
-          <button className="refresh-btn" onClick={load} disabled={loading}>
+          <button
+            className="refresh-btn"
+            onClick={() => load(true)}
+            disabled={loading}
+          >
             {loading ? "Yükleniyor…" : "↻ Yenile"}
           </button>
           {data && (
             <span className="timestamp">
               Güncellendi: {fmtTime(data.generatedAt)}
+              {data.fromCache && (
+                <span className="cache-badge" title="Sonuç 10 dk'lık sunucu önbelleğinden geldi. Taze veri için Yenile.">
+                   önbellek
+                </span>
+              )}
             </span>
           )}
         </div>

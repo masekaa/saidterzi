@@ -12,6 +12,7 @@ import {
   STOCK_TOP_N,
   CRYPTO_UNIVERSE,
   CRYPTO_TOP_N,
+  DMSR_TOP_N,
   allTickers,
   LOOKBACK_MONTHS,
   type Instrument,
@@ -39,7 +40,19 @@ export const revalidate = 0;
 // Çok sayıda dış istek (Yahoo + Ken French + FMP) — fonksiyon süresini uzat.
 export const maxDuration = 60;
 
-export async function GET() {
+// Sunucu-içi önbellek: aylık veri olduğundan 10 dk taze kabul edilir.
+// Yahoo rate-limit riskini ve yükleme süresini ciddi azaltır. ?refresh=1 atlar.
+let CACHE: { at: number; result: AnalysisResult } | null = null;
+const CACHE_TTL_MS = 10 * 60 * 1000;
+
+export async function GET(req: Request) {
+  const force = new URL(req.url).searchParams.get("refresh") === "1";
+  if (!force && CACHE && Date.now() - CACHE.at < CACHE_TTL_MS) {
+    return NextResponse.json(
+      { ...CACHE.result, fromCache: true },
+      { headers: { "Cache-Control": "no-store, max-age=0" } }
+    );
+  }
   try {
     const tickers = allTickers();
     const settled = await Promise.allSettled(
@@ -150,6 +163,18 @@ export async function GET() {
         topN: CRYPTO_TOP_N,
         withEarnings: false,
       },
+      {
+        id: "sector",
+        emoji: "🏭",
+        label: "Sektör Rotasyonu",
+        sublabel: `${DMSR_SECTORS.length} SPDR sektör ETF'i (DMSR)`,
+        positionLabel: "Sektör Momentum (DMSR)",
+        benchLabel: "Eşit Ağırlık (Tüm Sektörler)",
+        raw: sectorRaw,
+        universe: DMSR_SECTORS,
+        topN: DMSR_TOP_N,
+        withEarnings: false,
+      },
     ];
 
     const universes: UniverseBundle[] = [];
@@ -225,6 +250,8 @@ export async function GET() {
       universes,
       warnings,
     };
+
+    CACHE = { at: Date.now(), result };
 
     return NextResponse.json(result, {
       headers: { "Cache-Control": "no-store, max-age=0" },
