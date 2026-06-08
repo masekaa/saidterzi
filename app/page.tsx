@@ -1477,6 +1477,29 @@ class ErrorBoundary extends Component<
   }
 }
 
+function LoadingSkeleton() {
+  return (
+    <div className="skel-wrap" aria-busy="true" aria-label="Analiz yükleniyor">
+      <div className="skel-row">
+        <div className="spinner" />
+        <span>
+          ~68 sembol + Fama-French faktörleri çekiliyor ve 5 evren + bileşik
+          hesaplanıyor; ilk yükleme birkaç saniye sürebilir (sonra 10 dk
+          önbellekte).
+        </span>
+      </div>
+      <div className="skel hero-skel" />
+      <div className="skel-grid">
+        {Array.from({ length: 5 }).map((_, i) => (
+          <div key={i} className="skel card-skel" />
+        ))}
+      </div>
+      <div className="skel block-skel" />
+      <div className="skel block-skel" />
+    </div>
+  );
+}
+
 function BackToTop() {
   const [show, setShow] = useState(false);
   useEffect(() => {
@@ -2716,12 +2739,7 @@ export default function Home() {
         </div>
       </div>
 
-      {loading && !data && (
-        <div className="state">
-          <div className="spinner" />
-          Piyasa verileri çekiliyor ve tüm yöntemler hesaplanıyor…
-        </div>
-      )}
+      {loading && !data && <LoadingSkeleton />}
 
       {error && (
         <div className="error-box">
