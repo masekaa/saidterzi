@@ -1523,6 +1523,66 @@ function KeyInsights({ data }: { data: AnalysisResult }) {
       ),
   });
 
+  // 4) En iyi çeşitlendirici (en düşük ortalama korelasyonlu sleeve)
+  if (data.composite) {
+    const sl = data.composite.equityCurves.filter(
+      (c) => !c.highlight && !c.name.includes("Bileşik")
+    );
+    if (sl.length >= 3) {
+      const rets = sl.map((c) => {
+        const r: number[] = [];
+        for (let i = 1; i < c.growth.length; i++)
+          r.push(c.growth[i] / c.growth[i - 1] - 1);
+        return r;
+      });
+      const corr = (a: number[], b: number[]) => {
+        const m = Math.min(a.length, b.length);
+        if (m < 2) return 0;
+        let sa = 0;
+        let sb = 0;
+        for (let i = 0; i < m; i++) {
+          sa += a[i];
+          sb += b[i];
+        }
+        const ma = sa / m;
+        const mb = sb / m;
+        let cov = 0;
+        let va = 0;
+        let vb = 0;
+        for (let i = 0; i < m; i++) {
+          cov += (a[i] - ma) * (b[i] - mb);
+          va += (a[i] - ma) ** 2;
+          vb += (b[i] - mb) ** 2;
+        }
+        return va && vb ? cov / Math.sqrt(va * vb) : 0;
+      };
+      const avg = rets.map((a, i) => {
+        let s = 0;
+        let n = 0;
+        rets.forEach((b, j) => {
+          if (i !== j) {
+            s += corr(a, b);
+            n++;
+          }
+        });
+        return n ? s / n : 0;
+      });
+      let minI = 0;
+      for (let i = 1; i < avg.length; i++) if (avg[i] < avg[minI]) minI = i;
+      insights.push({
+        icon: "🔗",
+        text: (
+          <>
+            En iyi çeşitlendirici:{" "}
+            <b>{sl[minI].name.replace(/\s*\(.*\)/, "")}</b> (diğer sleeve&apos;lerle
+            ortalama korelasyon {avg[minI].toFixed(2)}) — bileşiğe en çok risk
+            dağıtan evren.
+          </>
+        ),
+      });
+    }
+  }
+
   if (!insights.length) return null;
   return (
     <div className="insights">
