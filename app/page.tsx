@@ -1566,6 +1566,7 @@ function StrategyLeaderboard({ data }: { data: AnalysisResult }) {
 
 const STUDIO_LB = [1, 3, 6, 9, 12, 18, 24];
 const STUDIO_TOPN = [1, 2, 3, 5, 8, 10];
+const STUDIO_COST = [0, 10, 25, 50];
 const STUDIO_UNIVERSES = [
   { id: "etf", label: "ETF (GEM)" },
   { id: "stock", label: "Hisse" },
@@ -1578,6 +1579,7 @@ interface StudioResult {
   label: string;
   lookback: number;
   topN: number;
+  cost: number;
   universe: string;
 }
 
@@ -1585,6 +1587,7 @@ function BacktestStudio() {
   const [uni, setUni] = useState("etf");
   const [lb, setLb] = useState(12);
   const [topN, setTopN] = useState(5);
+  const [cost, setCost] = useState(0);
   const [res, setRes] = useState<StudioResult | null>(null);
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
@@ -1593,10 +1596,11 @@ function BacktestStudio() {
     let cancel = false;
     setBusy(true);
     setErr(null);
-    const q =
+    const base =
       uni === "etf"
         ? `universe=etf&lookback=${lb}`
         : `universe=${uni}&lookback=${lb}&topN=${topN}`;
+    const q = `${base}&cost=${cost}`;
     fetch(`/api/backtest?${q}`, { cache: "no-store" })
       .then((r) =>
         r.ok
@@ -1622,7 +1626,7 @@ function BacktestStudio() {
     return () => {
       cancel = true;
     };
-  }, [uni, lb, topN]);
+  }, [uni, lb, topN, cost]);
 
   const bt = res?.backtest ?? null;
   const isEtf = uni === "etf";
@@ -1680,6 +1684,20 @@ function BacktestStudio() {
             ))}
           </div>
         </div>
+        <div className="ctrl-group">
+          <label>İşlem Maliyeti <em>(round-trip bps)</em></label>
+          <div className="seg">
+            {STUDIO_COST.map((v) => (
+              <button
+                key={v}
+                className={cost === v ? "on" : ""}
+                onClick={() => setCost(v)}
+              >
+                {v}
+              </button>
+            ))}
+          </div>
+        </div>
       </div>
 
       {busy && (
@@ -1693,8 +1711,9 @@ function BacktestStudio() {
         <>
           <div className="section-label">
             {res?.label} — look-back {res?.lookback} ay
-            {!isEtf ? `, top-${res?.topN}` : ""} ({bt.startDate} → {bt.endDate},{" "}
-            {bt.months} ay)
+            {!isEtf ? `, top-${res?.topN}` : ""}
+            {res && res.cost > 0 ? `, maliyet ${res.cost}bps` : ""} (
+            {bt.startDate} → {bt.endDate}, {bt.months} ay)
           </div>
           <EquityChart bt={bt} />
           <UnderwaterChart bt={bt} label={res?.label ?? "Strateji"} />

@@ -67,6 +67,7 @@ export async function GET(req: Request) {
     const sp = new URL(req.url).searchParams;
     const universe = (sp.get("universe") || "etf").toLowerCase();
     const lookback = Math.min(24, Math.max(1, Number(sp.get("lookback")) || 12));
+    const cost = Math.min(200, Math.max(0, Number(sp.get("cost")) || 0));
     const force = sp.get("refresh") === "1";
 
     const tbillRaw = (await fetchMap([TBILL]))[TBILL.key] ?? {
@@ -82,14 +83,14 @@ export async function GET(req: Request) {
 
     if (universe === "etf") {
       label = "GEM (Dual Momentum)";
-      const key = `etf|${lookback}`;
+      const key = `etf|${lookback}|${cost}`;
       const hit = CACHE.get(key);
       if (!force && hit && Date.now() - hit.at < TTL) {
         return NextResponse.json(hit.data);
       }
       const coreRaw = await fetchMap(CORE_ASSETS);
-      backtest = runBacktest(coreRaw, tbillRaw, lookback);
-      const data = { universe, lookback, topN: 0, label, backtest };
+      backtest = runBacktest(coreRaw, tbillRaw, lookback, cost);
+      const data = { universe, lookback, topN: 0, cost, label, backtest };
       CACHE.set(key, { at: Date.now(), data });
       return NextResponse.json(data);
     }
@@ -107,7 +108,7 @@ export async function GET(req: Request) {
     );
     label = cfg.positionLabel;
 
-    const key = `${universe}|${lookback}|${topN}`;
+    const key = `${universe}|${lookback}|${topN}|${cost}`;
     const hit = CACHE.get(key);
     if (!force && hit && Date.now() - hit.at < TTL) {
       return NextResponse.json(hit.data);
@@ -119,8 +120,9 @@ export async function GET(req: Request) {
       benchLabel: cfg.benchLabel,
       investedKey: universe,
       lookback,
+      costBps: cost,
     });
-    const data = { universe, lookback, topN, label, backtest };
+    const data = { universe, lookback, topN, cost, label, backtest };
     CACHE.set(key, { at: Date.now(), data });
     return NextResponse.json(data);
   } catch (err) {

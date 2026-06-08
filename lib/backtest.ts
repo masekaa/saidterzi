@@ -58,7 +58,8 @@ function buildMetrics(
 export function runBacktest(
   core: RawMap,
   tbill: RawSeries,
-  lookback: number = LOOKBACK_MONTHS
+  lookback: number = LOOKBACK_MONTHS,
+  costBps: number = 0
 ): BacktestResult | null {
   const LB = Math.max(1, Math.round(lookback));
   const keys = CORE_ASSETS.map((a) => a.key);
@@ -109,6 +110,12 @@ export function runBacktest(
       ewSum += r;
     }
     ew.push(ewSum / keys.length);
+  }
+
+  // İşlem maliyeti (round-trip bps): pozisyon değiştiğinde tam devir (τ=1).
+  if (costBps > 0) {
+    for (let i = 1; i < positions.length; i++)
+      if (positions[i] !== positions[i - 1]) gemRets[i] -= costBps / 10000;
   }
 
   // Pozisyon istatistikleri
@@ -173,8 +180,11 @@ export function runBacktest(
     dates: curveDates,
     equityCurves,
     timeline,
-    note:
-      "Ortak veri periyodunda (tüm varlıkların geçmişi mevcut olduğu tarihten itibaren) aylık simülasyon. Sinyal t-sonu, getiri t+1 (lookahead bias yok). İşlem maliyeti dahil değildir.",
+    note: `Ortak veri periyodunda aylık simülasyon. Sinyal t-sonu, getiri t+1 (lookahead bias yok). İşlem maliyeti: ${
+      costBps > 0
+        ? `round-trip ${costBps} bps, pozisyon değişiminde uygulandı (yalnızca momentum stratejisine)`
+        : "dahil değil"
+    }.`,
   };
 }
 
@@ -194,12 +204,14 @@ export function runStockBacktest(
     benchLabel?: string;
     investedKey?: string;
     lookback?: number;
+    costBps?: number;
   } = {}
 ): BacktestResult | null {
   const stratLabel = opts.stratLabel ?? "Hisse Momentum";
   const benchLabel = opts.benchLabel ?? "Eşit Ağırlık (Tüm Hisseler)";
   const investedKey = opts.investedKey ?? "stocks";
   const LB = Math.max(1, Math.round(opts.lookback ?? LOOKBACK_MONTHS));
+  const costBps = Math.max(0, opts.costBps ?? 0);
   const keys = universe.map((s) => s.key).filter((k) => stockRaw[k]);
   if (keys.length < 3) return null;
 
@@ -216,6 +228,7 @@ export function runStockBacktest(
   const ewRets: number[] = [];
   const rf: number[] = [];
   const positions: string[] = []; // "stocks" | "bil"
+  const pickSets: Set<string>[] = []; // her ay tutulan sepet (devir için)
 
   for (let t = LB; t <= n - 2; t++) {
     const tbill12 =
@@ -240,10 +253,31 @@ export function runStockBacktest(
       stratRets.push(rfNext);
       positions.push("bil");
     }
+    pickSets.push(new Set(picks.map((p) => p.k)));
 
     let es = 0;
     for (const k of keys) es += closes[k][t + 1] / closes[k][t] - 1;
     ewRets.push(es / keys.length);
+  }
+
+  // İşlem maliyeti: aylık tek-yön devir τ = ½·Σ|Δw| (eşit ağırlık sepet,
+  // boş sepet = %100 nakit). Round-trip maliyet costBps × τ stratejiden düşülür.
+  if (costBps > 0) {
+    const wmap = (set: Set<string>) => {
+      const m = new Map<string, number>();
+      if (set.size === 0) m.set("__cash", 1);
+      else for (const k of set) m.set(k, 1 / set.size);
+      return m;
+    };
+    for (let i = 1; i < pickSets.length; i++) {
+      const a = wmap(pickSets[i - 1]);
+      const b = wmap(pickSets[i]);
+      const union = new Set([...a.keys(), ...b.keys()]);
+      let sumAbs = 0;
+      for (const k of union) sumAbs += Math.abs((b.get(k) ?? 0) - (a.get(k) ?? 0));
+      const tau = 0.5 * sumAbs;
+      stratRets[i] -= (costBps / 10000) * tau;
+    }
   }
 
   // Pozisyon istatistikleri (yatırımda vs nakit)
@@ -298,6 +332,10 @@ export function runStockBacktest(
     dates: curveDates,
     equityCurves,
     timeline,
-    note: `${keys.length} varlıklı evrende top-${TOPN} relative+absolute momentum rotasyonu (aylık, eşit ağırlık). Sinyal t-sonu, getiri t+1 (lookahead bias yok). İşlem maliyeti dahil değildir.`,
+    note: `${keys.length} varlıklı evrende top-${TOPN} relative+absolute momentum rotasyonu (aylık, eşit ağırlık). Sinyal t-sonu, getiri t+1 (lookahead bias yok). İşlem maliyeti: ${
+      costBps > 0
+        ? `round-trip ${costBps} bps, devir-bazlı (τ=½·Σ|Δw|), yalnızca momentum stratejisine`
+        : "dahil değil"
+    }.`,
   };
 }
