@@ -1839,6 +1839,42 @@ function CrossUniverseComparison({ data }: { data: AnalysisResult }) {
   );
 }
 
+function CompositeStance({ data }: { data: AnalysisResult }) {
+  const total = 1 + data.universes.length;
+  const invested: string[] = [];
+  const cash: string[] = [];
+  (data.gem.positionKey === "cash" ? cash : invested).push("📊 ETF");
+  for (const u of data.universes) {
+    const inv = u.momentum.stocks.some((s) => s.selected);
+    (inv ? invested : cash).push(`${u.emoji} ${u.label}`);
+  }
+  const ratio = total > 0 ? invested.length / total : 0;
+  return (
+    <div className="stance">
+      <div className="stance-row">
+        <div className="stance-bar">
+          <div
+            className="stance-fill"
+            style={{ width: `${(ratio * 100).toFixed(0)}%` }}
+          />
+        </div>
+        <div className="stance-pct">%{(ratio * 100).toFixed(0)}</div>
+      </div>
+      <div className="stance-text">
+        Bu ay bileşik <b>{invested.length}/{total}</b> sleeve&apos;de yatırımda.{" "}
+        {cash.length > 0 ? (
+          <>
+            Nakitte: <b>{cash.join(", ")}</b> — bu sleeve&apos;lerin payı
+            bileşikte T-Bill&apos;de duruyor (savunma).
+          </>
+        ) : (
+          <>Tüm sleeve&apos;ler yatırımda — bileşik tam risk-on.</>
+        )}
+      </div>
+    </div>
+  );
+}
+
 function DiversificationStat({ bt }: { bt: BacktestResult }) {
   const comp = bt.strategies.find((s) => s.name.includes("eşit ağırlık"));
   const sleeves = bt.strategies.filter((s) => !s.name.includes("Bileşik"));
@@ -2511,6 +2547,7 @@ export default function Home() {
                 düşük drawdown</b> hedefler. Aşağıdaki equity curve&apos;de
                 bileşik (yeşil, kalın) sleeve&apos;lerle birlikte gösterilir.
               </p>
+              <CompositeStance data={data} />
               <EquityChart bt={data.composite} />
               <UnderwaterChart bt={data.composite} label="Bileşik" />
               <MonthlyHeatmap bt={data.composite} label="Bileşik" />

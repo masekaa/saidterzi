@@ -808,6 +808,49 @@ table.heatmap.corr td {
   padding-left: 10px;
   margin-bottom: 10px;
 }
+.stance {
+  background: var(--card);
+  border: 1px solid var(--border-soft);
+  border-radius: 12px;
+  padding: 14px 18px;
+  margin-bottom: 14px;
+}
+.stance-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+.stance-bar {
+  flex: 1;
+  height: 12px;
+  background: rgba(148, 163, 184, 0.18);
+  border-radius: 999px;
+  overflow: hidden;
+}
+.stance-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #22d3a6, #60a5fa);
+  border-radius: 999px;
+  transition: width 0.3s;
+}
+.stance-pct {
+  font-size: 15px;
+  font-weight: 800;
+  color: var(--text);
+  font-variant-numeric: tabular-nums;
+  min-width: 44px;
+  text-align: right;
+}
+.stance-text {
+  font-size: 12.5px;
+  color: var(--text-dim);
+  line-height: 1.5;
+}
+.stance-text b {
+  color: var(--text);
+}
+
 .divstat {
   display: flex;
   align-items: center;
