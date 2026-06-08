@@ -98,6 +98,20 @@ export const CRYPTO_UNIVERSE: Instrument[] = [
 ];
 export const CRYPTO_TOP_N = 3;
 
+// --- Uluslararası / bölgesel evren (GEM'in ABD-vs-dünya fikrinin genellemesi) ---
+// Bölgesel hisse ETF'leri arası dual momentum rotasyonu. Hepsi uzun geçmişli.
+export const INTL_UNIVERSE: Instrument[] = [
+  { key: "us", name: "ABD", ticker: "SPY", note: "S&P 500" },
+  { key: "efa", name: "Gelişmiş (ABD hariç)", ticker: "EFA", note: "EAFE" },
+  { key: "eem", name: "Gelişmekte Olan", ticker: "EEM", note: "Emerging" },
+  { key: "vgk", name: "Avrupa", ticker: "VGK", note: "FTSE Europe" },
+  { key: "ewj", name: "Japonya", ticker: "EWJ", note: "MSCI Japan" },
+  { key: "vpl", name: "Pasifik", ticker: "VPL", note: "Developed Pacific" },
+  { key: "ilf", name: "Latin Amerika", ticker: "ILF", note: "S&P Latin America 40" },
+  { key: "mchi", name: "Çin", ticker: "MCHI", note: "MSCI China" },
+];
+export const INTL_TOP_N = 3;
+
 // DMSR güvenli liman + trend referansı
 export const AGG: Instrument = {
   key: "agg",
@@ -116,6 +130,7 @@ export function allTickers(): string[] {
     ...DMSR_SECTORS,
     ...STOCK_UNIVERSE,
     ...CRYPTO_UNIVERSE,
+    ...INTL_UNIVERSE,
     AGG,
   ].forEach((i) => set.add(i.ticker));
   return Array.from(set);

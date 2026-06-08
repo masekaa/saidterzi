@@ -12,6 +12,8 @@ import {
   STOCK_TOP_N,
   CRYPTO_UNIVERSE,
   CRYPTO_TOP_N,
+  INTL_UNIVERSE,
+  INTL_TOP_N,
   DMSR_TOP_N,
   allTickers,
   LOOKBACK_MONTHS,
@@ -98,6 +100,7 @@ export async function GET(req: Request) {
     const signals = buildSignalBoard(coreRaw, tbillRaw, gem.relativeWinnerKey);
     const lookback = buildLookbackMatrix(coreRaw, tbillRaw);
     const cryptoRaw = mapBy(CRYPTO_UNIVERSE);
+    const intlRaw = mapBy(INTL_UNIVERSE);
 
     // Fama-French 3 faktörünü TEK kez çek (non-fatal); tüm stratejilerde paylaş.
     let factors = null;
@@ -173,6 +176,18 @@ export async function GET(req: Request) {
         raw: sectorRaw,
         universe: DMSR_SECTORS,
         topN: DMSR_TOP_N,
+        withEarnings: false,
+      },
+      {
+        id: "intl",
+        emoji: "🌍",
+        label: "Uluslararası",
+        sublabel: `${INTL_UNIVERSE.length} bölgesel hisse ETF'i`,
+        positionLabel: "Bölgesel Momentum",
+        benchLabel: "Eşit Ağırlık (Tüm Bölgeler)",
+        raw: intlRaw,
+        universe: INTL_UNIVERSE,
+        topN: INTL_TOP_N,
         withEarnings: false,
       },
     ];

@@ -10,6 +10,7 @@ import {
   STOCK_UNIVERSE,
   CRYPTO_UNIVERSE,
   DMSR_SECTORS,
+  INTL_UNIVERSE,
   type Instrument,
 } from "@/lib/universe";
 import { runBacktest, runStockBacktest } from "@/lib/backtest";
@@ -42,6 +43,12 @@ const CONFIGS: Record<string, Cfg> = {
     universe: DMSR_SECTORS,
     positionLabel: "Sektör Momentum (DMSR)",
     benchLabel: "Eşit Ağırlık (Tüm Sektörler)",
+    defaultTopN: 3,
+  },
+  intl: {
+    universe: INTL_UNIVERSE,
+    positionLabel: "Bölgesel Momentum",
+    benchLabel: "Eşit Ağırlık (Tüm Bölgeler)",
     defaultTopN: 3,
   },
 };
