@@ -248,6 +248,17 @@ export async function GET(req: Request) {
       if (!coreRaw[a.key])
         warnings.push(`${a.name} (${a.ticker}) verisi alınamadı.`);
 
+    // Her evren için veri kapsama uyarısı (eksik semboller).
+    for (const cfg of universeConfigs) {
+      const missing = cfg.universe.filter((i) => !cfg.raw[i.key]);
+      if (missing.length)
+        warnings.push(
+          `${cfg.label}: ${missing.length}/${cfg.universe.length} varlık alınamadı (${missing
+            .map((i) => i.ticker)
+            .join(", ")}) — analiz mevcut varlıklarla yapıldı.`
+        );
+    }
+
     const result: AnalysisResult = {
       generatedAt: new Date().toISOString(),
       lookbackMonths: LOOKBACK_MONTHS,
