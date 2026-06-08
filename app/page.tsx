@@ -1839,6 +1839,107 @@ function CrossUniverseComparison({ data }: { data: AnalysisResult }) {
   );
 }
 
+function DrawdownEpisodes({ bt, label }: { bt: BacktestResult; label: string }) {
+  const curve = bt.equityCurves.find((c) => c.highlight) ?? bt.equityCurves[0];
+  const g = curve?.growth;
+  const dates = bt.dates;
+  if (!g || g.length < 3) return null;
+
+  type Cur = {
+    peakIdx: number;
+    peakVal: number;
+    troughIdx: number;
+    troughVal: number;
+    recIdx: number | null;
+  };
+  const eps: Cur[] = [];
+  let peak = g[0];
+  let peakIdx = 0;
+  let cur: Cur | null = null;
+  for (let i = 1; i < g.length; i++) {
+    if (g[i] >= peak) {
+      if (cur) {
+        cur.recIdx = i;
+        eps.push(cur);
+        cur = null;
+      }
+      peak = g[i];
+      peakIdx = i;
+    } else if (!cur) {
+      cur = { peakIdx, peakVal: peak, troughIdx: i, troughVal: g[i], recIdx: null };
+    } else if (g[i] < cur.troughVal) {
+      cur.troughIdx = i;
+      cur.troughVal = g[i];
+    }
+  }
+  if (cur) eps.push(cur);
+
+  const ym = (i: number) => dates[i]?.slice(0, 7) ?? "—";
+  const rows = eps
+    .map((e) => ({
+      depth: e.troughVal / e.peakVal - 1,
+      peak: ym(e.peakIdx),
+      trough: ym(e.troughIdx),
+      rec: e.recIdx != null ? ym(e.recIdx) : null,
+      ddM: e.troughIdx - e.peakIdx,
+      recM: e.recIdx != null ? e.recIdx - e.troughIdx : null,
+    }))
+    .sort((a, b) => a.depth - b.depth)
+    .slice(0, 5);
+  if (!rows.length) return null;
+
+  return (
+    <>
+      <div className="section-label">
+        {label} — En Kötü 5 Drawdown Epizodu (derinlik · süre · toparlanma)
+      </div>
+      <div className="table-scroll">
+        <table className="metrics">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Derinlik</th>
+              <th className="left">Tepe</th>
+              <th className="left">Dip</th>
+              <th className="left">Toparlanma</th>
+              <th>Düşüş (ay)</th>
+              <th>Toparlanma (ay)</th>
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map((r, i) => (
+              <tr key={i} className={i === 0 ? "row-hl" : ""}>
+                <td className="rank">{i + 1}</td>
+                <td className="neg strong">{pct(r.depth)}</td>
+                <td className="left period-cell">{r.peak}</td>
+                <td className="left period-cell">{r.trough}</td>
+                <td className="left period-cell">
+                  {r.rec ?? (
+                    <span className="neg">sürüyor</span>
+                  )}
+                </td>
+                <td>{r.ddM}</td>
+                <td>
+                  {r.recM != null ? (
+                    r.recM
+                  ) : (
+                    <span className="neg">—</span>
+                  )}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      <p className="table-note">
+        Her epizod: yeni zirveden başlayıp dibe inen ve (varsa) eski zirveye dönen
+        kayıp dönemi. Düşüş süresi = tepe→dip, toparlanma süresi = dip→eski zirve.
+        &quot;Sürüyor&quot; = henüz toparlanmamış aktif drawdown.
+      </p>
+    </>
+  );
+}
+
 function CompositeStance({ data }: { data: AnalysisResult }) {
   const total = 1 + data.universes.length;
   const invested: string[] = [];
@@ -2550,6 +2651,7 @@ export default function Home() {
               <CompositeStance data={data} />
               <EquityChart bt={data.composite} />
               <UnderwaterChart bt={data.composite} label="Bileşik" />
+              <DrawdownEpisodes bt={data.composite} label="Bileşik" />
               <MonthlyHeatmap bt={data.composite} label="Bileşik" />
               <MetricsTable rows={data.composite.strategies} />
               <p className="table-note">{data.composite.note}</p>
