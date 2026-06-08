@@ -1,6 +1,12 @@
 "use client";
 
-import { useCallback, useEffect, useState, type ReactNode } from "react";
+import {
+  Component,
+  useCallback,
+  useEffect,
+  useState,
+  type ReactNode,
+} from "react";
 import type {
   AnalysisResult,
   AssetMethodResult,
@@ -1448,6 +1454,29 @@ function CollapsibleSection({
   );
 }
 
+class ErrorBoundary extends Component<
+  { children: ReactNode; label?: string },
+  { hasError: boolean }
+> {
+  constructor(props: { children: ReactNode; label?: string }) {
+    super(props);
+    this.state = { hasError: false };
+  }
+  static getDerivedStateFromError() {
+    return { hasError: true };
+  }
+  render() {
+    if (this.state.hasError)
+      return (
+        <div className="error-box">
+          {this.props.label ?? "Bu bölüm"} gösterilemedi (beklenmedik veri).
+          Diğer bölümler etkilenmedi; <b>Yenile</b>&apos;yi deneyebilirsin.
+        </div>
+      );
+    return this.props.children;
+  }
+}
+
 function BackToTop() {
   const [show, setShow] = useState(false);
   useEffect(() => {
@@ -2402,7 +2431,7 @@ function BacktestStudio() {
 function UniverseSection({ u }: { u: UniverseBundle }) {
   const bt = u.backtest;
   return (
-    <>
+    <ErrorBoundary label={`${u.label} bölümü`}>
       <div className="universe-divider">
         <span>
           {u.emoji} {u.label}
@@ -2472,7 +2501,7 @@ function UniverseSection({ u }: { u: UniverseBundle }) {
       )}
 
       {u.earnings && <EarningsMomentumPanel data={u.earnings} />}
-    </>
+    </ErrorBoundary>
   );
 }
 
@@ -2731,16 +2760,21 @@ export default function Home() {
           <MethodologyPanel />
 
           {/* Etkileşimli backtest stüdyosu */}
-          <BacktestStudio />
+          <ErrorBoundary label="Backtest Stüdyosu">
+            <BacktestStudio />
+          </ErrorBoundary>
 
           {/* Strateji karşılaştırma tablosu */}
           <StrategyLeaderboard data={data} />
 
           {/* Ortak-dönem equity curve overlay (adil kıyas) */}
-          <CrossUniverseComparison data={data} />
+          <ErrorBoundary label="Ortak-dönem karşılaştırması">
+            <CrossUniverseComparison data={data} />
+          </ErrorBoundary>
 
           {/* Dual Momentum Bileşik — 4 evrenin eşit-ağırlık meta-stratejisi */}
           {data.composite && (
+            <ErrorBoundary label="Bileşik bölümü">
             <CollapsibleSection
               defaultOpen
               title={
@@ -2770,6 +2804,7 @@ export default function Home() {
               <DiversificationStat bt={data.composite} />
               <CorrelationMatrix bt={data.composite} />
             </CollapsibleSection>
+            </ErrorBoundary>
           )}
 
           {/* Evren sekmeleri (ETF + dinamik evrenler) */}
