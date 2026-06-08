@@ -800,6 +800,57 @@ table.heatmap .lb-tbill td {
   padding-left: 10px;
   margin-bottom: 10px;
 }
+.signals-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 12px;
+}
+.sig-card {
+  background: var(--card);
+  border: 1px solid var(--border-soft);
+  border-radius: 12px;
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+}
+.sig-head {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-dim);
+}
+.sig-picks {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  min-height: 26px;
+}
+.sig-picks .pick {
+  background: rgba(34, 211, 166, 0.14);
+  color: var(--success, #22d3a6);
+  border: 1px solid rgba(34, 211, 166, 0.35);
+  border-radius: 7px;
+  padding: 3px 9px;
+  font-size: 12.5px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+.sig-picks .pick-cash {
+  background: rgba(148, 163, 184, 0.14);
+  color: var(--text-dim);
+  border-color: var(--border-soft);
+}
+.sig-foot {
+  font-size: 11px;
+  color: var(--text-faint);
+  margin-top: auto;
+}
+.period-cell {
+  font-size: 11px;
+  color: var(--text-faint);
+  white-space: nowrap;
+}
+
 .studio {
   background: var(--card);
   border: 1px solid var(--border);

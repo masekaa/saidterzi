@@ -1426,6 +1426,144 @@ function MethodsSection({ methods }: { methods: MethodResult[] }) {
   );
 }
 
+function ConsolidatedSignals({ data }: { data: AnalysisResult }) {
+  const gem = data.gem;
+  const etfCash = gem.positionKey === "cash";
+  return (
+    <>
+      <div className="section-label">
+        Bu Ayın Sinyalleri — tüm evrenlerde güncel pozisyonlar
+      </div>
+      <div className="signals-grid">
+        <div className="sig-card">
+          <div className="sig-head">📊 ETF (GEM)</div>
+          <div className="sig-picks">
+            <span className={`pick ${etfCash ? "pick-cash" : ""}`}>
+              {gem.positionName}
+            </span>
+          </div>
+          <div className="sig-foot">
+            {etfCash ? "Riskten kaç (nakit)" : "Hissede kal"}
+          </div>
+        </div>
+        {data.universes.map((u) => {
+          const picks = u.momentum.stocks.filter((s) => s.selected);
+          return (
+            <div className="sig-card" key={u.id}>
+              <div className="sig-head">
+                {u.emoji} {u.label}
+              </div>
+              <div className="sig-picks">
+                {picks.length ? (
+                  picks.map((p) => (
+                    <span className="pick" key={p.key} title={p.name}>
+                      {p.ticker}
+                    </span>
+                  ))
+                ) : (
+                  <span className="pick pick-cash">Nakit</span>
+                )}
+              </div>
+              <div className="sig-foot">
+                {picks.length
+                  ? `Top-${u.momentum.topN} momentum seçimi`
+                  : "Hiçbiri T-Bill'i geçemedi"}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+      <p className="table-note">
+        Her evren için bu ay sonu itibarıyla dual momentum (göreceli + mutlak)
+        seçimi. Backtest stüdyosundan farklı look-back denemek için yukarıyı
+        kullan; bu kartlar kitap-standardı 12 aya dayanır.
+      </p>
+    </>
+  );
+}
+
+function StrategyLeaderboard({ data }: { data: AnalysisResult }) {
+  type Row = {
+    name: string;
+    emoji: string;
+    m: StrategyMetrics;
+    period: string;
+    months: number;
+  };
+  const rows: Row[] = [];
+  if (data.backtest?.strategies[0]) {
+    rows.push({
+      name: data.backtest.strategies[0].name,
+      emoji: "📊",
+      m: data.backtest.strategies[0],
+      period: `${data.backtest.startDate} → ${data.backtest.endDate}`,
+      months: data.backtest.months,
+    });
+  }
+  for (const u of data.universes) {
+    if (u.backtest?.strategies[0]) {
+      rows.push({
+        name: u.backtest.strategies[0].name,
+        emoji: u.emoji,
+        m: u.backtest.strategies[0],
+        period: `${u.backtest.startDate} → ${u.backtest.endDate}`,
+        months: u.backtest.months,
+      });
+    }
+  }
+  if (rows.length < 2) return null;
+  rows.sort((a, b) => (b.m.sharpe ?? -99) - (a.m.sharpe ?? -99));
+
+  return (
+    <>
+      <div className="section-label">
+        Strateji Karşılaştırma — tüm evrenlerin momentum stratejileri (Sharpe&apos;a
+        göre sıralı)
+      </div>
+      <div className="table-scroll">
+        <table className="metrics">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th className="left">Strateji</th>
+              <th>CAGR</th>
+              <th>Sharpe</th>
+              <th>Sortino</th>
+              <th>Max DD</th>
+              <th>Toplam Getiri</th>
+              <th className="left">Dönem</th>
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map((r, i) => (
+              <tr key={i} className={i === 0 ? "row-hl" : ""}>
+                <td className="rank">{i + 1}</td>
+                <td className="left">
+                  {r.emoji} {r.name}
+                </td>
+                <td>{pct(r.m.cagr)}</td>
+                <td className="strong">{num(r.m.sharpe)}</td>
+                <td>{num(r.m.sortino)}</td>
+                <td className="neg">{pct(r.m.maxDrawdown)}</td>
+                <td>{pct(r.m.totalReturn, 0)}</td>
+                <td className="left period-cell">
+                  {r.period} ({r.months} ay)
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      <p className="table-note">
+        ⚠️ Dönemler farklı (her evrenin ortak veri geçmişi farklı başlar) — Sharpe
+        gibi risk-ayarlı oranlar daha adil kıyas sağlar, ama mutlak getiriler
+        doğrudan karşılaştırılamaz. Her strateji kendi evreninin eşit-ağırlık
+        al-tut benchmark'ını ilgili sekmede görebilirsin.
+      </p>
+    </>
+  );
+}
+
 const STUDIO_LB = [1, 3, 6, 9, 12, 18, 24];
 const STUDIO_TOPN = [1, 2, 3, 5, 8, 10];
 const STUDIO_UNIVERSES = [
@@ -1841,11 +1979,17 @@ export default function Home() {
             <p className="hero-rationale">{gem.rationale}</p>
           </div>
 
+          {/* Bu ayın tüm evren sinyalleri */}
+          <ConsolidatedSignals data={data} />
+
           {/* Metodoloji açıklaması */}
           <MethodologyPanel />
 
           {/* Etkileşimli backtest stüdyosu */}
           <BacktestStudio />
+
+          {/* Strateji karşılaştırma tablosu */}
+          <StrategyLeaderboard data={data} />
 
           {/* Evren sekmeleri (ETF + dinamik evrenler) */}
           <div
