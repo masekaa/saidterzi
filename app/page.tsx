@@ -1736,7 +1736,9 @@ function CrossUniverseComparison({ data }: { data: AnalysisResult }) {
 }
 
 function CorrelationMatrix({ bt }: { bt: BacktestResult }) {
-  const sleeves = bt.equityCurves.filter((c) => !c.highlight);
+  const sleeves = bt.equityCurves.filter(
+    (c) => !c.highlight && !c.name.includes("Bileşik")
+  );
   if (sleeves.length < 2) return null;
   const rets = sleeves.map((c) => {
     const r: number[] = [];

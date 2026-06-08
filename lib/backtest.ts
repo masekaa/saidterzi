@@ -392,8 +392,20 @@ export function buildComposite(
     return s / sleeveRets.length;
   });
 
+  // Risk-parity (ters-volatilite) bileşik: w_k = (1/σ_k)/Σ(1/σ_j), statik.
+  const vols = sleeveRets.map((sr) => annualVolatility(sr) ?? 0);
+  const invVols = vols.map((v) => (v > 0 ? 1 / v : 0));
+  const totalInv = invVols.reduce((s, v) => s + v, 0);
+  const rpWeights = invVols.map((v) => (totalInv > 0 ? v / totalInv : 0));
+  const compRetsRP = common.map((_, i) => {
+    let s = 0;
+    for (let k = 0; k < sleeveRets.length; k++) s += rpWeights[k] * sleeveRets[k][i];
+    return s;
+  });
+
   const strategies: StrategyMetrics[] = [
     buildMetrics("Dual Momentum Bileşik (eşit ağırlık)", compRets, rf),
+    buildMetrics("Dual Momentum Bileşik (risk-parity)", compRetsRP, rf),
     ...valid.map((s, k) => buildMetrics(s.name, sleeveRets[k], rf)),
   ];
 
@@ -413,6 +425,7 @@ export function buildComposite(
       growth: toGrowth(compRets),
       highlight: true,
     },
+    { name: "Bileşik (risk-parity)", growth: toGrowth(compRetsRP) },
     ...valid.map((s, k) => ({ name: s.name, growth: toGrowth(sleeveRets[k]) })),
   ];
 
