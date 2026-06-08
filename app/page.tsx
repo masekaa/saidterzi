@@ -1985,7 +1985,12 @@ function BacktestStudio() {
           </div>
           <EquityChart bt={bt} />
           <UnderwaterChart bt={bt} label={res?.label ?? "Strateji"} />
+          <RollingReturnsChart bt={bt} label={res?.label ?? "Strateji"} />
+          <MonthlyHeatmap bt={bt} label={res?.label ?? "Strateji"} />
+          <BoxPlot bt={bt} />
           <MetricsTable rows={bt.strategies} />
+          <AdvancedMetricsTable rows={bt.strategies} />
+          <p className="table-note">{bt.note}</p>
         </>
       )}
       {!busy && !err && !bt && (
