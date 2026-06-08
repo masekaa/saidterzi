@@ -2609,6 +2609,31 @@ function UniverseSection({ u }: { u: UniverseBundle }) {
         </small>
       </div>
 
+      {bt?.strategies[0] && (
+        <div className="ustat">
+          <div className="ustat-item">
+            <span>CAGR</span>
+            <b>{pct(bt.strategies[0].cagr)}</b>
+          </div>
+          <div className="ustat-item">
+            <span>Sharpe</span>
+            <b className="strong">{num(bt.strategies[0].sharpe)}</b>
+          </div>
+          <div className="ustat-item">
+            <span>Sortino</span>
+            <b>{num(bt.strategies[0].sortino)}</b>
+          </div>
+          <div className="ustat-item">
+            <span>Max DD</span>
+            <b className="neg">{pct(bt.strategies[0].maxDrawdown)}</b>
+          </div>
+          <div className="ustat-item">
+            <span>Dönem</span>
+            <b>{bt.months} ay</b>
+          </div>
+        </div>
+      )}
+
       {u.momentum && <StockMomentumBoard data={u.momentum} />}
 
       {u.signals && (
