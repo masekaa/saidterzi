@@ -2330,6 +2330,7 @@ function UniverseSection({ u }: { u: UniverseBundle }) {
           <EquityChart bt={bt} />
           <PositionTimeline bt={bt} label={u.positionLabel} />
           <UnderwaterChart bt={bt} label={u.positionLabel} />
+          <DrawdownEpisodes bt={bt} label={u.positionLabel} />
           <MonthlyHeatmap bt={bt} label={u.positionLabel} />
           <RiskReturnChart rows={bt.strategies} />
           <RollingReturnsChart bt={bt} label={u.positionLabel} />
@@ -2705,6 +2706,7 @@ export default function Home() {
               <EquityChart bt={bt} />
               <PositionTimeline bt={bt} />
               <UnderwaterChart bt={bt} />
+              <DrawdownEpisodes bt={bt} label="GEM" />
               <MonthlyHeatmap bt={bt} />
               <RiskReturnChart rows={bt.strategies} />
               <RollingReturnsChart bt={bt} />
