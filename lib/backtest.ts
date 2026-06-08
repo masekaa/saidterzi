@@ -339,3 +339,95 @@ export function runStockBacktest(
     }.`,
   };
 }
+
+// ===========================================================================
+//  DUAL MOMENTUM BİLEŞİK (COMPOSITE)
+//  4 evrenin momentum stratejisini ortak dönemde eşit-ağırlık birleştirir.
+//  İmperfect korelasyonlu sleeve'ler → çeşitlendirme (daha düşük oynaklık).
+//  BacktestResult şeklinde döner; tüm grafikler yeniden kullanılır.
+// ===========================================================================
+export function buildComposite(
+  sleeves: { name: string; bt: BacktestResult | null }[],
+  tbill: RawSeries
+): BacktestResult | null {
+  const valid = sleeves.filter((s) => s.bt);
+  if (valid.length < 2) return null;
+
+  // Her sleeve'in aylık getirisi: ret_i = growth[i]/growth[i-1]-1, ay = dates[i]
+  const retMaps = valid.map((s) => {
+    const bt = s.bt as BacktestResult;
+    const curve =
+      bt.equityCurves.find((c) => c.highlight) ?? bt.equityCurves[0];
+    const m = new Map<string, number>();
+    if (curve)
+      for (let i = 1; i < curve.growth.length && i < bt.dates.length; i++)
+        m.set(
+          bt.dates[i].slice(0, 7),
+          curve.growth[i] / curve.growth[i - 1] - 1
+        );
+    return m;
+  });
+
+  const common = Array.from(retMaps[0].keys())
+    .filter((ym) => retMaps.every((m) => m.has(ym)))
+    .sort();
+  if (common.length < 13) return null;
+
+  // T-Bill aylık getiri (Sharpe/Sortino için rf)
+  const rfMap = new Map<string, number>();
+  for (let i = 1; i < tbill.series.length; i++) {
+    const prev = tbill.series[i - 1].close;
+    if (prev > 0)
+      rfMap.set(
+        tbill.series[i].date.slice(0, 7),
+        tbill.series[i].close / prev - 1
+      );
+  }
+  const rf = common.map((ym) => rfMap.get(ym) ?? 0);
+
+  const sleeveRets = retMaps.map((m) => common.map((ym) => m.get(ym) as number));
+  const compRets = common.map((_, i) => {
+    let s = 0;
+    for (const sr of sleeveRets) s += sr[i];
+    return s / sleeveRets.length;
+  });
+
+  const strategies: StrategyMetrics[] = [
+    buildMetrics("Dual Momentum Bileşik (eşit ağırlık)", compRets, rf),
+    ...valid.map((s, k) => buildMetrics(s.name, sleeveRets[k], rf)),
+  ];
+
+  const toGrowth = (rets: number[]): number[] => {
+    const g: number[] = [1];
+    let acc = 1;
+    for (const r of rets) {
+      acc *= 1 + r;
+      g.push(acc);
+    }
+    return g;
+  };
+  const dates = [common[0], ...common];
+  const equityCurves = [
+    {
+      name: "Dual Momentum Bileşik",
+      growth: toGrowth(compRets),
+      highlight: true,
+    },
+    ...valid.map((s, k) => ({ name: s.name, growth: toGrowth(sleeveRets[k]) })),
+  ];
+
+  return {
+    startDate: common[0],
+    endDate: common[common.length - 1],
+    months: compRets.length,
+    strategies,
+    dates,
+    equityCurves,
+    timeline: [],
+    note: `${valid.length} dual-momentum stratejisinin (${valid
+      .map((s) => s.name)
+      .join(
+        ", "
+      )}) eşit-ağırlık aylık bileşimi, ortak dönemde. İmperfect korelasyonlu sleeve'ler tek stratejiden daha düşük oynaklık hedefler (çeşitlendirme).`,
+  };
+}

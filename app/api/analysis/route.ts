@@ -26,7 +26,7 @@ import {
 } from "@/lib/methods";
 import { fetchFamaFrench3, alphaFromFactors } from "@/lib/factors";
 import { buildEarningsMomentum } from "@/lib/fundamentals";
-import { runBacktest, runStockBacktest } from "@/lib/backtest";
+import { runBacktest, runStockBacktest, buildComposite } from "@/lib/backtest";
 import { trailingReturn } from "@/lib/calc";
 import type {
   AnalysisResult,
@@ -248,6 +248,13 @@ export async function GET(req: Request) {
       methods,
       backtest,
       universes,
+      composite: buildComposite(
+        [
+          { name: "GEM (ETF)", bt: backtest },
+          ...universes.map((u) => ({ name: u.positionLabel, bt: u.backtest })),
+        ],
+        tbillRaw
+      ),
       warnings,
     };
 

@@ -213,6 +213,7 @@ export interface AnalysisResult {
   methods: MethodResult[]; // ETF tüm yöntemler (şeffaf)
   backtest: BacktestResult | null; // ETF GEM backtest
   universes: UniverseBundle[]; // ETF dışı evrenler (hisse, kripto, ...)
+  composite: BacktestResult | null; // 4 evrenin eşit-ağırlık bileşik stratejisi
   warnings: string[];
   fromCache?: boolean; // sonuç sunucu önbelleğinden mi geldi
 }

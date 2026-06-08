@@ -2184,6 +2184,31 @@ export default function Home() {
           {/* Ortak-dönem equity curve overlay (adil kıyas) */}
           <CrossUniverseComparison data={data} />
 
+          {/* Dual Momentum Bileşik — 4 evrenin eşit-ağırlık meta-stratejisi */}
+          {data.composite && (
+            <>
+              <div className="section-label">
+                🧩 Dual Momentum Bileşik — 4 evrenin eşit-ağırlık birleşimi (
+                {data.composite.startDate} → {data.composite.endDate},{" "}
+                {data.composite.months} ay)
+              </div>
+              <p className="chart-help" style={{ maxWidth: "80ch" }}>
+                GEM + Hisse + Kripto + Sektör momentum stratejilerini her ay{" "}
+                <b>eşit ağırlıkla</b> birleştiren çeşitlendirilmiş meta-strateji.
+                Sleeve&apos;ler imperfect korelasyonlu olduğundan bileşik
+                genelde tek bir sleeve&apos;den <b>daha yüksek Sharpe / daha
+                düşük drawdown</b> hedefler. Aşağıdaki equity curve&apos;de
+                bileşik (yeşil, kalın) sleeve&apos;lerle birlikte gösterilir.
+              </p>
+              <EquityChart bt={data.composite} />
+              <UnderwaterChart bt={data.composite} label="Bileşik" />
+              <MonthlyHeatmap bt={data.composite} label="Bileşik" />
+              <MetricsTable rows={data.composite.strategies} />
+              <p className="table-note">{data.composite.note}</p>
+              <AdvancedMetricsTable rows={data.composite.strategies} />
+            </>
+          )}
+
           {/* Evren sekmeleri (ETF + dinamik evrenler) */}
           <div
             className="view-tabs"
