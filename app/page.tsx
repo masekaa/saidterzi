@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState, type ReactNode } from "react";
 import type {
   AnalysisResult,
   AssetMethodResult,
@@ -1427,6 +1427,97 @@ function MethodsSection({ methods }: { methods: MethodResult[] }) {
   );
 }
 
+function KeyInsights({ data }: { data: AnalysisResult }) {
+  const insights: { icon: string; text: ReactNode }[] = [];
+
+  // 1) En yüksek Sharpe strateji
+  const strat: { name: string; emoji: string; sharpe: number }[] = [];
+  if (data.backtest?.strategies[0]?.sharpe != null)
+    strat.push({
+      name: "GEM",
+      emoji: "📊",
+      sharpe: data.backtest.strategies[0].sharpe,
+    });
+  for (const u of data.universes)
+    if (u.backtest?.strategies[0]?.sharpe != null)
+      strat.push({
+        name: u.positionLabel,
+        emoji: u.emoji,
+        sharpe: u.backtest.strategies[0].sharpe,
+      });
+  const best = strat.sort((a, b) => b.sharpe - a.sharpe)[0];
+  if (best)
+    insights.push({
+      icon: "🏆",
+      text: (
+        <>
+          En yüksek risk-ayarlı getiri:{" "}
+          <b>
+            {best.emoji} {best.name}
+          </b>{" "}
+          (Sharpe {best.sharpe.toFixed(2)}).
+        </>
+      ),
+    });
+
+  // 2) Bileşik performansı
+  if (data.composite?.equityCurves[0] && data.composite.strategies[0]) {
+    const g = data.composite.equityCurves[0].growth;
+    const mult = g[g.length - 1];
+    insights.push({
+      icon: "🧩",
+      text: (
+        <>
+          Eşit-ağırlık bileşik ortak dönemde ({data.composite.months} ay){" "}
+          <b>{mult.toFixed(1)}×</b> büyüdü, Sharpe{" "}
+          <b>{num(data.composite.strategies[0].sharpe)}</b> — tekil
+          sleeve&apos;lerden genelde daha dengeli.
+        </>
+      ),
+    });
+  }
+
+  // 3) Güncel savunma duruşu
+  const cashUnis = data.universes.filter(
+    (u) => u.momentum.stocks.filter((s) => s.selected).length === 0
+  );
+  const etfCash = data.gem.positionKey === "cash";
+  const totalCash = cashUnis.length + (etfCash ? 1 : 0);
+  const totalUni = data.universes.length + 1;
+  insights.push({
+    icon: totalCash > 0 ? "⚠️" : "✅",
+    text:
+      totalCash > 0 ? (
+        <>
+          <b>
+            {totalCash}/{totalUni}
+          </b>{" "}
+          evren şu an nakitte (mutlak momentum negatif) — savunmacı duruş.
+        </>
+      ) : (
+        <>
+          <b>Tüm evrenler yatırımda</b> — mutlak momentum her yerde pozitif, risk
+          iştahı açık.
+        </>
+      ),
+  });
+
+  if (!insights.length) return null;
+  return (
+    <div className="insights">
+      <div className="insights-title">⚡ Öne Çıkanlar</div>
+      <ul>
+        {insights.map((it, i) => (
+          <li key={i}>
+            <span className="ins-icon">{it.icon}</span>
+            {it.text}
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
 function ConsolidatedSignals({ data }: { data: AnalysisResult }) {
   const gem = data.gem;
   const etfCash = gem.positionKey === "cash";
@@ -2274,6 +2365,9 @@ export default function Home() {
             </div>
             <p className="hero-rationale">{gem.rationale}</p>
           </div>
+
+          {/* Otomatik içgörü özeti */}
+          <KeyInsights data={data} />
 
           {/* Bu ayın tüm evren sinyalleri */}
           <ConsolidatedSignals data={data} />
