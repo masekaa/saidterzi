@@ -1603,6 +1603,15 @@ function StrategyLeaderboard({ data }: { data: AnalysisResult }) {
       });
     }
   }
+  if (data.composite?.strategies[0]) {
+    rows.push({
+      name: data.composite.strategies[0].name,
+      emoji: "🧩",
+      m: data.composite.strategies[0],
+      period: `${data.composite.startDate} → ${data.composite.endDate}`,
+      months: data.composite.months,
+    });
+  }
   if (rows.length < 2) return null;
   rows.sort((a, b) => (b.m.sharpe ?? -99) - (a.m.sharpe ?? -99));
 
@@ -1679,6 +1688,7 @@ function CrossUniverseComparison({ data }: { data: AnalysisResult }) {
   };
   add("GEM (Dual Momentum)", "📊", data.backtest);
   for (const u of data.universes) add(u.positionLabel, u.emoji, u.backtest);
+  add("Bileşik (eşit ağırlık)", "🧩", data.composite);
   if (series.length < 2) return null;
 
   // Ortak ay aralığı (tüm serilerin kesişimi)
@@ -1698,7 +1708,9 @@ function CrossUniverseComparison({ data }: { data: AnalysisResult }) {
       growth,
       finalMult,
       cagr,
-      color: CURVE_COLORS[idx % CURVE_COLORS.length],
+      color: s.label.includes("Bileşik")
+        ? "#22d3a6"
+        : CURVE_COLORS[idx % CURVE_COLORS.length],
     };
   });
 
@@ -1800,8 +1812,8 @@ function CrossUniverseComparison({ data }: { data: AnalysisResult }) {
                 )
                 .join(" ")}
               className="equity-line"
-              stroke={l.color}
-              style={{ strokeWidth: 2 }}
+              stroke={l.label.includes("Bileşik") ? "#22d3a6" : l.color}
+              style={{ strokeWidth: l.label.includes("Bileşik") ? 3.5 : 2 }}
             />
           ))}
         </svg>
