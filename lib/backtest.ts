@@ -432,6 +432,34 @@ export function buildComposite(
     return s;
   });
 
+  // Tavanlı risk-parity: ters-vol başlar, hiçbir sleeve adil payın 2.5 katını
+  // (cap = 2.5/n) geçemez; aşan kısım kalan sleeve'lere oransal dağıtılır
+  // (iteratif). Ultra-düşük-vol sleeve'lerin (tahvil) blokta hâkim olmasını
+  // önler — eşit-ağırlık ile saf risk-parity arası dengeli orta yol.
+  const n = sleeveRets.length;
+  const cappedWeights = (() => {
+    const cap = 2.5 / n;
+    let w = totalInv > 0 ? invVols.map((v) => v / totalInv) : invVols.map(() => 1 / n);
+    for (let iter = 0; iter < 50; iter++) {
+      const over = w.map((x) => x > cap + 1e-9);
+      if (!over.some(Boolean)) break;
+      let excess = 0;
+      let uncSum = 0;
+      w.forEach((x, i) => {
+        if (over[i]) excess += x - cap;
+        else uncSum += x;
+      });
+      if (uncSum <= 1e-12) break;
+      w = w.map((x, i) => (over[i] ? cap : x + (x / uncSum) * excess));
+    }
+    return w;
+  })();
+  const compRetsRPCap = common.map((_, i) => {
+    let s = 0;
+    for (let k = 0; k < sleeveRets.length; k++) s += cappedWeights[k] * sleeveRets[k][i];
+    return s;
+  });
+
   // Pasif eşit-ağırlık al-tut: o ay veri olan sleeve benchmark'larının ortalaması.
   const benchRets = common.map((ym) => {
     let s = 0,
@@ -450,6 +478,7 @@ export function buildComposite(
   const strategies: StrategyMetrics[] = [
     buildMetrics("Dual Momentum Bileşik (eşit ağırlık)", compRets, rf),
     buildMetrics("Dual Momentum Bileşik (risk-parity)", compRetsRP, rf),
+    buildMetrics("Dual Momentum Bileşik (risk-parity tavanlı)", compRetsRPCap, rf),
     ...(hasBench
       ? [buildMetrics("Pasif Eşit-Ağırlık (Al-Tut)", benchRets, rf)]
       : []),
@@ -473,6 +502,7 @@ export function buildComposite(
       highlight: true,
     },
     { name: "Bileşik (risk-parity)", growth: toGrowth(compRetsRP) },
+    { name: "Bileşik (risk-parity tavanlı)", growth: toGrowth(compRetsRPCap) },
     ...(hasBench
       ? [{ name: "Pasif Eşit-Ağırlık (Al-Tut)", growth: toGrowth(benchRets) }]
       : []),
