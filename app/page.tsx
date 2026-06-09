@@ -1931,6 +1931,37 @@ function MomentumValueAdd({ data }: { data: AnalysisResult }) {
                 </tr>
               );
             })}
+            {(() => {
+              const avgC =
+                rows.reduce(
+                  (s, r) => s + ((r.mom.cagr ?? 0) - (r.bench.cagr ?? 0)),
+                  0
+                ) / rows.length;
+              const avgS =
+                rows.reduce(
+                  (s, r) => s + ((r.mom.sharpe ?? 0) - (r.bench.sharpe ?? 0)),
+                  0
+                ) / rows.length;
+              return (
+                <tr className="row-hl">
+                  <td className="left">
+                    <b>Ortalama ({rows.length} evren)</b>
+                  </td>
+                  <td>—</td>
+                  <td>—</td>
+                  <td className={avgC >= 0 ? "pos-cell strong" : "neg strong"}>
+                    {avgC >= 0 ? "+" : ""}
+                    {pct(avgC)}
+                  </td>
+                  <td>—</td>
+                  <td>—</td>
+                  <td className={avgS >= 0 ? "pos-cell strong" : "neg strong"}>
+                    {avgS >= 0 ? "+" : ""}
+                    {num(avgS)}
+                  </td>
+                </tr>
+              );
+            })()}
           </tbody>
         </table>
       </div>
