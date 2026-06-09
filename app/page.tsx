@@ -2830,6 +2830,7 @@ function BacktestStudio() {
               <button
                 key={u.id}
                 className={uni === u.id ? "on" : ""}
+                aria-pressed={uni === u.id}
                 onClick={() => setUni(u.id)}
               >
                 {u.label}
@@ -2844,6 +2845,7 @@ function BacktestStudio() {
               <button
                 key={v}
                 className={lb === v ? "on" : ""}
+                aria-pressed={lb === v}
                 onClick={() => setLb(v)}
               >
                 {v}
@@ -2859,6 +2861,7 @@ function BacktestStudio() {
                 key={v}
                 disabled={isEtf}
                 className={!isEtf && topN === v ? "on" : ""}
+                aria-pressed={!isEtf && topN === v}
                 onClick={() => setTopN(v)}
               >
                 {v}
@@ -2873,6 +2876,7 @@ function BacktestStudio() {
               <button
                 key={v}
                 className={cost === v ? "on" : ""}
+                aria-pressed={cost === v}
                 onClick={() => setCost(v)}
               >
                 {v}
