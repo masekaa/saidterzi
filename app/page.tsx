@@ -4506,6 +4506,8 @@ export default function Home() {
               <MetricsTable rows={data.composite.strategies} />
               <p className="table-note">{data.composite.note}</p>
               <AdvancedMetricsTable rows={data.composite.strategies} />
+              <CrisisPerformance bt={data.composite} label="Bileşik" />
+              <BootstrapRisk bt={data.composite} label="Bileşik" />
               <DiversificationStat bt={data.composite} />
               <CompositeAttribution bt={data.composite} />
               <RiskParityWeights bt={data.composite} />
