@@ -1209,6 +1209,11 @@ table.heatmap.corr td {
   gap: 10px;
   font-size: 12.5px;
 }
+.rpw-cap {
+  color: #f59e0b;
+  font-weight: 700;
+  cursor: help;
+}
 .rpw-name {
   color: var(--text);
   font-weight: 600;

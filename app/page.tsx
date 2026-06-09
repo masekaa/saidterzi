@@ -4008,6 +4008,9 @@ function RiskParityWeights({ bt }: { bt: BacktestResult }) {
   const top = rows[0];
   const effN = 1 / rows.reduce((s, r) => s + r.w * r.w, 0);
   const concentrated = top.w > 0.4;
+  // Tavanlı risk-parity bu eşiği (2.5/n) aşan sleeve'leri kırpar — işaretle.
+  const cap = 2.5 / rows.length;
+  const anyCapped = rows.some((r) => r.w > cap + 1e-9);
 
   return (
     <>
@@ -4020,6 +4023,16 @@ function RiskParityWeights({ bt }: { bt: BacktestResult }) {
             <div className="rpw-row" key={r.name}>
               <div className="rpw-name">
                 {r.name.replace(/\s*\(.*\)/, "")}
+                {r.w > cap + 1e-9 && (
+                  <span
+                    className="rpw-cap"
+                    title={`Tavanlı risk-parity varyantında %${(cap * 100).toFixed(
+                      0
+                    )} sınırına kırpılır`}
+                  >
+                    {" "}✂
+                  </span>
+                )}
               </div>
               <div className="rpw-bar">
                 <div
@@ -4039,6 +4052,13 @@ function RiskParityWeights({ bt }: { bt: BacktestResult }) {
           eşit-ağırlık bileşiğin kripto-baskınlığını giderir. <b>Etkin sleeve
           sayısı:</b> {effN.toFixed(1)} / {rows.length} (eşit dağılımda ={" "}
           {rows.length}; düşük = yoğunlaşmış).
+          {anyCapped && (
+            <>
+              {" "}
+              <b>✂</b> işaretli sleeve&apos;ler <b>tavanlı risk-parity</b>{" "}
+              varyantında %{(cap * 100).toFixed(0)} sınırına kırpılır.
+            </>
+          )}
         </p>
         {concentrated && (
           <p className="table-note neg">
