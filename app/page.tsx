@@ -990,8 +990,8 @@ function AdvancedMetricsTable({ rows }: { rows: StrategyMetrics[] }) {
   return (
     <>
       <div className="section-label">
-        Gelişmiş Risk Metrikleri (Sortino · çarpıklık · basıklık · CVaR ·
-        drawdown süreleri)
+        Gelişmiş Risk Metrikleri (Sortino · Calmar · çarpıklık · basıklık · CVaR
+        · drawdown süreleri)
       </div>
       <div className="table-scroll">
         <table className="metrics">
@@ -999,6 +999,7 @@ function AdvancedMetricsTable({ rows }: { rows: StrategyMetrics[] }) {
             <tr>
               <th className="left">Strateji</th>
               <th>Sortino</th>
+              <th>Calmar</th>
               <th>Çarpıklık</th>
               <th>Basıklık</th>
               <th>CVaR %5 (aylık)</th>
@@ -1007,10 +1008,18 @@ function AdvancedMetricsTable({ rows }: { rows: StrategyMetrics[] }) {
             </tr>
           </thead>
           <tbody>
-            {rows.map((s, i) => (
+            {rows.map((s, i) => {
+              const calmar =
+                s.cagr != null &&
+                s.maxDrawdown != null &&
+                s.maxDrawdown < 0
+                  ? s.cagr / Math.abs(s.maxDrawdown)
+                  : null;
+              return (
               <tr key={i} className={i === 0 ? "row-hl" : ""}>
                 <td className="left">{s.name}</td>
                 <td className="strong">{num(s.sortino)}</td>
+                <td>{num(calmar)}</td>
                 <td>{num(s.skewness)}</td>
                 <td>{num(s.kurtosis)}</td>
                 <td className="neg">{pct(s.cvar5)}</td>
@@ -1025,7 +1034,8 @@ function AdvancedMetricsTable({ rows }: { rows: StrategyMetrics[] }) {
                   )}
                 </td>
               </tr>
-            ))}
+              );
+            })}
           </tbody>
         </table>
       </div>
