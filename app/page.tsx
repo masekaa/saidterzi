@@ -2391,6 +2391,98 @@ function RollingVol({ bt, label }: { bt: BacktestResult; label: string }) {
   );
 }
 
+function RollingSharpe({ bt, label }: { bt: BacktestResult; label: string }) {
+  const curve = bt.equityCurves.find((c) => c.highlight) ?? bt.equityCurves[0];
+  const g = curve?.growth;
+  if (!g || g.length < 26) return null;
+  const rets = growthToRets(g);
+  const WIN = 12;
+  const vals: { i: number; v: number }[] = [];
+  for (let i = WIN; i <= rets.length; i++) {
+    const w = rets.slice(i - WIN, i);
+    const m = w.reduce((s, x) => s + x, 0) / WIN;
+    const variance = w.reduce((s, x) => s + (x - m) ** 2, 0) / (WIN - 1);
+    const sd = Math.sqrt(variance);
+    if (sd <= 0) continue;
+    // Yıllıklaştırılmış Sharpe (risksiz ≈ 0 varsayımı): (m·12) / (sd·√12).
+    vals.push({ i, v: (m * Math.sqrt(12)) / sd });
+  }
+  if (vals.length < 2) return null;
+
+  const W = 820;
+  const H = 200;
+  const padL = 46;
+  const padR = 14;
+  const padT = 14;
+  const padB = 26;
+  const innerW = W - padL - padR;
+  const innerH = H - padT - padB;
+  const n = g.length;
+  const lo = Math.min(0, ...vals.map((p) => p.v));
+  const hi = Math.max(0, ...vals.map((p) => p.v));
+  const span = hi - lo || 1;
+  const X = (i: number) => padL + (innerW * i) / Math.max(1, n - 1);
+  const Y = (v: number) => padT + innerH * (1 - (v - lo) / span);
+  const line = vals
+    .map((p, k) => `${k === 0 ? "M" : "L"}${X(p.i).toFixed(1)},${Y(p.v).toFixed(1)}`)
+    .join(" ");
+
+  // Y eksen tikleri (0.5 adımlarla, 0 dahil)
+  const yTicks: number[] = [];
+  const tickStep = 0.5;
+  const tLo = Math.ceil(lo / tickStep) * tickStep;
+  for (let v = tLo; v <= hi + 1e-9; v += tickStep) yTicks.push(Number(v.toFixed(2)));
+
+  const xTicks: { i: number; label: string }[] = [];
+  let ly = "";
+  bt.dates.forEach((d, i) => {
+    const y = d.slice(0, 4);
+    if (y !== ly) {
+      xTicks.push({ i, label: y });
+      ly = y;
+    }
+  });
+  const step = Math.ceil(xTicks.length / 10);
+  const shown = xTicks.filter((_, idx) => idx % step === 0);
+  const last = vals[vals.length - 1].v;
+
+  return (
+    <div className="chart-card">
+      <div className="chart-title">
+        {label} 12-Ay Rolling Sharpe — risk-ayarlı getirinin zaman içindeki seyri
+      </div>
+      <div className="chart-help">
+        Her nokta o aydan geriye 12 ayın yıllıklaştırılmış Sharpe oranı (risksiz ≈ 0).
+        Sıfır çizgisinin üstü = pozitif risk-ayarlı getiri; uzun süre &gt; 1 olan
+        platolar güçlü rejimleri, sıfır altı dönemler kayıp rejimlerini gösterir.
+        Son 12 ay: <b>{last.toFixed(2)}</b>.
+      </div>
+      <svg className="equity-svg" viewBox={`0 0 ${W} ${H}`} role="img" aria-label="Finansal analiz grafiği; açıklama hemen üstteki başlık ve metinde">
+        {yTicks.map((v, i) => (
+          <g key={i}>
+            <line
+              x1={padL}
+              x2={W - padR}
+              y1={Y(v)}
+              y2={Y(v)}
+              className={Math.abs(v) < 1e-9 ? "grid-line zero" : "grid-line"}
+            />
+            <text x={padL - 8} y={Y(v) + 3} className="axis-label" textAnchor="end">
+              {v.toFixed(1)}
+            </text>
+          </g>
+        ))}
+        <path d={line} className="equity-line" stroke="#22d3ee" style={{ strokeWidth: 1.8 }} />
+        {shown.map((t, idx) => (
+          <text key={idx} x={X(t.i)} y={H - 8} className="axis-label" textAnchor="middle">
+            {t.label}
+          </text>
+        ))}
+      </svg>
+    </div>
+  );
+}
+
 function Seasonality({ bt, label }: { bt: BacktestResult; label: string }) {
   const curve = bt.equityCurves.find((c) => c.highlight) ?? bt.equityCurves[0];
   const g = curve?.growth;
@@ -3241,6 +3333,7 @@ function BacktestCharts({
       <RiskReturnChart rows={bt.strategies} />
       <RollingReturnsChart bt={bt} label={label} />
       <RollingVol bt={bt} label={label} />
+      <RollingSharpe bt={bt} label={label} />
       <RollingRelative bt={bt} label={label} />
       <ScatterGemVsBench bt={bt} label={label} />
       <CaptureRatios bt={bt} />
