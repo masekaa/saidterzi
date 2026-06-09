@@ -1319,6 +1319,15 @@ table.heatmap.corr td {
   color: var(--text-dim);
   font-size: 14px;
 }
+.studio-dim {
+  opacity: 0.55;
+  transition: opacity 0.15s;
+  pointer-events: none;
+}
+.studio-updating {
+  color: var(--accent);
+  font-weight: 600;
+}
 
 .view-tabs {
   position: sticky;

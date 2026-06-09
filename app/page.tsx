@@ -3085,20 +3085,21 @@ function BacktestStudio() {
         </div>
       </div>
 
-      {busy && (
+      {busy && !res && (
         <div className="studio-state">
           <div className="spinner" />
           Backtest hesaplanıyor…
         </div>
       )}
       {err && !busy && <div className="error-box">{err}</div>}
-      {!busy && !err && bt && (
-        <>
+      {!err && bt && (
+        <div className={busy ? "studio-dim" : ""}>
           <div className="section-label">
             {res?.label} — look-back {res?.lookback} ay
             {!isEtf ? `, top-${res?.topN}` : ""}
             {res && res.cost > 0 ? `, maliyet ${res.cost}bps` : ""} (
             {bt.startDate} → {bt.endDate}, {bt.months} ay)
+            {busy && <span className="studio-updating"> · ⟳ güncelleniyor…</span>}
           </div>
           {(() => {
             const mom = bt.strategies[0];
@@ -3130,9 +3131,9 @@ function BacktestStudio() {
             label={res?.label ?? "Strateji"}
             investedKey={res && res.universe !== "etf" ? res.universe : undefined}
           />
-        </>
+        </div>
       )}
-      {!busy && !err && !bt && (
+      {!busy && !err && !bt && res && (
         <div className="studio-state">
           Bu evren/parametrelerle backtest üretilemedi (yetersiz ortak geçmiş
           olabilir).
