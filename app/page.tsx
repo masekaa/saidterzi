@@ -29,6 +29,14 @@ const CURVE_COLORS = [
   "#c084fc",
   "#94a3b8",
   "#f472b6",
+  // 8 evren + GEM + bileşik aynı grafikte çizilebildiğinden ≥10 ayrık renk
+  // gerekir; aksi halde renkler tekrarlayıp evrenler karışır.
+  "#22d3ee",
+  "#a3e635",
+  "#fb7185",
+  "#818cf8",
+  "#fcd34d",
+  "#e879f9",
 ];
 
 // Pozisyon bandı için varlık etiket + renk haritası (anahtar -> {label,color})
