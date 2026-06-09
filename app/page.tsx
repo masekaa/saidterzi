@@ -2073,12 +2073,54 @@ function StrategyLeaderboard({ data }: { data: AnalysisResult }) {
   );
 }
 
+// Strateji−benchmark aylık fark serisinin t-istatistiği: üstünlük şanstan
+// ayırt edilebilir mi? t = ortalama / (sd/√n). |t|>1.96 ≈ %95 anlamlılık.
+function excessTStat(
+  bt: BacktestResult | null
+): { t: number; meanMonthly: number; n: number } | null {
+  if (!bt) return null;
+  const strat = bt.equityCurves.find((c) => c.highlight) ?? bt.equityCurves[0];
+  const bench =
+    bt.equityCurves.find(
+      (c) => !c.highlight && /Eşit Ağırlık|Al-Tut|Buy.?Hold|SPY|ACWI/i.test(c.name)
+    ) ?? bt.equityCurves.find((c) => !c.highlight);
+  if (!strat || !bench) return null;
+  const sMap = new Map<string, number>();
+  for (let i = 1; i < strat.growth.length && i < bt.dates.length; i++)
+    sMap.set(bt.dates[i].slice(0, 7), strat.growth[i] / strat.growth[i - 1] - 1);
+  const bMap = new Map<string, number>();
+  for (let i = 1; i < bench.growth.length && i < bt.dates.length; i++)
+    bMap.set(bt.dates[i].slice(0, 7), bench.growth[i] / bench.growth[i - 1] - 1);
+  const diffs: number[] = [];
+  for (const [ym, sr] of sMap) {
+    const br = bMap.get(ym);
+    if (br != null) diffs.push(sr - br);
+  }
+  const n = diffs.length;
+  if (n < 13) return null;
+  const mean = diffs.reduce((a, b) => a + b, 0) / n;
+  const variance = diffs.reduce((a, b) => a + (b - mean) ** 2, 0) / (n - 1);
+  const sd = Math.sqrt(variance);
+  if (sd <= 0) return null;
+  return { t: mean / (sd / Math.sqrt(n)), meanMonthly: mean, n };
+}
+
+// |t|'ye göre anlamlılık işareti (iki-yönlü)
+function sigMark(t: number): string {
+  const a = Math.abs(t);
+  if (a >= 2.576) return "✓✓"; // %99
+  if (a >= 1.96) return "✓"; // %95
+  if (a >= 1.645) return "~"; // %90
+  return "·";
+}
+
 function MomentumValueAdd({ data }: { data: AnalysisResult }) {
   type Row = {
     label: string;
     emoji: string;
     mom: StrategyMetrics;
     bench: StrategyMetrics;
+    tstat: number | null;
   };
   const rows: Row[] = [];
   const add = (label: string, emoji: string, bt: BacktestResult | null) => {
@@ -2087,7 +2129,8 @@ function MomentumValueAdd({ data }: { data: AnalysisResult }) {
     const bench =
       bt.strategies.find((s) => s.name.includes("Eşit Ağırlık")) ??
       bt.strategies[bt.strategies.length - 1];
-    if (mom && bench) rows.push({ label, emoji, mom, bench });
+    if (mom && bench)
+      rows.push({ label, emoji, mom, bench, tstat: excessTStat(bt)?.t ?? null });
   };
   add("ETF (GEM)", "📊", data.backtest);
   for (const u of data.universes) add(u.label, u.emoji, u.backtest);
@@ -2114,6 +2157,7 @@ function MomentumValueAdd({ data }: { data: AnalysisResult }) {
               <th>Momentum Sharpe</th>
               <th>Al-Tut Sharpe</th>
               <th>Sharpe Farkı</th>
+              <th>Aylık Fark t-stat</th>
             </tr>
           </thead>
           <tbody>
@@ -2136,6 +2180,26 @@ function MomentumValueAdd({ data }: { data: AnalysisResult }) {
                   <td className={dS >= 0 ? "pos-cell strong" : "neg strong"}>
                     {dS >= 0 ? "+" : ""}
                     {num(dS)}
+                  </td>
+                  <td
+                    className={
+                      r.tstat == null
+                        ? ""
+                        : r.tstat >= 1.645
+                        ? "pos-cell"
+                        : r.tstat <= -1.645
+                        ? "neg"
+                        : ""
+                    }
+                    title={
+                      r.tstat == null
+                        ? "Yetersiz veri"
+                        : `t=${r.tstat.toFixed(2)} — |t|>1.96 ≈ %95, >2.58 ≈ %99 anlamlılık`
+                    }
+                  >
+                    {r.tstat == null
+                      ? "—"
+                      : `${r.tstat.toFixed(2)} ${sigMark(r.tstat)}`}
                   </td>
                 </tr>
               );
@@ -2168,6 +2232,17 @@ function MomentumValueAdd({ data }: { data: AnalysisResult }) {
                     {avgS >= 0 ? "+" : ""}
                     {num(avgS)}
                   </td>
+                  {(() => {
+                    const sig = rows.filter(
+                      (r) => r.tstat != null && Math.abs(r.tstat) >= 1.96
+                    ).length;
+                    const tot = rows.filter((r) => r.tstat != null).length;
+                    return (
+                      <td className="strong" title="%95 düzeyinde anlamlı evren sayısı">
+                        {sig}/{tot} anlamlı
+                      </td>
+                    );
+                  })()}
                 </tr>
               );
             })()}
@@ -2179,7 +2254,12 @@ function MomentumValueAdd({ data }: { data: AnalysisResult }) {
         iyi risk-ayarlı getiri. Şu an <b>{wins}/{rows.length}</b> evrende momentum
         al-tut&apos;u CAGR&apos;da geçiyor; <b>Sharpe farkı</b> (pozitif = momentum
         kazanıyor) risk-ayarlı katma değeri gösterir — düşüş korumasının asıl
-        faydası burada görülür.
+        faydası burada görülür. <b>Aylık Fark t-stat:</b> aylık (momentum −
+        al-tut) getiri farkının t-istatistiği — üstünlük sıfırdan istatistiksel
+        olarak ayırt edilebiliyor mu? <b>✓</b> = %95, <b>✓✓</b> = %99, <b>~</b> =
+        %90, <b>·</b> = anlamsız. Not: aylık getiriler oto-korelasyonlu olabilir,
+        bu yüzden basit t-stat anlamlılığı bir miktar abartabilir (Newey-West daha
+        muhafazakâr olurdu); yön ve büyüklük göstergesi olarak yorumla.
       </p>
     </>
   );
