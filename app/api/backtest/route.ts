@@ -16,6 +16,7 @@ import {
   type Instrument,
 } from "@/lib/universe";
 import { runBacktest, runStockBacktest } from "@/lib/backtest";
+import { settledLimit } from "@/lib/concurrency";
 import type { BacktestResult, RawSeries } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
@@ -72,8 +73,8 @@ const CACHE = new Map<string, { at: number; data: unknown }>();
 const TTL = 10 * 60 * 1000;
 
 async function fetchMap(list: Instrument[]) {
-  const settled = await Promise.allSettled(
-    list.map((i) => fetchMonthlySeries(i.ticker, "max"))
+  const settled = await settledLimit(list, 12, (i) =>
+    fetchMonthlySeries(i.ticker, "max")
   );
   const m: Record<string, RawSeries> = {};
   list.forEach((i, idx) => {

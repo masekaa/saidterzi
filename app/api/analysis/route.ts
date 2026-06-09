@@ -3,6 +3,7 @@
 
 import { NextResponse } from "next/server";
 import { fetchMonthlySeries } from "@/lib/yahoo";
+import { settledLimit } from "@/lib/concurrency";
 import {
   CORE_ASSETS,
   TBILL,
@@ -50,32 +51,6 @@ export const maxDuration = 60;
 // Yahoo rate-limit riskini ve yükleme süresini ciddi azaltır. ?refresh=1 atlar.
 let CACHE: { at: number; result: AnalysisResult } | null = null;
 const CACHE_TTL_MS = 10 * 60 * 1000;
-
-// Eşzamanlılık-sınırlı allSettled: 7 evren ile ~73 ticker tek seferde çekilirse
-// Yahoo rate-limit (429) riski artar. Aynı anda en çok `limit` istek koşar;
-// sonuç sırası girdiyle birebir korunur (allSettled semantiği).
-async function settledLimit<T, R>(
-  items: T[],
-  limit: number,
-  fn: (item: T) => Promise<R>
-): Promise<PromiseSettledResult<R>[]> {
-  const results = new Array<PromiseSettledResult<R>>(items.length);
-  let next = 0;
-  const worker = async () => {
-    while (next < items.length) {
-      const idx = next++;
-      try {
-        results[idx] = { status: "fulfilled", value: await fn(items[idx]) };
-      } catch (reason) {
-        results[idx] = { status: "rejected", reason };
-      }
-    }
-  };
-  await Promise.all(
-    Array.from({ length: Math.min(limit, items.length) }, worker)
-  );
-  return results;
-}
 
 export async function GET(req: Request) {
   const force = new URL(req.url).searchParams.get("refresh") === "1";
