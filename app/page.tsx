@@ -3992,6 +3992,13 @@ function RiskParityWeights({ bt }: { bt: BacktestResult }) {
     .map((x, i) => ({ ...x, w: invs[i] / tot }))
     .sort((a, b) => b.w - a.w);
 
+  // Yoğunlaşma: etkin sleeve sayısı = 1/Σw² (ters-Herfindahl). Eşit-ağırlıkta = N;
+  // tek sleeve baskınsa düşer. Ultra-düşük-vol sleeve (tahvil/kısa vade) ters-vol
+  // blokta hâkim olabilir → kullanıcıya dengesizliği şeffafça göster.
+  const top = rows[0];
+  const effN = 1 / rows.reduce((s, r) => s + r.w * r.w, 0);
+  const concentrated = top.w > 0.4;
+
   return (
     <>
       <div className="section-label">
@@ -4019,8 +4026,19 @@ function RiskParityWeights({ bt }: { bt: BacktestResult }) {
           Risk-parity bileşik her sleeve&apos;e oynaklığıyla <b>ters orantılı</b>{" "}
           ağırlık verir (w = (1/σ)/Σ(1/σ)). Yüksek oynaklıklı sleeve&apos;ler
           (genelde kripto) otomatik daha az pay alır → dengeli risk katkısı,
-          eşit-ağırlık bileşiğin kripto-baskınlığını giderir.
+          eşit-ağırlık bileşiğin kripto-baskınlığını giderir. <b>Etkin sleeve
+          sayısı:</b> {effN.toFixed(1)} / {rows.length} (eşit dağılımda ={" "}
+          {rows.length}; düşük = yoğunlaşmış).
         </p>
+        {concentrated && (
+          <p className="table-note neg">
+            ⚠️ Ağırlık <b>{top.name.replace(/\s*\(.*\)/, "")}</b>&apos;de
+            yoğunlaşmış (%{(top.w * 100).toFixed(0)}). Ultra-düşük oynaklıklı
+            sleeve&apos;ler (örn. tahvil / kısa vade) ters-vol blokta baskın olur;
+            daha dengeli dağılım istersen <b>eşit-ağırlık</b> bileşiği veya bir
+            ağırlık tavanı tercih edebilirsin.
+          </p>
+        )}
       </div>
     </>
   );
