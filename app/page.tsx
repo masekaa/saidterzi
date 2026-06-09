@@ -1733,7 +1733,14 @@ function BackToTop() {
   return (
     <button
       className="back-to-top"
-      onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
+      onClick={() =>
+        window.scrollTo({
+          top: 0,
+          behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches
+            ? "auto"
+            : "smooth",
+        })
+      }
       aria-label="Sayfa başına dön"
       title="Başa dön"
     >
