@@ -5090,9 +5090,6 @@ export default function Home() {
                 document.getElementById(`vtab-${ids[next]}`)?.focus();
               }
             }}
-            style={{
-              gridTemplateColumns: `repeat(${1 + data.universes.length}, 1fr)`,
-            }}
           >
             <button
               id="vtab-etf"

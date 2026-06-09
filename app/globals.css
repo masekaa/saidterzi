@@ -1514,7 +1514,9 @@ table.heatmap.corr td {
   top: 0;
   z-index: 20;
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  /* Sekme sayısı (9+) büyüdükçe otomatik sarar: her sekmeye en az 150px,
+     sığdığı kadar sütun. Mobilde 2'şerli sarar, masaüstünde tek sıra. */
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
   gap: 10px;
   padding: 12px 0;
   margin: 18px 0 20px;
@@ -1559,7 +1561,7 @@ table.heatmap.corr td {
 }
 @media (max-width: 640px) {
   .view-tabs {
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(auto-fit, minmax(128px, 1fr));
   }
   .view-tab {
     font-size: 13.5px;
