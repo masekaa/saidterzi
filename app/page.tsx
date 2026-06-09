@@ -2901,6 +2901,31 @@ function BacktestStudio() {
             {res && res.cost > 0 ? `, maliyet ${res.cost}bps` : ""} (
             {bt.startDate} → {bt.endDate}, {bt.months} ay)
           </div>
+          {(() => {
+            const mom = bt.strategies[0];
+            const bench =
+              bt.strategies.find((s) => s.name.includes("Eşit Ağırlık")) ??
+              bt.strategies[bt.strategies.length - 1];
+            if (!mom || !bench || mom === bench) return null;
+            const dC = (mom.cagr ?? 0) - (bench.cagr ?? 0);
+            const dS = (mom.sharpe ?? 0) - (bench.sharpe ?? 0);
+            return (
+              <p className="table-note">
+                Bu parametrelerle <b>{res?.label}</b>, al-tut benchmark&apos;ını
+                CAGR&apos;da{" "}
+                <b className={dC >= 0 ? "pos-cell" : "neg"}>
+                  {dC >= 0 ? "+" : ""}
+                  {pct(dC)}
+                </b>
+                , Sharpe&apos;da{" "}
+                <b className={dS >= 0 ? "pos-cell" : "neg"}>
+                  {dS >= 0 ? "+" : ""}
+                  {num(dS)}
+                </b>{" "}
+                {dC >= 0 ? "geçiyor ✓" : "geçemiyor"}.
+              </p>
+            );
+          })()}
           <EquityChart bt={bt} />
           <UnderwaterChart bt={bt} label={res?.label ?? "Strateji"} />
           <DrawdownEpisodes bt={bt} label={res?.label ?? "Strateji"} />

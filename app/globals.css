@@ -507,6 +507,12 @@ table.metrics tr.row-hl .left {
   justify-content: space-between;
   gap: 12px;
 }
+.table-note b.pos-cell {
+  color: var(--success, #22d3a6);
+}
+.table-note b.neg {
+  color: var(--danger);
+}
 .chart-help {
   font-size: 11.5px;
   line-height: 1.55;
