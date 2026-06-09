@@ -2080,6 +2080,82 @@ function CrossUniverseComparison({ data }: { data: AnalysisResult }) {
   );
 }
 
+function RollingVol({ bt, label }: { bt: BacktestResult; label: string }) {
+  const curve = bt.equityCurves.find((c) => c.highlight) ?? bt.equityCurves[0];
+  const g = curve?.growth;
+  if (!g || g.length < 26) return null;
+  const rets: number[] = [];
+  for (let i = 1; i < g.length; i++) rets.push(g[i] / g[i - 1] - 1);
+  const WIN = 12;
+  const vals: { i: number; v: number }[] = [];
+  for (let i = WIN; i <= rets.length; i++) {
+    const w = rets.slice(i - WIN, i);
+    const m = w.reduce((s, x) => s + x, 0) / WIN;
+    const variance = w.reduce((s, x) => s + (x - m) ** 2, 0) / (WIN - 1);
+    vals.push({ i, v: Math.sqrt(variance) * Math.sqrt(12) });
+  }
+  if (vals.length < 2) return null;
+
+  const W = 820;
+  const H = 200;
+  const padL = 46;
+  const padR = 14;
+  const padT = 14;
+  const padB = 26;
+  const innerW = W - padL - padR;
+  const innerH = H - padT - padB;
+  const n = g.length;
+  const hi = Math.max(...vals.map((p) => p.v)) * 1.05 || 0.1;
+  const X = (i: number) => padL + (innerW * i) / Math.max(1, n - 1);
+  const Y = (v: number) => padT + innerH * (1 - v / hi);
+  const line = vals
+    .map((p, k) => `${k === 0 ? "M" : "L"}${X(p.i).toFixed(1)},${Y(p.v).toFixed(1)}`)
+    .join(" ");
+
+  const yTicks: number[] = [];
+  for (let v = 0; v <= hi; v += 0.1) yTicks.push(v);
+  const xTicks: { i: number; label: string }[] = [];
+  let ly = "";
+  bt.dates.forEach((d, i) => {
+    const y = d.slice(0, 4);
+    if (y !== ly) {
+      xTicks.push({ i, label: y });
+      ly = y;
+    }
+  });
+  const step = Math.ceil(xTicks.length / 10);
+  const shown = xTicks.filter((_, idx) => idx % step === 0);
+
+  return (
+    <div className="chart-card">
+      <div className="chart-title">
+        {label} 12-Ay Rolling Volatilite — risk rejiminin zaman içindeki seyri
+      </div>
+      <div className="chart-help">
+        Her nokta o aydan geriye 12 ayın yıllıklaştırılmış oynaklığı. Tepe noktalar
+        = stratejinin en riskli olduğu dönemler (örn. kriz/çöküş); düşük platolar =
+        sakin rejimler.
+      </div>
+      <svg className="equity-svg" viewBox={`0 0 ${W} ${H}`} role="img" aria-label="Finansal analiz grafiği; açıklama hemen üstteki başlık ve metinde">
+        {yTicks.map((v, i) => (
+          <g key={i}>
+            <line x1={padL} x2={W - padR} y1={Y(v)} y2={Y(v)} className="grid-line" />
+            <text x={padL - 8} y={Y(v) + 3} className="axis-label" textAnchor="end">
+              {(v * 100).toFixed(0)}%
+            </text>
+          </g>
+        ))}
+        <path d={line} className="equity-line" stroke="#f59e0b" style={{ strokeWidth: 1.8 }} />
+        {shown.map((t, idx) => (
+          <text key={idx} x={X(t.i)} y={H - 8} className="axis-label" textAnchor="middle">
+            {t.label}
+          </text>
+        ))}
+      </svg>
+    </div>
+  );
+}
+
 function Seasonality({ bt, label }: { bt: BacktestResult; label: string }) {
   const curve = bt.equityCurves.find((c) => c.highlight) ?? bt.equityCurves[0];
   const g = curve?.growth;
@@ -2817,6 +2893,7 @@ function UniverseSection({ u }: { u: UniverseBundle }) {
           <MonthlyHeatmap bt={bt} label={u.positionLabel} />
           <RiskReturnChart rows={bt.strategies} />
           <RollingReturnsChart bt={bt} label={u.positionLabel} />
+          <RollingVol bt={bt} label={u.positionLabel} />
           <ScatterGemVsBench bt={bt} label={u.positionLabel} />
           <BoxPlot bt={bt} />
           <Seasonality bt={bt} label={u.positionLabel} />
@@ -3208,6 +3285,7 @@ export default function Home() {
               <MonthlyHeatmap bt={bt} />
               <RiskReturnChart rows={bt.strategies} />
               <RollingReturnsChart bt={bt} />
+              <RollingVol bt={bt} label="GEM" />
               <ScatterGemVsBench bt={bt} />
               <BoxPlot bt={bt} />
               <Seasonality bt={bt} label="GEM" />
