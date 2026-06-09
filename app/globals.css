@@ -676,6 +676,23 @@ table.metrics tr.comp-row .left {
   fill: rgba(239, 68, 68, 0.7);
 }
 
+/* Aylık getiri histogramı + normal eğri */
+.hist-bar {
+  fill: rgba(56, 189, 248, 0.45);
+  stroke: rgba(56, 189, 248, 0.8);
+  stroke-width: 0.6;
+}
+.hist-normal {
+  fill: none;
+  stroke: #f59e0b;
+  stroke-width: 2;
+}
+.hist-mean {
+  stroke: rgba(226, 232, 240, 0.5);
+  stroke-width: 1;
+  stroke-dasharray: 4 3;
+}
+
 /* Takvim-yılı getirileri (gruplu çubuk) */
 .yr-bench-bar {
   fill: rgba(148, 163, 184, 0.55);

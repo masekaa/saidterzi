@@ -1317,6 +1317,117 @@ function BoxPlot({ bt }: { bt: BacktestResult }) {
   );
 }
 
+function ReturnHistogram({ bt, label = "GEM" }: { bt: BacktestResult; label?: string }) {
+  const curve = bt.equityCurves.find((c) => c.highlight) ?? bt.equityCurves[0];
+  const g = curve?.growth;
+  if (!g || g.length < 14) return null;
+  const rets = growthToRets(g);
+  const n = rets.length;
+  if (n < 10) return null;
+
+  const m = rets.reduce((s, x) => s + x, 0) / n;
+  const sd = Math.sqrt(rets.reduce((s, x) => s + (x - m) ** 2, 0) / (n - 1)) || 1e-6;
+  const skew = rets.reduce((s, x) => s + ((x - m) / sd) ** 3, 0) / n;
+  const kurt = rets.reduce((s, x) => s + ((x - m) / sd) ** 4, 0) / n - 3;
+  const lo = Math.min(...rets);
+  const hi = Math.max(...rets);
+  const range = hi - lo || 1;
+  const BINS = Math.min(25, Math.max(11, Math.round(Math.sqrt(n))));
+  const bw = range / BINS;
+  const counts = new Array(BINS).fill(0);
+  for (const r of rets) {
+    let idx = Math.floor((r - lo) / bw);
+    if (idx >= BINS) idx = BINS - 1;
+    if (idx < 0) idx = 0;
+    counts[idx]++;
+  }
+  const maxCount = Math.max(...counts);
+
+  const W = 820;
+  const H = 240;
+  const padL = 36;
+  const padR = 14;
+  const padT = 16;
+  const padB = 30;
+  const innerW = W - padL - padR;
+  const innerH = H - padT - padB;
+
+  // Normal yoğunluk eğrisi, sayım ölçeğine getirilmiş: E(x) = n·bw·pdf(x).
+  const pdf = (x: number) =>
+    Math.exp(-((x - m) ** 2) / (2 * sd * sd)) / (sd * Math.sqrt(2 * Math.PI));
+  const SAMPLES = 80;
+  const norm: { x: number; e: number }[] = [];
+  for (let k = 0; k <= SAMPLES; k++) {
+    const x = lo + (range * k) / SAMPLES;
+    norm.push({ x, e: n * bw * pdf(x) });
+  }
+  const yMax = Math.max(maxCount, ...norm.map((p) => p.e)) * 1.08 || 1;
+
+  const X = (v: number) => padL + (innerW * (v - lo)) / range;
+  const Y = (c: number) => padT + innerH * (1 - c / yMax);
+  const normPath = norm
+    .map((p, k) => `${k === 0 ? "M" : "L"}${X(p.x).toFixed(1)},${Y(p.e).toFixed(1)}`)
+    .join(" ");
+
+  const xTicks: number[] = [];
+  for (let p = Math.ceil(lo * 10) / 10; p <= hi; p += 0.05) xTicks.push(Number(p.toFixed(2)));
+
+  return (
+    <div className="chart-card">
+      <div className="chart-title">
+        {label} Aylık Getiri Histogramı — gerçek dağılım vs normal (çan) eğri
+      </div>
+      <div className="chart-help">
+        Çubuklar gerçek aylık getiri sıklığı; turuncu eğri aynı ortalama/oynaklıkta
+        teorik normal dağılım. Çubukların merkezde <b>ve</b> uçlarda eğriyi aşması =
+        kalın kuyruk (basıklık&gt;0); sol/sağ asimetri = çarpıklık. Bu seri:
+        çarpıklık <b>{skew.toFixed(2)}</b>, fazla basıklık <b>{kurt.toFixed(2)}</b>.
+      </div>
+      <svg className="equity-svg" viewBox={`0 0 ${W} ${H}`} role="img" aria-label="Finansal analiz grafiği; açıklama hemen üstteki başlık ve metinde">
+        {xTicks.map((v, i) => (
+          <line
+            key={`g${i}`}
+            x1={X(v)}
+            x2={X(v)}
+            y1={padT}
+            y2={H - padB}
+            className={Math.abs(v) < 1e-9 ? "grid-line zero" : "grid-line"}
+          />
+        ))}
+        {counts.map((c, i) => {
+          const x0 = X(lo + i * bw);
+          const x1 = X(lo + (i + 1) * bw);
+          const w = Math.max(1, x1 - x0 - 1.5);
+          const y = Y(c);
+          return (
+            <rect
+              key={i}
+              x={x0 + 0.75}
+              y={y}
+              width={w}
+              height={Math.max(0, H - padB - y)}
+              className="hist-bar"
+            />
+          );
+        })}
+        <path d={normPath} className="hist-normal" />
+        <line x1={X(m)} x2={X(m)} y1={padT} y2={H - padB} className="hist-mean" />
+        {xTicks.map((v, i) => (
+          <text
+            key={`t${i}`}
+            x={X(v)}
+            y={H - padB + 16}
+            className="axis-label"
+            textAnchor="middle"
+          >
+            {(v * 100).toFixed(0)}%
+          </text>
+        ))}
+      </svg>
+    </div>
+  );
+}
+
 function FactorAlphaPanel({ fa, subject = "GEM" }: { fa: FactorAlpha; subject?: string }) {
   const sig = Math.abs(fa.alphaTStat) >= 2;
   return (
@@ -3489,6 +3600,7 @@ function BacktestCharts({
       <ScatterGemVsBench bt={bt} label={label} />
       <CaptureRatios bt={bt} />
       <BoxPlot bt={bt} />
+      <ReturnHistogram bt={bt} label={label} />
       <Seasonality bt={bt} label={label} />
       <MetricsTable rows={bt.strategies} />
       <p className="table-note">{bt.note}</p>
