@@ -1673,7 +1673,39 @@ function KeyInsights({ data }: { data: AnalysisResult }) {
       ),
   });
 
-  // 4) En iyi çeşitlendirici (en düşük ortalama korelasyonlu sleeve)
+  // 4) Piyasa genişliği — pozitif mutlak momentumlu varlık oranı (risk-on/off)
+  {
+    let pos = 0;
+    let tot = 0;
+    for (const u of data.universes)
+      for (const s of u.momentum.stocks) {
+        if (s.excessVsTbill != null) {
+          tot++;
+          if (s.excessVsTbill > 0) pos++;
+        }
+      }
+    if (tot >= 10) {
+      const br = pos / tot;
+      insights.push({
+        icon: br >= 0.5 ? "📈" : "📉",
+        text: (
+          <>
+            Piyasa genişliği: tüm evrenlerdeki <b>{tot}</b> varlığın{" "}
+            <b>%{(br * 100).toFixed(0)}</b>&apos;i T-Bill&apos;i geçiyor (pozitif
+            momentum) —{" "}
+            {br >= 0.6
+              ? "geniş risk-on ortamı"
+              : br >= 0.4
+              ? "karışık/nötr ortam"
+              : "dar/savunmacı (risk-off) ortam"}
+            .
+          </>
+        ),
+      });
+    }
+  }
+
+  // 5) En iyi çeşitlendirici (en düşük ortalama korelasyonlu sleeve)
   if (data.composite) {
     const sl = data.composite.equityCurves.filter(
       (c) => !c.highlight && !c.name.includes("Bileşik")
