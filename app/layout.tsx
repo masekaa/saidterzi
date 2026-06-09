@@ -2,9 +2,20 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Dual Momentum Analiz — Gold · S&P 500 · NASDAQ",
+  title: "Dual Momentum Analiz — ETF · Hisse · Kripto · Sektör · Uluslararası",
   description:
-    "Antonacci Dual Momentum (GEM) stratejisine göre Altın, S&P 500 ve NASDAQ canlı analizi.",
+    "Antonacci Dual Momentum: GEM + hisse/kripto/sektör/uluslararası momentum evrenleri, eşit-ağırlık & risk-parity bileşik, interaktif backtest stüdyosu, Fama-French alpha ve tam risk analizi. Canlı, anahtarsız veri.",
+  icons: {
+    icon:
+      "data:image/svg+xml," +
+      encodeURIComponent(
+        '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text y=".9em" font-size="86">📈</text></svg>'
+      ),
+  },
+};
+
+export const viewport = {
+  themeColor: "#0b0f1a",
 };
 
 export default function RootLayout({
