@@ -4248,10 +4248,38 @@ function RobustnessHeatmap() {
                 }),
               ])}
             </div>
+            {(() => {
+              const vals = data.cells
+                .map((c) => c.sharpe)
+                .filter((s): s is number => s != null && isFinite(s));
+              if (vals.length < 2) return null;
+              const sorted = [...vals].sort((a, b) => a - b);
+              const med = sorted[Math.floor(sorted.length / 2)];
+              const solid = vals.filter((s) => s > 0.5).length;
+              const pos = vals.filter((s) => s > 0).length;
+              const pctSolid = (solid / vals.length) * 100;
+              const verdict =
+                pctSolid >= 70
+                  ? { t: "Dayanıklı", c: "ok" }
+                  : pctSolid >= 40
+                  ? { t: "Orta", c: "" }
+                  : { t: "Kırılgan", c: "thin" };
+              return (
+                <div className={`rob-verdict ${verdict.c}`}>
+                  Dayanıklılık: <b>{verdict.t}</b> — {vals.length} konfigürasyonun{" "}
+                  <b>%{pctSolid.toFixed(0)}</b>&apos;i Sharpe&gt;0.5 (%
+                  {((pos / vals.length) * 100).toFixed(0)}&apos;i pozitif) · medyan
+                  Sharpe <b>{med.toFixed(2)}</b> · aralık {sorted[0].toFixed(2)}–
+                  {sorted[sorted.length - 1].toFixed(2)}.
+                </div>
+              );
+            })()}
             <p className="table-note">
               Hücre = o look-back &amp; top-N ile yıllık Sharpe (renk: kırmızı≤0 →
               yeşil&gt;1.2). 12-ay satırı kalın çerçeveli (Antonacci standardı).
               GEM tekli seçim yaptığından top-N&apos;den bağımsızdır (tek sütun).
+              Yüksek &quot;dayanıklılık&quot; = strateji parametre seçimine duyarlı
+              değil (aşırı-uyum riski düşük).
             </p>
           </>
         )}

@@ -664,6 +664,21 @@ table.metrics tr.comp-row .left {
   border-color: rgba(226, 232, 240, 0.55);
   box-shadow: 0 0 0 1px rgba(226, 232, 240, 0.25);
 }
+.rob-verdict {
+  margin: 8px 0 2px;
+  padding: 8px 12px;
+  border-radius: 8px;
+  font-size: 0.82rem;
+  background: var(--panel);
+  border: 1px solid var(--border-soft);
+  color: var(--text-dim);
+}
+.rob-verdict.ok {
+  border-color: rgba(34, 211, 166, 0.5);
+}
+.rob-verdict.thin {
+  border-color: rgba(245, 158, 11, 0.5);
+}
 
 /* Özel bileşik oluşturucu — sleeve aç/kapat butonları */
 .cc-toggles {
