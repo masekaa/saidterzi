@@ -128,6 +128,21 @@ export const COMMODITIES_UNIVERSE: Instrument[] = [
 ];
 export const COMMODITIES_TOP_N = 3;
 
+// --- Faktör / stil rotasyonu evreni ---
+// Faktör momentumu (Gupta-Kelly 2019, Arnott et al.): hangi faktör primi
+// güçlüyse ona dön. Tek-faktör ETF'leri arası dual momentum; sektör/bölge
+// rotasyonundan farklı bir alfa kaynağı (stil zamanlaması).
+export const FACTOR_UNIVERSE: Instrument[] = [
+  { key: "mtum", name: "Momentum", ticker: "MTUM", note: "iShares MSCI USA Momentum" },
+  { key: "vlue", name: "Değer", ticker: "VLUE", note: "iShares MSCI USA Value" },
+  { key: "qual", name: "Kalite", ticker: "QUAL", note: "iShares MSCI USA Quality" },
+  { key: "usmv", name: "Düşük Volatilite", ticker: "USMV", note: "iShares Min Vol USA" },
+  { key: "size", name: "Boyut (Small)", ticker: "SIZE", note: "iShares MSCI USA Size" },
+  { key: "vug", name: "Büyüme", ticker: "VUG", note: "Vanguard Growth" },
+  { key: "hdv", name: "Temettü", ticker: "HDV", note: "iShares Core High Dividend" },
+];
+export const FACTOR_TOP_N = 2;
+
 // DMSR güvenli liman + trend referansı
 export const AGG: Instrument = {
   key: "agg",
@@ -148,6 +163,7 @@ export function allTickers(): string[] {
     ...CRYPTO_UNIVERSE,
     ...INTL_UNIVERSE,
     ...COMMODITIES_UNIVERSE,
+    ...FACTOR_UNIVERSE,
     AGG,
   ].forEach((i) => set.add(i.ticker));
   return Array.from(set);

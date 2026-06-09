@@ -16,6 +16,8 @@ import {
   INTL_TOP_N,
   COMMODITIES_UNIVERSE,
   COMMODITIES_TOP_N,
+  FACTOR_UNIVERSE,
+  FACTOR_TOP_N,
   DMSR_TOP_N,
   allTickers,
   LOOKBACK_MONTHS,
@@ -118,6 +120,7 @@ export async function GET(req: Request) {
     const cryptoRaw = mapBy(CRYPTO_UNIVERSE);
     const intlRaw = mapBy(INTL_UNIVERSE);
     const commodityRaw = mapBy(COMMODITIES_UNIVERSE);
+    const factorRaw = mapBy(FACTOR_UNIVERSE);
 
     // İki yavaş dış çağrıyı (Ken French zip + FMP earnings) PARALEL başlat —
     // soğuk yükleme süresini kısaltır (sıralı await yerine örtüşürler).
@@ -222,6 +225,18 @@ export async function GET(req: Request) {
         raw: commodityRaw,
         universe: COMMODITIES_UNIVERSE,
         topN: COMMODITIES_TOP_N,
+        withEarnings: false,
+      },
+      {
+        id: "factor",
+        emoji: "🎛️",
+        label: "Faktör / Stil",
+        sublabel: `${FACTOR_UNIVERSE.length} tek-faktör ETF'i`,
+        positionLabel: "Faktör Momentum",
+        benchLabel: "Eşit Ağırlık (Tüm Faktörler)",
+        raw: factorRaw,
+        universe: FACTOR_UNIVERSE,
+        topN: FACTOR_TOP_N,
         withEarnings: false,
       },
     ];

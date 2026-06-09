@@ -12,6 +12,7 @@ import {
   DMSR_SECTORS,
   INTL_UNIVERSE,
   COMMODITIES_UNIVERSE,
+  FACTOR_UNIVERSE,
   type Instrument,
 } from "@/lib/universe";
 import { runBacktest, runStockBacktest } from "@/lib/backtest";
@@ -57,6 +58,12 @@ const CONFIGS: Record<string, Cfg> = {
     positionLabel: "Emtia Momentum",
     benchLabel: "Eşit Ağırlık (Tüm Emtialar)",
     defaultTopN: 3,
+  },
+  factor: {
+    universe: FACTOR_UNIVERSE,
+    positionLabel: "Faktör Momentum",
+    benchLabel: "Eşit Ağırlık (Tüm Faktörler)",
+    defaultTopN: 2,
   },
 };
 
