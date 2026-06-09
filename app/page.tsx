@@ -1852,6 +1852,18 @@ function StrategyLeaderboard({ data }: { data: AnalysisResult }) {
       months: data.composite.months,
     });
   }
+  const rp = data.composite?.strategies.find((s) =>
+    s.name.includes("risk-parity")
+  );
+  if (rp && data.composite) {
+    rows.push({
+      name: rp.name,
+      emoji: "🧩",
+      m: rp,
+      period: `${data.composite.startDate} → ${data.composite.endDate}`,
+      months: data.composite.months,
+    });
+  }
   if (rows.length < 2) return null;
   const sval = (m: StrategyMetrics) => {
     const v = m[sortKey];
