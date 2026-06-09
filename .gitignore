@@ -30,6 +30,10 @@ data/raw/
 *.parquet
 *.feather
 
+# --- Claude Code runtime artefaktları (oturum-yerel, versiyonlanmaz) ---
+.claude/scheduled_tasks.lock
+.claude/*.lock
+
 # --- OS / editör ---
 .DS_Store
 Thumbs.db
