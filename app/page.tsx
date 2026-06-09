@@ -273,7 +273,15 @@ function StockMomentumBoard({ data }: { data: StockMomentumData }) {
               <th
                 className={`sortable ${sortK === "rank" ? "sorted" : ""}`}
                 onClick={() => setSortK("rank")}
-                title="Momentum sırasına göre"
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault();
+                    setSortK("rank");
+                  }
+                }}
+                tabIndex={0}
+                aria-sort={sortK === "rank" ? "ascending" : "none"}
+                title="Momentum sırasına göre (Enter ile sırala)"
               >
                 #{sh("rank")}
               </th>
@@ -283,6 +291,15 @@ function StockMomentumBoard({ data }: { data: StockMomentumData }) {
               <th
                 className={`sortable ${sortK === "excess" ? "sorted" : ""}`}
                 onClick={() => setSortK("excess")}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault();
+                    setSortK("excess");
+                  }
+                }}
+                tabIndex={0}
+                aria-sort={sortK === "excess" ? "descending" : "none"}
+                title="T-Bill'e karşı paya göre (Enter ile sırala)"
               >
                 T-Bill&apos;e Karşı{sh("excess")}
               </th>
@@ -290,6 +307,15 @@ function StockMomentumBoard({ data }: { data: StockMomentumData }) {
               <th
                 className={`sortable ${sortK === "prox" ? "sorted" : ""}`}
                 onClick={() => setSortK("prox")}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault();
+                    setSortK("prox");
+                  }
+                }}
+                tabIndex={0}
+                aria-sort={sortK === "prox" ? "descending" : "none"}
+                title="52-hafta yakınlığa göre (Enter ile sırala)"
               >
                 52-Hafta{sh("prox")}
               </th>
@@ -2101,15 +2127,27 @@ function StrategyLeaderboard({ data }: { data: AnalysisResult }) {
     label: string;
     k: keyof StrategyMetrics;
     left?: boolean;
-  }) => (
-    <th
-      className={`sortable ${left ? "left" : ""} ${sortKey === k ? "sorted" : ""}`}
-      onClick={() => setSortKey(k)}
-    >
-      {label}
-      {sortKey === k ? " ▾" : ""}
-    </th>
-  );
+  }) => {
+    const active = sortKey === k;
+    return (
+      <th
+        className={`sortable ${left ? "left" : ""} ${active ? "sorted" : ""}`}
+        onClick={() => setSortKey(k)}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault();
+            setSortKey(k);
+          }
+        }}
+        tabIndex={0}
+        aria-sort={active ? (asc ? "ascending" : "descending") : "none"}
+        title="Sıralamak için tıkla veya Enter"
+      >
+        {label}
+        {active ? " ▾" : ""}
+      </th>
+    );
+  };
 
   return (
     <>
