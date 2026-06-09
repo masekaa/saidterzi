@@ -2626,6 +2626,12 @@ function RollingRelative({ bt, label }: { bt: BacktestResult; label: string }) {
   }
   if (vals.length < 2) return null;
 
+  // "Vuruş ortalaması": kayan 12-ay pencerelerinin yüzde kaçında momentum önde?
+  // Ortalama (t-stat) tek bir sayı verir; bu ise üstünlüğün TUTARLILIĞINI ölçer.
+  const winCount = vals.filter((p) => p.d > 0).length;
+  const winPct = (winCount / vals.length) * 100;
+  const avgD = vals.reduce((s, p) => s + p.d, 0) / vals.length;
+
   const W = 820;
   const H = 200;
   const padL = 46;
@@ -2663,13 +2669,20 @@ function RollingRelative({ bt, label }: { bt: BacktestResult; label: string }) {
   return (
     <div className="chart-card">
       <div className="chart-title">
-        {label} — Kayan 12-Ay Göreli Performans (momentum eksi {benchName})
+        {label} — Kayan 12-Ay Göreli Performans (momentum eksi {benchName}){" "}
+        <span className={winPct >= 50 ? "pos-cell" : "neg"}>
+          · vuruş ort. {winPct.toFixed(0)}%
+        </span>
       </div>
       <div className="chart-help">
         Her nokta: momentumun son 12-ay getirisi eksi al-tut benchmark&apos;ının
         son 12-ay getirisi. <b>0 üstü</b> = momentum o pencerede önde;{" "}
-        <b>0 altı</b> = geride. Sürekli 0 üstü kalması, momentum kenarının
-        tutarlı olduğunu gösterir.
+        <b>0 altı</b> = geride. Tüm kayan 12-ay pencerelerinin{" "}
+        <b>{winPct.toFixed(0)}%</b>&apos;inde momentum önde (ortalama fark{" "}
+        <b>{avgD >= 0 ? "+" : ""}
+        {(avgD * 100).toFixed(1)}%</b>). Yüksek vuruş ortalaması, kenarın
+        şanstan çok tutarlılığa dayandığını gösterir; ortalama (t-stat) ile
+        birlikte yorumla.
       </div>
       <svg className="equity-svg" viewBox={`0 0 ${W} ${H}`} role="img" aria-label="Finansal analiz grafiği; açıklama hemen üstteki başlık ve metinde">
         <line x1={padL} x2={W - padR} y1={zeroY} y2={zeroY} className="grid-line zero" />
