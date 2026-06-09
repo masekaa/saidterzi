@@ -2324,8 +2324,10 @@ function CustomComposite({ data }: { data: AnalysisResult }) {
       let eq = 1,
         peak = 1,
         maxdd = 0;
+      const growth: number[] = [1];
       for (const x of r) {
         eq *= 1 + x;
+        growth.push(eq);
         if (eq > peak) peak = eq;
         const dd = eq / peak - 1;
         if (dd < maxdd) maxdd = dd;
@@ -2344,6 +2346,8 @@ function CustomComposite({ data }: { data: AnalysisResult }) {
         from: common[0],
         to: common[common.length - 1],
         k: chosen.length,
+        growth,
+        dates: [common[0], ...common],
       };
     },
     [sleeves]
@@ -2397,6 +2401,91 @@ function CustomComposite({ data }: { data: AnalysisResult }) {
         </div>
         {cur ? (
           <>
+            {(() => {
+              const g = cur.growth;
+              const W = 820,
+                H = 168,
+                padL = 46,
+                padR = 12,
+                padT = 10,
+                padB = 22;
+              const innerW = W - padL - padR;
+              const innerH = H - padT - padB;
+              const logs = g.map((v) => Math.log(Math.max(v, 1e-9)));
+              const lo = Math.min(...logs);
+              const hi = Math.max(...logs);
+              const span = hi - lo || 1;
+              const X = (i: number) =>
+                padL + (innerW * i) / Math.max(1, g.length - 1);
+              const Y = (lv: number) => padT + innerH * (1 - (lv - lo) / span);
+              const path = logs
+                .map(
+                  (lv, i) =>
+                    `${i === 0 ? "M" : "L"}${X(i).toFixed(1)},${Y(lv).toFixed(1)}`
+                )
+                .join(" ");
+              const yTicks = [lo, (lo + hi) / 2, hi].map((lv) => ({
+                lv,
+                mult: Math.exp(lv),
+              }));
+              const xticks: { i: number; label: string }[] = [];
+              let ly = "";
+              cur.dates.forEach((d, i) => {
+                const y = d.slice(0, 4);
+                if (y !== ly) {
+                  xticks.push({ i, label: y });
+                  ly = y;
+                }
+              });
+              const step = Math.ceil(xticks.length / 9);
+              const shown = xticks.filter((_, idx) => idx % step === 0);
+              return (
+                <svg
+                  className="equity-svg"
+                  viewBox={`0 0 ${W} ${H}`}
+                  role="img"
+                  aria-label="Seçili özel bileşiğin log-büyüme eğrisi"
+                  style={{ marginBottom: 8 }}
+                >
+                  {yTicks.map((t, i) => (
+                    <g key={i}>
+                      <line
+                        x1={padL}
+                        x2={W - padR}
+                        y1={Y(t.lv)}
+                        y2={Y(t.lv)}
+                        className="grid-line"
+                      />
+                      <text
+                        x={padL - 6}
+                        y={Y(t.lv) + 3}
+                        className="axis-label"
+                        textAnchor="end"
+                      >
+                        {t.mult.toFixed(t.mult >= 10 ? 0 : 1)}×
+                      </text>
+                    </g>
+                  ))}
+                  <path
+                    d={path}
+                    className="equity-line"
+                    stroke="#22d3a6"
+                    style={{ strokeWidth: 2 }}
+                  />
+                  {shown.map((t, idx) => (
+                    <text
+                      key={idx}
+                      x={X(t.i)}
+                      y={H - 6}
+                      className="axis-label"
+                      textAnchor="middle"
+                    >
+                      {t.label}
+                    </text>
+                  ))}
+                </svg>
+              );
+            })()}
             <div className="cap-grid">
               <div className="cap-item">
                 <div className="cap-label">CAGR</div>
