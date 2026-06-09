@@ -1866,6 +1866,43 @@ function KeyInsights({ data }: { data: AnalysisResult }) {
     }
   }
 
+  // 6) En kırılgan sinyal (ince pay) — bu ay nakde dönmeye en yakın pozisyon
+  {
+    const cands: { name: string; emoji: string; margin: number }[] = [];
+    const gw = data.signals.assets.find((a) => a.isGemWinner);
+    if (
+      data.gem.positionKey !== "cash" &&
+      gw?.excessVsTbill != null &&
+      gw.excessVsTbill > 0
+    )
+      cands.push({ name: "GEM", emoji: "📊", margin: gw.excessVsTbill });
+    for (const u of data.universes) {
+      const exc = u.momentum.stocks
+        .filter((s) => s.selected)
+        .map((s) => s.excessVsTbill)
+        .filter((x): x is number => x != null && isFinite(x) && x > 0);
+      if (exc.length)
+        cands.push({ name: u.positionLabel, emoji: u.emoji, margin: Math.min(...exc) });
+    }
+    if (cands.length) {
+      const thin = cands.reduce((a, b) => (b.margin < a.margin ? b : a));
+      if (thin.margin < 0.03)
+        insights.push({
+          icon: "⚠️",
+          text: (
+            <>
+              En kırılgan sinyal:{" "}
+              <b>
+                {thin.emoji} {thin.name}
+              </b>{" "}
+              seçimi T-Bill eşiğinin yalnız <b>+{(thin.margin * 100).toFixed(1)}%</b>{" "}
+              üstünde — küçük bir geri çekilme bu pozisyonu nakde döndürebilir.
+            </>
+          ),
+        });
+    }
+  }
+
   if (!insights.length) return null;
   return (
     <div className="insights">
