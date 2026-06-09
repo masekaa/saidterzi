@@ -61,6 +61,20 @@ export async function GET(req: Request) {
       tickers.map((t) => fetchMonthlySeries(t, "max"))
     );
 
+    // Yahoo geçici hatalarına karşı: ilk geçişte başarısız olanları BİR kez
+    // yeniden dene (sadece başarısızlar, paralel — gecikme minimum, veri tamlığı artar).
+    const failed = settled
+      .map((s, i) => (s.status === "rejected" ? i : -1))
+      .filter((i) => i >= 0);
+    if (failed.length) {
+      const retried = await Promise.allSettled(
+        failed.map((i) => fetchMonthlySeries(tickers[i], "max"))
+      );
+      failed.forEach((i, k) => {
+        if (retried[k].status === "fulfilled") settled[i] = retried[k];
+      });
+    }
+
     const byTicker: Record<string, RawSeries> = {};
     const errors: string[] = [];
     settled.forEach((s, i) => {
