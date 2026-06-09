@@ -4975,7 +4975,8 @@ export default function Home() {
 
   return (
     <div className="wrap">
-      <div className="header">
+      <a href="#ana-icerik" className="skip-link">İçeriğe atla</a>
+      <div className="header" role="banner">
         <div>
           <h1 className="title">Dual Momentum Analiz Motoru</h1>
           <p className="subtitle">
@@ -5035,7 +5036,7 @@ export default function Home() {
       {data && gem && (
         <>
           {/* GEM Önerisi */}
-          <div className="hero">
+          <div className="hero" id="ana-icerik" tabIndex={-1}>
             <p className="hero-label">GEM Önerisi — Bu Ay Tutulacak Pozisyon</p>
             <div className="hero-position">
               <span className="hero-asset">{gem.positionName}</span>

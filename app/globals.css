@@ -1514,6 +1514,28 @@ table.heatmap.corr td {
   font-weight: 600;
 }
 
+/* Erişilebilirlik: içeriğe atla linki — yalnız klavye odağında görünür */
+.skip-link {
+  position: absolute;
+  left: 12px;
+  top: -48px;
+  z-index: 100;
+  background: var(--accent);
+  color: #06281f;
+  font-weight: 700;
+  padding: 8px 14px;
+  border-radius: 8px;
+  text-decoration: none;
+  transition: top 0.15s ease;
+}
+.skip-link:focus {
+  top: 12px;
+  outline: 2px solid #fff;
+}
+.hero:focus {
+  outline: none;
+}
+
 .view-tabs {
   position: sticky;
   top: 0;
