@@ -4401,11 +4401,33 @@ export default function Home() {
           {/* Evren sekmeleri (ETF + dinamik evrenler) */}
           <div
             className="view-tabs"
+            role="tablist"
+            aria-label="Varlık evreni sekmeleri"
+            onKeyDown={(e) => {
+              const ids = ["etf", ...data.universes.map((u) => u.id)];
+              const idx = ids.indexOf(view);
+              let next = -1;
+              if (e.key === "ArrowRight" || e.key === "ArrowDown")
+                next = (idx + 1) % ids.length;
+              else if (e.key === "ArrowLeft" || e.key === "ArrowUp")
+                next = (idx - 1 + ids.length) % ids.length;
+              else if (e.key === "Home") next = 0;
+              else if (e.key === "End") next = ids.length - 1;
+              if (next >= 0) {
+                e.preventDefault();
+                selectView(ids[next]);
+                document.getElementById(`vtab-${ids[next]}`)?.focus();
+              }
+            }}
             style={{
               gridTemplateColumns: `repeat(${1 + data.universes.length}, 1fr)`,
             }}
           >
             <button
+              id="vtab-etf"
+              role="tab"
+              aria-selected={view === "etf"}
+              tabIndex={view === "etf" ? 0 : -1}
               className={`view-tab ${view === "etf" ? "active" : ""}`}
               onClick={() => selectView("etf")}
             >
@@ -4420,6 +4442,10 @@ export default function Home() {
             {data.universes.map((u) => (
               <button
                 key={u.id}
+                id={`vtab-${u.id}`}
+                role="tab"
+                aria-selected={view === u.id}
+                tabIndex={view === u.id ? 0 : -1}
                 className={`view-tab ${view === u.id ? "active" : ""}`}
                 onClick={() => selectView(u.id)}
               >
