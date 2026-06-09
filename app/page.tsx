@@ -53,6 +53,31 @@ function num(x: number | null, d = 2): string {
   if (x == null || !isFinite(x)) return "—";
   return x.toFixed(d);
 }
+
+// Pearson korelasyon (iki getiri serisi)
+function pearson(a: number[], b: number[]): number {
+  const m = Math.min(a.length, b.length);
+  if (m < 2) return 0;
+  let sa = 0;
+  let sb = 0;
+  for (let i = 0; i < m; i++) {
+    sa += a[i];
+    sb += b[i];
+  }
+  const ma = sa / m;
+  const mb = sb / m;
+  let cov = 0;
+  let va = 0;
+  let vb = 0;
+  for (let i = 0; i < m; i++) {
+    const da = a[i] - ma;
+    const db = b[i] - mb;
+    cov += da * db;
+    va += da * da;
+    vb += db * db;
+  }
+  return va && vb ? cov / Math.sqrt(va * vb) : 0;
+}
 function fmtTime(iso: string): string {
   try {
     return new Date(iso).toLocaleString("tr-TR", {
@@ -1608,33 +1633,12 @@ function KeyInsights({ data }: { data: AnalysisResult }) {
           r.push(c.growth[i] / c.growth[i - 1] - 1);
         return r;
       });
-      const corr = (a: number[], b: number[]) => {
-        const m = Math.min(a.length, b.length);
-        if (m < 2) return 0;
-        let sa = 0;
-        let sb = 0;
-        for (let i = 0; i < m; i++) {
-          sa += a[i];
-          sb += b[i];
-        }
-        const ma = sa / m;
-        const mb = sb / m;
-        let cov = 0;
-        let va = 0;
-        let vb = 0;
-        for (let i = 0; i < m; i++) {
-          cov += (a[i] - ma) * (b[i] - mb);
-          va += (a[i] - ma) ** 2;
-          vb += (b[i] - mb) ** 2;
-        }
-        return va && vb ? cov / Math.sqrt(va * vb) : 0;
-      };
       const avg = rets.map((a, i) => {
         let s = 0;
         let n = 0;
         rets.forEach((b, j) => {
           if (i !== j) {
-            s += corr(a, b);
+            s += pearson(a, b);
             n++;
           }
         });
@@ -2540,33 +2544,9 @@ function CorrelationMatrix({ bt }: { bt: BacktestResult }) {
       r.push(c.growth[i] / c.growth[i - 1] - 1);
     return r;
   });
-  const corr = (a: number[], b: number[]) => {
-    const m = Math.min(a.length, b.length);
-    if (m < 2) return 0;
-    let sa = 0;
-    let sb = 0;
-    for (let i = 0; i < m; i++) {
-      sa += a[i];
-      sb += b[i];
-    }
-    const ma = sa / m;
-    const mb = sb / m;
-    let cov = 0;
-    let va = 0;
-    let vb = 0;
-    for (let i = 0; i < m; i++) {
-      const da = a[i] - ma;
-      const db = b[i] - mb;
-      cov += da * db;
-      va += da * da;
-      vb += db * db;
-    }
-    if (va === 0 || vb === 0) return 0;
-    return cov / Math.sqrt(va * vb);
-  };
   const labels = sleeves.map((s) => s.name);
   const k = sleeves.length;
-  const matrix = rets.map((a) => rets.map((b) => corr(a, b)));
+  const matrix = rets.map((a) => rets.map((b) => pearson(a, b)));
   const avgOff =
     matrix
       .flatMap((row, i) => row.filter((_, j) => i !== j))
