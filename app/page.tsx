@@ -2816,11 +2816,27 @@ function BacktestStudio() {
   return (
     <div className="studio">
       <div className="studio-head">
-        <span className="studio-title">🎛️ Backtest Stüdyosu</span>
-        <span className="studio-sub">
-          Parametreleri değiştir — sonuç anında yeniden hesaplanır (sayfanın geri
-          kalanı kitap-standardı 12 ayda kalır)
-        </span>
+        <div className="studio-head-text">
+          <span className="studio-title">🎛️ Backtest Stüdyosu</span>
+          <span className="studio-sub">
+            Parametreleri değiştir — sonuç anında yeniden hesaplanır (sayfanın
+            geri kalanı kitap-standardı 12 ayda kalır)
+          </span>
+        </div>
+        {(uni !== "etf" || lb !== 12 || topN !== 5 || cost !== 0) && (
+          <button
+            className="mini-btn"
+            onClick={() => {
+              setUni("etf");
+              setLb(12);
+              setTopN(5);
+              setCost(0);
+            }}
+            title="Varsayılana dön (ETF · 12 ay · top-5 · 0 bps)"
+          >
+            ↺ Sıfırla
+          </button>
+        )}
       </div>
       <div className="studio-controls">
         <div className="ctrl-group">

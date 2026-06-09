@@ -1206,9 +1206,15 @@ table.heatmap.corr td {
 }
 .studio-head {
   display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+.studio-head-text {
+  display: flex;
   flex-direction: column;
   gap: 2px;
-  margin-bottom: 14px;
 }
 .studio-title {
   font-size: 17px;
