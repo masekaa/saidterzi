@@ -4,6 +4,7 @@ import {
   Component,
   useCallback,
   useEffect,
+  useMemo,
   useState,
   type ReactNode,
 } from "react";
@@ -3125,6 +3126,120 @@ function CrisisPerformance({ bt, label = "Strateji" }: { bt: BacktestResult; lab
   );
 }
 
+function BootstrapRisk({ bt, label = "Strateji" }: { bt: BacktestResult; label?: string }) {
+  const curve = bt.equityCurves.find((c) => c.highlight) ?? bt.equityCurves[0];
+  const g = curve?.growth;
+  const strat =
+    (curve && bt.strategies.find((s) => s.name === curve.name)) ??
+    bt.strategies[0];
+
+  const stats = useMemo(() => {
+    if (!g || g.length < 25) return null;
+    const rets = growthToRets(g);
+    const n = rets.length;
+    if (n < 24) return null;
+    const N = 500;
+    const L = 6; // blok uzunluğu (ay) — kısa-vadeli oto-korelasyonu korur
+    // Sabit-tohumlu LCG: veri sabitken her render aynı sonuç → titreme yok.
+    let seed = (123456789 ^ n) >>> 0;
+    const rnd = () => {
+      seed = (1103515245 * seed + 12345) & 0x7fffffff;
+      return seed / 0x7fffffff;
+    };
+    const cagrs: number[] = [];
+    const dds: number[] = [];
+    for (let p = 0; p < N; p++) {
+      let eq = 1,
+        peak = 1,
+        maxdd = 0,
+        i = 0;
+      while (i < n) {
+        const start = Math.floor(rnd() * n);
+        for (let k = 0; k < L && i < n; k++, i++) {
+          eq *= 1 + rets[(start + k) % n];
+          if (eq > peak) peak = eq;
+          const dd = eq / peak - 1;
+          if (dd < maxdd) maxdd = dd;
+        }
+      }
+      cagrs.push(Math.pow(eq, 12 / n) - 1);
+      dds.push(maxdd);
+    }
+    cagrs.sort((a, b) => a - b);
+    dds.sort((a, b) => a - b); // en negatif (en kötü) başta
+    const q = (arr: number[], p: number) =>
+      arr[Math.min(arr.length - 1, Math.max(0, Math.floor(p * arr.length)))];
+    return {
+      cagrMed: q(cagrs, 0.5),
+      cagrLo: q(cagrs, 0.05),
+      cagrHi: q(cagrs, 0.95),
+      ddMed: q(dds, 0.5),
+      ddWorst: q(dds, 0.05),
+      pPos: cagrs.filter((c) => c > 0).length / cagrs.length,
+      N,
+      L,
+      years: n / 12,
+    };
+  }, [g]);
+  if (!stats) return null;
+
+  return (
+    <div className="chart-card">
+      <div className="chart-title">
+        {label} — Blok-Bootstrap Risk Dağılımı ({stats.N} sentetik yol)
+      </div>
+      <div className="chart-help">
+        Tek bir tarihsel yol, olası sonuçların yalnızca bir gerçekleşmesidir.
+        Aylık getiriler <b>{stats.L}-ay&apos;lık bloklar</b> hâlinde yeniden
+        örneklenip {stats.N} sentetik {stats.years.toFixed(0)}-yıllık geçmiş
+        üretildi (kısa-vadeli oto-korelasyon korunur). Aşağısı bu dağılımın
+        özeti: gerçekleşen sonuç şanslı/şanssız mıydı, makul kötü senaryo ne?
+      </div>
+      <div className="cap-grid">
+        <div className="cap-item">
+          <div className="cap-label">Medyan CAGR</div>
+          <div className={`cap-val ${stats.cagrMed >= 0 ? "pos" : "neg"}`}>
+            {pct(stats.cagrMed)}
+          </div>
+        </div>
+        <div className="cap-item">
+          <div className="cap-label">CAGR %5–%95 aralığı</div>
+          <div className="cap-val">
+            {pct(stats.cagrLo)} … {pct(stats.cagrHi)}
+          </div>
+        </div>
+        <div className="cap-item">
+          <div className="cap-label">CAGR&gt;0 olasılığı</div>
+          <div className={`cap-val ${stats.pPos >= 0.5 ? "pos" : "neg"}`}>
+            %{(stats.pPos * 100).toFixed(0)}
+          </div>
+        </div>
+        <div className="cap-item">
+          <div className="cap-label">Medyan Max Drawdown</div>
+          <div className="cap-val neg">{pct(stats.ddMed)}</div>
+        </div>
+        <div className="cap-item">
+          <div className="cap-label">Kötü senaryo Max DD (%5)</div>
+          <div className="cap-val neg">{pct(stats.ddWorst)}</div>
+        </div>
+        <div className="cap-item">
+          <div className="cap-label">Gerçekleşen (CAGR · MaxDD)</div>
+          <div className="cap-val">
+            {pct(strat?.cagr ?? null)} · {pct(strat?.maxDrawdown ?? null)}
+          </div>
+        </div>
+      </div>
+      <p className="table-note">
+        ⚠️ Bootstrap, getiri sürecinin <b>durağan</b> (stationary) olduğunu
+        varsayar — rejim değişimlerini veya görülmemiş şokları öngöremez; yalnız
+        geçmişin yeniden düzenlenmesidir. &quot;Kötü senaryo Max DD&quot;, tarihsel
+        max drawdown&apos;dan daha derin olabilir çünkü kötü aylar farklı sırada
+        kümelenebilir — sıra/şans riskinin bir göstergesidir, garanti değil.
+      </p>
+    </div>
+  );
+}
+
 function Seasonality({ bt, label }: { bt: BacktestResult; label: string }) {
   const curve = bt.equityCurves.find((c) => c.highlight) ?? bt.equityCurves[0];
   const g = curve?.growth;
@@ -3977,6 +4092,7 @@ function BacktestCharts({
       <MonthlyHeatmap bt={bt} label={label} />
       <YearlyReturns bt={bt} label={label} />
       <CrisisPerformance bt={bt} label={label} />
+      <BootstrapRisk bt={bt} label={label} />
       <RiskReturnChart rows={bt.strategies} />
       <RollingReturnsChart bt={bt} label={label} />
       <RollingVol bt={bt} label={label} />
