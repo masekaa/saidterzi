@@ -382,10 +382,14 @@ export function buildComposite(
   // eşit-ağırlık tutsaydık?" Her sleeve'in kendi benchmark eğrisini kullanır.
   const benchMaps = valid.map((s) => {
     const bt = s.bt as BacktestResult;
+    // Eşit-ağırlık al-tut'u önceliklendir (GEM'de tekil varlık eğrileri de var;
+    // varlık sınıfının pasif proxy'si eşit-ağırlıktır, tek bir endeks değil).
     const bc =
+      bt.equityCurves.find((c) => !c.highlight && /Eşit Ağırlık/i.test(c.name)) ??
       bt.equityCurves.find(
-        (c) => !c.highlight && /Eşit Ağırlık|Al-Tut|Buy.?Hold|SPY|ACWI/i.test(c.name)
-      ) ?? bt.equityCurves.find((c) => !c.highlight);
+        (c) => !c.highlight && /Al-Tut|Buy.?Hold|SPY|ACWI/i.test(c.name)
+      ) ??
+      bt.equityCurves.find((c) => !c.highlight);
     const m = new Map<string, number>();
     if (bc)
       for (let i = 1; i < bc.growth.length && i < bt.dates.length; i++)

@@ -2080,10 +2080,15 @@ function excessTStat(
 ): { t: number; meanMonthly: number; n: number } | null {
   if (!bt) return null;
   const strat = bt.equityCurves.find((c) => c.highlight) ?? bt.equityCurves[0];
+  // Benchmark: önce eşit-ağırlık al-tut (MomentumValueAdd tablosuyla TUTARLI),
+  // yoksa tekil al-tut/endeks, yoksa ilk vurgusuz eğri. GEM'de hem tekil varlık
+  // hem eşit-ağırlık eğrisi var; eşit-ağırlığı seçmek satır-içi tutarlılık sağlar.
   const bench =
+    bt.equityCurves.find((c) => !c.highlight && /Eşit Ağırlık/i.test(c.name)) ??
     bt.equityCurves.find(
-      (c) => !c.highlight && /Eşit Ağırlık|Al-Tut|Buy.?Hold|SPY|ACWI/i.test(c.name)
-    ) ?? bt.equityCurves.find((c) => !c.highlight);
+      (c) => !c.highlight && /Al-Tut|Buy.?Hold|SPY|ACWI/i.test(c.name)
+    ) ??
+    bt.equityCurves.find((c) => !c.highlight);
   if (!strat || !bench) return null;
   const sMap = new Map<string, number>();
   for (let i = 1; i < strat.growth.length && i < bt.dates.length; i++)
