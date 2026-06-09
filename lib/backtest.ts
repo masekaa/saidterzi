@@ -479,6 +479,13 @@ export function buildComposite(
     ...valid.map((s, k) => ({ name: s.name, growth: toGrowth(sleeveRets[k]) })),
   ];
 
+  // Ortak dönemi hangi sleeve sınırlıyor? (en geç başlayan = bağlayıcı kısıt)
+  const sleeveStarts = retMaps.map((m, k) => ({
+    name: valid[k].name,
+    start: Array.from(m.keys()).sort()[0] ?? "—",
+  }));
+  const binding = sleeveStarts.reduce((a, b) => (b.start > a.start ? b : a));
+
   return {
     startDate: common[0],
     endDate: common[common.length - 1],
@@ -491,6 +498,6 @@ export function buildComposite(
       .map((s) => s.name)
       .join(
         ", "
-      )}) eşit-ağırlık aylık bileşimi, ortak dönemde. İmperfect korelasyonlu sleeve'ler tek stratejiden daha düşük oynaklık hedefler (çeşitlendirme).`,
+      )}) eşit-ağırlık aylık bileşimi, ortak dönemde. İmperfect korelasyonlu sleeve'ler tek stratejiden daha düşük oynaklık hedefler (çeşitlendirme). Ortak dönem ${common[0]}'de başlar; en geç başlayan sleeve "${binding.name}" (${binding.start}) bu pencereyi sınırlar — daha uzun geçmiş için kısa-geçmişli sleeve'leri yukarıdaki Özel Bileşik Oluşturucu'dan çıkarabilirsin.`,
   };
 }
