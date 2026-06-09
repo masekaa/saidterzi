@@ -2993,6 +2993,125 @@ function YearlyReturns({ bt, label }: { bt: BacktestResult; label: string }) {
   );
 }
 
+// Bilinen tarihsel kriz pencereleri (aylık, YYYY-MM dahil).
+const CRISES: { name: string; from: string; to: string }[] = [
+  { name: "2008 Küresel Finans Krizi", from: "2007-11", to: "2009-02" },
+  { name: "2011 Euro / ABD Not Düşüşü", from: "2011-05", to: "2011-09" },
+  { name: "2015–16 Çin / Petrol Şoku", from: "2015-06", to: "2016-02" },
+  { name: "2018 Q4 Satışı", from: "2018-10", to: "2018-12" },
+  { name: "2020 COVID Çöküşü", from: "2020-01", to: "2020-03" },
+  { name: "2022 Enflasyon Ayı Piyasası", from: "2022-01", to: "2022-09" },
+];
+
+function CrisisPerformance({ bt, label = "Strateji" }: { bt: BacktestResult; label?: string }) {
+  const strat = bt.equityCurves.find((c) => c.highlight) ?? bt.equityCurves[0];
+  if (!strat) return null;
+  const bench =
+    bt.equityCurves.find((c) => !c.highlight && /Eşit Ağırlık/i.test(c.name)) ??
+    bt.equityCurves.find(
+      (c) => !c.highlight && /Al-Tut|Buy.?Hold|SPY|ACWI|Pasif/i.test(c.name)
+    ) ??
+    bt.equityCurves.find((c) => !c.highlight);
+  const ym = bt.dates.map((d) => d.slice(0, 7));
+
+  const winRet = (growth: number[], from: string, to: string): number | null => {
+    let startIdx = -1;
+    for (let i = 0; i < ym.length; i++)
+      if (ym[i] >= from) {
+        startIdx = i;
+        break;
+      }
+    let endIdx = -1;
+    for (let i = ym.length - 1; i >= 0; i--)
+      if (ym[i] <= to) {
+        endIdx = i;
+        break;
+      }
+    if (startIdx < 0 || endIdx < 0 || endIdx < startIdx) return null;
+    const baseIdx = startIdx > 0 ? startIdx - 1 : startIdx;
+    const base = growth[baseIdx];
+    const end = growth[endIdx];
+    if (!base || !isFinite(base) || !isFinite(end)) return null;
+    return end / base - 1;
+  };
+
+  const rows = CRISES.map((c) => ({
+    name: c.name,
+    from: c.from,
+    to: c.to,
+    s: winRet(strat.growth, c.from, c.to),
+    b: bench ? winRet(bench.growth, c.from, c.to) : null,
+  })).filter((r) => r.s != null);
+  if (rows.length < 1) return null;
+
+  const protRows = rows.filter((r) => r.s != null && r.b != null);
+  const avgProt =
+    protRows.length > 0
+      ? protRows.reduce((acc, r) => acc + ((r.s as number) - (r.b as number)), 0) /
+        protRows.length
+      : null;
+
+  return (
+    <>
+      <div className="section-label">
+        {label} — Kriz Stres Testi (tarihsel düşüş dönemlerinde getiri)
+      </div>
+      <div className="chart-help">
+        Her satır bilinen bir kriz penceresi; <b>{label}</b> ile pasif benchmark&apos;ın
+        o dönemdeki kümülatif getirisi. Dual momentum&apos;un asıl vaadi burada
+        görünür: mutlak momentum negatife dönünce nakde/tahvile geçtiğinden
+        krizlerde <b>çok daha az kaybetmesi</b> beklenir (pozitif &quot;koruma&quot; =
+        benchmark&apos;tan daha iyi).
+      </div>
+      <div className="table-scroll">
+        <table className="metrics">
+          <thead>
+            <tr>
+              <th className="left">Kriz</th>
+              <th>Dönem</th>
+              <th>{label}</th>
+              <th>Benchmark</th>
+              <th>Koruma (fark)</th>
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map((r, i) => {
+              const prot = r.s != null && r.b != null ? r.s - r.b : null;
+              return (
+                <tr key={i}>
+                  <td className="left">{r.name}</td>
+                  <td>
+                    {r.from} → {r.to}
+                  </td>
+                  <td className={(r.s ?? 0) >= 0 ? "pos-cell" : "neg"}>{pct(r.s)}</td>
+                  <td className={(r.b ?? 0) >= 0 ? "pos-cell" : "neg"}>{pct(r.b)}</td>
+                  <td className={prot == null ? "" : prot >= 0 ? "pos-cell strong" : "neg strong"}>
+                    {prot == null ? "—" : `${prot >= 0 ? "+" : ""}${pct(prot)}`}
+                  </td>
+                </tr>
+              );
+            })}
+            {avgProt != null && (
+              <tr className="row-hl">
+                <td className="left">
+                  <b>Ortalama koruma ({protRows.length} kriz)</b>
+                </td>
+                <td>—</td>
+                <td>—</td>
+                <td>—</td>
+                <td className={avgProt >= 0 ? "pos-cell strong" : "neg strong"}>
+                  {avgProt >= 0 ? "+" : ""}
+                  {pct(avgProt)}
+                </td>
+              </tr>
+            )}
+          </tbody>
+        </table>
+      </div>
+    </>
+  );
+}
+
 function Seasonality({ bt, label }: { bt: BacktestResult; label: string }) {
   const curve = bt.equityCurves.find((c) => c.highlight) ?? bt.equityCurves[0];
   const g = curve?.growth;
@@ -3844,6 +3963,7 @@ function BacktestCharts({
       <DrawdownEpisodes bt={bt} label={label} />
       <MonthlyHeatmap bt={bt} label={label} />
       <YearlyReturns bt={bt} label={label} />
+      <CrisisPerformance bt={bt} label={label} />
       <RiskReturnChart rows={bt.strategies} />
       <RollingReturnsChart bt={bt} label={label} />
       <RollingVol bt={bt} label={label} />
