@@ -3143,6 +3143,66 @@ function BacktestStudio() {
   );
 }
 
+function CaptureRatios({ bt }: { bt: BacktestResult }) {
+  const mom = bt.equityCurves.find((c) => c.highlight);
+  const bench =
+    bt.equityCurves.find((c) => c.name.includes("Eşit Ağırlık")) ??
+    bt.equityCurves.find((c) => !c.highlight);
+  if (!mom || !bench) return null;
+  const m = Math.min(mom.growth.length, bench.growth.length);
+  if (m < 13) return null;
+  let upS = 0;
+  let upB = 0;
+  let dnS = 0;
+  let dnB = 0;
+  let upN = 0;
+  let dnN = 0;
+  for (let i = 1; i < m; i++) {
+    const sr = mom.growth[i] / mom.growth[i - 1] - 1;
+    const br = bench.growth[i] / bench.growth[i - 1] - 1;
+    if (br > 0) {
+      upS += sr;
+      upB += br;
+      upN++;
+    } else if (br < 0) {
+      dnS += sr;
+      dnB += br;
+      dnN++;
+    }
+  }
+  const up = upB !== 0 ? upS / upB : null;
+  const dn = dnB !== 0 ? dnS / dnB : null;
+  if (up == null && dn == null) return null;
+  const benchName = bench.name.replace(/\s*\(.*\)/, "");
+
+  return (
+    <div className="chart-card">
+      <div className="chart-title">
+        Yukarı / Aşağı Yakalama — {benchName} aylarına göre
+      </div>
+      <div className="cap-grid">
+        <div className="cap-item">
+          <div className="cap-label">Yukarı Yakalama ({upN} ay)</div>
+          <div className="cap-val pos">{up != null ? `%${(up * 100).toFixed(0)}` : "—"}</div>
+        </div>
+        <div className="cap-item">
+          <div className="cap-label">Aşağı Yakalama ({dnN} ay)</div>
+          <div className={`cap-val ${dn != null && dn < 0.7 ? "pos" : "neg"}`}>
+            {dn != null ? `%${(dn * 100).toFixed(0)}` : "—"}
+          </div>
+        </div>
+      </div>
+      <p className="chart-help">
+        Benchmark&apos;ın yükseldiği aylarda strateji getirisinin oranı (yukarı)
+        ve düştüğü aylarda oranı (aşağı). <b>İdeal: yüksek yukarı, düşük aşağı.</b>{" "}
+        Düşük aşağı-yakalama, dual momentum&apos;un düşüş korumasının somut
+        ölçüsüdür (nakde kaçış sayesinde benchmark&apos;ın kayıplarının yalnızca
+        bir kısmını yer).
+      </p>
+    </div>
+  );
+}
+
 function BacktestCharts({
   bt,
   label = "GEM",
@@ -3166,6 +3226,7 @@ function BacktestCharts({
       <RollingVol bt={bt} label={label} />
       <RollingRelative bt={bt} label={label} />
       <ScatterGemVsBench bt={bt} label={label} />
+      <CaptureRatios bt={bt} />
       <BoxPlot bt={bt} />
       <Seasonality bt={bt} label={label} />
       <MetricsTable rows={bt.strategies} />

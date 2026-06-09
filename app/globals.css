@@ -617,6 +617,36 @@ table.metrics tr.row-hl .left {
   stroke: #22d3a6;
   stroke-width: 1.3;
 }
+.cap-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-bottom: 6px;
+}
+.cap-item {
+  background: var(--panel);
+  border: 1px solid var(--border-soft);
+  border-radius: 10px;
+  padding: 12px 14px;
+}
+.cap-label {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-faint);
+  margin-bottom: 5px;
+}
+.cap-val {
+  font-size: 26px;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+.cap-val.pos {
+  color: var(--success, #22d3a6);
+}
+.cap-val.neg {
+  color: var(--danger);
+}
 .equity-svg .grid-line.zero {
   stroke: var(--text-faint);
   stroke-dasharray: none;
