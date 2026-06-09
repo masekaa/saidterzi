@@ -3245,7 +3245,12 @@ export default function Home() {
               onClick={() => selectView("etf")}
             >
               📊 Çekirdek Varlıklar (ETF)
-              <small>Altın · S&amp;P 500 · NASDAQ — GEM</small>
+              <small>
+                Altın · S&amp;P 500 · NASDAQ
+                {data.backtest?.strategies[0]?.sharpe != null && (
+                  <> · GEM Sharpe {num(data.backtest.strategies[0].sharpe)}</>
+                )}
+              </small>
             </button>
             {data.universes.map((u) => (
               <button
@@ -3254,7 +3259,12 @@ export default function Home() {
                 onClick={() => selectView(u.id)}
               >
                 {u.emoji} {u.label}
-                <small>{u.sublabel}</small>
+                <small>
+                  {u.sublabel}
+                  {u.backtest?.strategies[0]?.sharpe != null && (
+                    <> · Sharpe {num(u.backtest.strategies[0].sharpe)}</>
+                  )}
+                </small>
               </button>
             ))}
           </div>
