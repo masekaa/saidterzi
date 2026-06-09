@@ -4097,6 +4097,126 @@ interface StudioResult {
   universe: string;
 }
 
+type RobCell = { lb: number; topN: number; sharpe: number | null; cagr: number | null };
+type RobData = {
+  universe: string;
+  lookbacks: number[];
+  topNs: number[];
+  cells: RobCell[];
+};
+
+function sharpeHeat(s: number | null): string {
+  if (s == null) return "rgba(100,116,139,0.18)";
+  if (s <= 0) return "rgba(239,68,68,0.55)";
+  if (s < 0.3) return "rgba(245,158,11,0.42)";
+  if (s < 0.6) return "rgba(234,179,8,0.45)";
+  if (s < 0.9) return "rgba(132,204,22,0.5)";
+  if (s < 1.2) return "rgba(34,197,94,0.58)";
+  return "rgba(16,185,129,0.72)";
+}
+
+function RobustnessHeatmap() {
+  const [uni, setUni] = useState("etf");
+  const [data, setData] = useState<RobData | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [err, setErr] = useState<string | null>(null);
+
+  useEffect(() => {
+    let alive = true;
+    setLoading(true);
+    setErr(null);
+    fetch(`/api/robustness?universe=${uni}`)
+      .then((r) => r.json())
+      .then((d) => {
+        if (!alive) return;
+        if (d.error) {
+          setErr(d.error);
+          setData(null);
+        } else {
+          setData(d as RobData);
+        }
+      })
+      .catch((e) => alive && setErr(String(e)))
+      .finally(() => alive && setLoading(false));
+    return () => {
+      alive = false;
+    };
+  }, [uni]);
+
+  return (
+    <>
+      <div className="section-label">
+        🧯 Parametre Dayanıklılık Haritası — look-back × top-N (Sharpe)
+      </div>
+      <div className="chart-card">
+        <div className="chart-help">
+          Strateji yalnız 12-ay/seçili top-N&apos;de mi iyi, yoksa tüm parametre
+          yüzeyinde mi sağlam? <b>Geniş yeşil alan = dayanıklı</b> (aşırı-uyum
+          riski düşük); kırmızı denizinde <b>tek parlak hücre = kiraz toplama</b>{" "}
+          (kırılgan, muhtemelen şans). 12-ay satırı kitap-standardıdır.
+        </div>
+        <div className="cc-toggles">
+          {STUDIO_UNIVERSES.map((u) => (
+            <button
+              key={u.id}
+              className={`cc-toggle ${uni === u.id ? "on" : ""}`}
+              aria-pressed={uni === u.id}
+              onClick={() => setUni(u.id)}
+            >
+              {u.label}
+            </button>
+          ))}
+        </div>
+        {loading && <p className="table-note">Hesaplanıyor…</p>}
+        {err && <p className="table-note neg">Hata: {err}</p>}
+        {data && !loading && (
+          <>
+            <div
+              className="rob-grid"
+              style={{
+                gridTemplateColumns: `auto repeat(${data.topNs.length}, minmax(46px, 1fr))`,
+              }}
+            >
+              <div className="rob-corner">LB ∖ N</div>
+              {data.topNs.map((tn) => (
+                <div key={`h${tn}`} className="rob-colh">
+                  {data.universe === "etf" ? "GEM" : `Top-${tn}`}
+                </div>
+              ))}
+              {data.lookbacks.flatMap((lb) => [
+                <div key={`r${lb}`} className="rob-rowh">
+                  {lb}a
+                </div>,
+                ...data.topNs.map((tn) => {
+                  const c = data.cells.find((x) => x.lb === lb && x.topN === tn);
+                  const s = c?.sharpe ?? null;
+                  return (
+                    <div
+                      key={`c${lb}-${tn}`}
+                      className={`rob-cell ${lb === 12 ? "std" : ""}`}
+                      style={{ background: sharpeHeat(s) }}
+                      title={`Look-back ${lb}a · ${
+                        data.universe === "etf" ? "GEM" : `Top-${tn}`
+                      } → Sharpe ${num(s)}, CAGR ${pct(c?.cagr ?? null)}`}
+                    >
+                      {s != null ? s.toFixed(2) : "—"}
+                    </div>
+                  );
+                }),
+              ])}
+            </div>
+            <p className="table-note">
+              Hücre = o look-back &amp; top-N ile yıllık Sharpe (renk: kırmızı≤0 →
+              yeşil&gt;1.2). 12-ay satırı kalın çerçeveli (Antonacci standardı).
+              GEM tekli seçim yaptığından top-N&apos;den bağımsızdır (tek sütun).
+            </p>
+          </>
+        )}
+      </div>
+    </>
+  );
+}
+
 function BacktestStudio() {
   const [uni, setUni] = useState("etf");
   const [lb, setLb] = useState(12);
@@ -4765,6 +4885,11 @@ export default function Home() {
           {/* Etkileşimli backtest stüdyosu */}
           <ErrorBoundary label="Backtest Stüdyosu">
             <BacktestStudio />
+          </ErrorBoundary>
+
+          {/* Parametre dayanıklılık (overfitting) haritası */}
+          <ErrorBoundary label="Parametre dayanıklılık haritası">
+            <RobustnessHeatmap />
           </ErrorBoundary>
 
           {/* Strateji karşılaştırma tablosu */}

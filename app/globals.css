@@ -630,6 +630,41 @@ table.metrics tr.comp-row .left {
   margin-bottom: 6px;
 }
 
+/* Parametre dayanıklılık ısı haritası */
+.rob-grid {
+  display: grid;
+  gap: 3px;
+  margin: 6px 0 4px;
+}
+.rob-corner,
+.rob-colh,
+.rob-rowh {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-dim);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px;
+}
+.rob-rowh {
+  justify-content: flex-end;
+  padding-right: 8px;
+}
+.rob-cell {
+  font-size: 11.5px;
+  font-weight: 700;
+  color: var(--text);
+  text-align: center;
+  padding: 7px 4px;
+  border-radius: 4px;
+  border: 1px solid transparent;
+}
+.rob-cell.std {
+  border-color: rgba(226, 232, 240, 0.55);
+  box-shadow: 0 0 0 1px rgba(226, 232, 240, 0.25);
+}
+
 /* Özel bileşik oluşturucu — sleeve aç/kapat butonları */
 .cc-toggles {
   display: flex;
