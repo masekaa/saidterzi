@@ -675,6 +675,32 @@ table.metrics tr.comp-row .left {
 .seas-neg {
   fill: rgba(239, 68, 68, 0.7);
 }
+
+/* Takvim-yılı getirileri (gruplu çubuk) */
+.yr-bench-bar {
+  fill: rgba(148, 163, 184, 0.55);
+}
+.yr-legend {
+  font-size: 0.72rem;
+  font-weight: 500;
+  color: var(--text-dim);
+  margin-left: 0.5rem;
+  white-space: nowrap;
+}
+.yr-swatch {
+  display: inline-block;
+  width: 0.7rem;
+  height: 0.7rem;
+  border-radius: 2px;
+  vertical-align: middle;
+  margin-right: 0.15rem;
+}
+.yr-swatch.strat {
+  background: rgba(34, 211, 166, 0.7);
+}
+.yr-swatch.bench {
+  background: rgba(148, 163, 184, 0.55);
+}
 .box-whisker {
   stroke: var(--text-faint);
   stroke-width: 1.2;

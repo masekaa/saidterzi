@@ -2494,6 +2494,145 @@ function RollingSharpe({ bt, label }: { bt: BacktestResult; label: string }) {
   );
 }
 
+// Takvim-yılı getirileri: strateji vs benchmark gruplu çubuk grafik.
+function yearlyReturns(
+  growth: number[],
+  dates: string[]
+): { year: string; ret: number; partial: boolean }[] {
+  if (growth.length !== dates.length || growth.length < 2) return [];
+  const byYear = new Map<string, { first: number; last: number }>();
+  dates.forEach((d, i) => {
+    const y = d.slice(0, 4);
+    const e = byYear.get(y);
+    if (!e) byYear.set(y, { first: i, last: i });
+    else e.last = i;
+  });
+  const years = [...byYear.keys()].sort();
+  const out: { year: string; ret: number; partial: boolean }[] = [];
+  for (let k = 0; k < years.length; k++) {
+    const y = years[k];
+    const cur = byYear.get(y)!;
+    // Baz = önceki yıl sonu büyümesi; ilk yıl için seri çapası (index 0).
+    const base = k === 0 ? growth[0] : growth[byYear.get(years[k - 1])!.last];
+    if (!base) continue;
+    const ret = growth[cur.last] / base - 1;
+    // Yıl Ocak'ta başlamıyor veya Aralık'ta bitmiyorsa kısmi (partial) işaretle.
+    const partial =
+      (k === 0 && dates[cur.first].slice(5, 7) !== "01") ||
+      (k === years.length - 1 && dates[cur.last].slice(5, 7) !== "12");
+    out.push({ year: y, ret, partial });
+  }
+  return out;
+}
+
+function YearlyReturns({ bt, label }: { bt: BacktestResult; label: string }) {
+  const strat = bt.equityCurves.find((c) => c.highlight) ?? bt.equityCurves[0];
+  if (!strat) return null;
+  const bench =
+    bt.equityCurves.find(
+      (c) => !c.highlight && /Eşit Ağırlık|Al-Tut|Buy.?Hold|SPY|ACWI/i.test(c.name)
+    ) ?? bt.equityCurves.find((c) => !c.highlight);
+  const sY = yearlyReturns(strat.growth, bt.dates);
+  if (sY.length < 2) return null;
+  const bMap = new Map<string, number>();
+  if (bench) for (const r of yearlyReturns(bench.growth, bt.dates)) bMap.set(r.year, r.ret);
+
+  const W = 820;
+  const H = 240;
+  const padL = 44;
+  const padR = 14;
+  const padT = 16;
+  const padB = 30;
+  const innerW = W - padL - padR;
+  const innerH = H - padT - padB;
+  const allVals = sY.map((r) => r.ret).concat([...bMap.values()]);
+  const maxAbs = Math.max(0.05, ...allVals.map((v) => Math.abs(v))) * 1.1;
+  const mid = padT + innerH / 2;
+  const bw = innerW / sY.length;
+  const Yh = (v: number) => (Math.abs(v) / maxAbs) * (innerH / 2);
+
+  const yTicks: number[] = [];
+  const tStep = maxAbs > 0.6 ? 0.2 : 0.1;
+  for (let v = -Math.floor(maxAbs / tStep) * tStep; v <= maxAbs; v += tStep)
+    yTicks.push(Number(v.toFixed(2)));
+  const stepX = Math.ceil(sY.length / 16);
+
+  return (
+    <div className="chart-card">
+      <div className="chart-title">
+        {label} Takvim-Yılı Getirileri — strateji vs benchmark{" "}
+        <span className="yr-legend">
+          <span className="yr-swatch strat" /> strateji
+          {bench ? (
+            <>
+              {"  "}
+              <span className="yr-swatch bench" /> benchmark
+            </>
+          ) : null}
+        </span>
+      </div>
+      <div className="chart-help">
+        Her yılın tam takvim-yılı toplam getirisi. Strateji çubuğu yeşil (kâr) /
+        kırmızı (zarar); ince benchmark çubuğu kıyas içindir. <b>*</b> ile işaretli
+        yıllar kısmi (veri Ocak&apos;ta başlamıyor / Aralık&apos;ta bitmiyor).
+      </div>
+      <svg className="equity-svg" viewBox={`0 0 ${W} ${H}`} role="img" aria-label="Finansal analiz grafiği; açıklama hemen üstteki başlık ve metinde">
+        {yTicks.map((v, i) => {
+          const y = mid - (v / maxAbs) * (innerH / 2);
+          return (
+            <g key={i}>
+              <line
+                x1={padL}
+                x2={W - padR}
+                y1={y}
+                y2={y}
+                className={Math.abs(v) < 1e-9 ? "grid-line zero" : "grid-line"}
+              />
+              <text x={padL - 6} y={y + 3} className="axis-label" textAnchor="end">
+                {(v * 100).toFixed(0)}
+              </text>
+            </g>
+          );
+        })}
+        {sY.map((r, i) => {
+          const b = bMap.get(r.year);
+          const xc = padL + i * bw + bw / 2;
+          const sw = Math.min(22, bw * 0.42);
+          const sh = Yh(r.ret);
+          const sx = xc - (b != null ? sw : sw / 2);
+          const sy = r.ret >= 0 ? mid - sh : mid;
+          return (
+            <g key={r.year}>
+              <rect
+                x={sx}
+                y={sy}
+                width={sw}
+                height={Math.max(1, sh)}
+                className={r.ret >= 0 ? "seas-pos" : "seas-neg"}
+              />
+              {b != null ? (
+                <rect
+                  x={xc + 1}
+                  y={b >= 0 ? mid - Yh(b) : mid}
+                  width={sw * 0.6}
+                  height={Math.max(1, Yh(b))}
+                  className="yr-bench-bar"
+                />
+              ) : null}
+              {i % stepX === 0 ? (
+                <text x={xc} y={H - 14} className="axis-label" textAnchor="middle">
+                  {r.year.slice(2)}
+                  {r.partial ? "*" : ""}
+                </text>
+              ) : null}
+            </g>
+          );
+        })}
+      </svg>
+    </div>
+  );
+}
+
 function Seasonality({ bt, label }: { bt: BacktestResult; label: string }) {
   const curve = bt.equityCurves.find((c) => c.highlight) ?? bt.equityCurves[0];
   const g = curve?.growth;
@@ -3341,6 +3480,7 @@ function BacktestCharts({
       <UnderwaterChart bt={bt} label={label} />
       <DrawdownEpisodes bt={bt} label={label} />
       <MonthlyHeatmap bt={bt} label={label} />
+      <YearlyReturns bt={bt} label={label} />
       <RiskReturnChart rows={bt.strategies} />
       <RollingReturnsChart bt={bt} label={label} />
       <RollingVol bt={bt} label={label} />
