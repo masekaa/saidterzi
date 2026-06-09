@@ -5216,6 +5216,29 @@ export default function Home() {
                 Tablodaki üç 🧩 satırını karşılaştır.
               </p>
               <AdvancedMetricsTable rows={data.composite.strategies} />
+              {(() => {
+                const ex = excessTStat(data.composite);
+                if (!ex) return null;
+                const sig = Math.abs(ex.t) >= 1.96;
+                return (
+                  <p className="table-note">
+                    <b>Aktif değer (pasif al-tut&apos;a karşı):</b> bileşiğin pasif
+                    eşit-ağırlık benchmark&apos;a karşı Bilgi Oranı{" "}
+                    <b className={ex.ir >= 0 ? "pos-cell" : "neg"}>
+                      {ex.ir >= 0 ? "+" : ""}
+                      {ex.ir.toFixed(2)}
+                    </b>
+                    , aylık fark t-stat{" "}
+                    <b className={sig ? "pos-cell" : ""}>
+                      {ex.t.toFixed(2)} {sigMark(ex.t)}
+                    </b>{" "}
+                    ({ex.n} ay).{" "}
+                    {sig
+                      ? "Dual momentum'un pasif tutmaya kattığı değer istatistiksel olarak anlamlı."
+                      : "Üstünlük istatistiksel olarak kesin değil; oto-korelasyon nedeniyle t-stat'ı temkinli yorumla."}
+                  </p>
+                );
+              })()}
               <CrisisPerformance bt={data.composite} label="Bileşik" />
               <BootstrapRisk bt={data.composite} label="Bileşik" />
               <DiversificationStat bt={data.composite} />
