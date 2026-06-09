@@ -4163,8 +4163,19 @@ function sharpeHeat(s: number | null): string {
   return "rgba(16,185,129,0.72)";
 }
 
+function cagrHeat(c: number | null): string {
+  if (c == null) return "rgba(100,116,139,0.18)";
+  if (c <= 0) return "rgba(239,68,68,0.55)";
+  if (c < 0.05) return "rgba(245,158,11,0.42)";
+  if (c < 0.1) return "rgba(234,179,8,0.45)";
+  if (c < 0.15) return "rgba(132,204,22,0.5)";
+  if (c < 0.25) return "rgba(34,197,94,0.58)";
+  return "rgba(16,185,129,0.72)";
+}
+
 function RobustnessHeatmap() {
   const [uni, setUni] = useState("etf");
+  const [metric, setMetric] = useState<"sharpe" | "cagr">("sharpe");
   const [data, setData] = useState<RobData | null>(null);
   const [loading, setLoading] = useState(false);
   const [err, setErr] = useState<string | null>(null);
@@ -4211,6 +4222,18 @@ function RobustnessHeatmap() {
             </button>
           ))}
         </div>
+        <div className="cc-toggles" style={{ marginTop: -4 }}>
+          {(["sharpe", "cagr"] as const).map((mk) => (
+            <button
+              key={mk}
+              className={`cc-toggle ${metric === mk ? "on" : ""}`}
+              aria-pressed={metric === mk}
+              onClick={() => setMetric(mk)}
+            >
+              {mk === "sharpe" ? "Sharpe görünümü" : "CAGR görünümü"}
+            </button>
+          ))}
+        </div>
         {loading && <p className="table-note">Hesaplanıyor…</p>}
         {err && <p className="table-note neg">Hata: {err}</p>}
         {data && !loading && (
@@ -4233,17 +4256,28 @@ function RobustnessHeatmap() {
                 </div>,
                 ...data.topNs.map((tn) => {
                   const c = data.cells.find((x) => x.lb === lb && x.topN === tn);
-                  const s = c?.sharpe ?? null;
+                  const val =
+                    metric === "sharpe" ? c?.sharpe ?? null : c?.cagr ?? null;
+                  const bg =
+                    metric === "sharpe" ? sharpeHeat(val) : cagrHeat(val);
+                  const disp =
+                    val == null
+                      ? "—"
+                      : metric === "sharpe"
+                      ? val.toFixed(2)
+                      : `${(val * 100).toFixed(0)}%`;
                   return (
                     <div
                       key={`c${lb}-${tn}`}
                       className={`rob-cell ${lb === 12 ? "std" : ""}`}
-                      style={{ background: sharpeHeat(s) }}
+                      style={{ background: bg }}
                       title={`Look-back ${lb}a · ${
                         data.universe === "etf" ? "GEM" : `Top-${tn}`
-                      } → Sharpe ${num(s)}, CAGR ${pct(c?.cagr ?? null)}`}
+                      } → Sharpe ${num(c?.sharpe ?? null)}, CAGR ${pct(
+                        c?.cagr ?? null
+                      )}`}
                     >
-                      {s != null ? s.toFixed(2) : "—"}
+                      {disp}
                     </div>
                   );
                 }),
@@ -4251,12 +4285,13 @@ function RobustnessHeatmap() {
             </div>
             {(() => {
               const vals = data.cells
-                .map((c) => c.sharpe)
+                .map((c) => (metric === "sharpe" ? c.sharpe : c.cagr))
                 .filter((s): s is number => s != null && isFinite(s));
               if (vals.length < 2) return null;
               const sorted = [...vals].sort((a, b) => a - b);
               const med = sorted[Math.floor(sorted.length / 2)];
-              const solid = vals.filter((s) => s > 0.5).length;
+              const solidThr = metric === "sharpe" ? 0.5 : 0.05;
+              const solid = vals.filter((s) => s > solidThr).length;
               const pos = vals.filter((s) => s > 0).length;
               const pctSolid = (solid / vals.length) * 100;
               const verdict =
@@ -4265,22 +4300,28 @@ function RobustnessHeatmap() {
                   : pctSolid >= 40
                   ? { t: "Orta", c: "" }
                   : { t: "Kırılgan", c: "thin" };
+              const fmt = (v: number) =>
+                metric === "sharpe" ? v.toFixed(2) : `%${(v * 100).toFixed(0)}`;
+              const lbl = metric === "sharpe" ? "Sharpe>0.5" : "CAGR>%5";
+              const medLbl = metric === "sharpe" ? "Sharpe" : "CAGR";
               return (
                 <div className={`rob-verdict ${verdict.c}`}>
-                  Dayanıklılık: <b>{verdict.t}</b> — {vals.length} konfigürasyonun{" "}
-                  <b>%{pctSolid.toFixed(0)}</b>&apos;i Sharpe&gt;0.5 (%
-                  {((pos / vals.length) * 100).toFixed(0)}&apos;i pozitif) · medyan
-                  Sharpe <b>{med.toFixed(2)}</b> · aralık {sorted[0].toFixed(2)}–
-                  {sorted[sorted.length - 1].toFixed(2)}.
+                  Dayanıklılık ({medLbl}): <b>{verdict.t}</b> —{" "}
+                  {vals.length} konfigürasyonun <b>%{pctSolid.toFixed(0)}</b>&apos;i{" "}
+                  {lbl} (%{((pos / vals.length) * 100).toFixed(0)}&apos;i pozitif) ·
+                  medyan {medLbl} <b>{fmt(med)}</b> · aralık {fmt(sorted[0])}–
+                  {fmt(sorted[sorted.length - 1])}.
                 </div>
               );
             })()}
             <p className="table-note">
-              Hücre = o look-back &amp; top-N ile yıllık Sharpe (renk: kırmızı≤0 →
-              yeşil&gt;1.2). 12-ay satırı kalın çerçeveli (Antonacci standardı).
-              GEM tekli seçim yaptığından top-N&apos;den bağımsızdır (tek sütun).
-              Yüksek &quot;dayanıklılık&quot; = strateji parametre seçimine duyarlı
-              değil (aşırı-uyum riski düşük).
+              Hücre = o look-back &amp; top-N ile{" "}
+              {metric === "sharpe" ? "yıllık Sharpe" : "yıllık CAGR"} (renk:
+              kırmızı≤0 → yeşil yüksek). 12-ay satırı kalın çerçeveli (Antonacci
+              standardı). GEM tekli seçim yaptığından top-N&apos;den bağımsızdır
+              (tek sütun). Yüksek &quot;dayanıklılık&quot; = strateji parametre
+              seçimine duyarlı değil (aşırı-uyum riski düşük). Sharpe görünümü
+              risk-ayarlı, CAGR görünümü ham getiri yüzeyini gösterir.
             </p>
           </>
         )}
