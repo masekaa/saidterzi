@@ -12,7 +12,7 @@ Bu uygulama **Next.js 14 (App Router)** — Vercel'in yerel framework'ü. Ekstra
    - **Root Directory:** `./` (repo kökü)
    - **Build Command:** `next build` (otomatik)
    - **Output:** otomatik
-   - **Environment Variables:** Zorunlu değil. (Opsiyonel: earnings momentum için `FMP_API_KEY`.)
+   - **Environment Variables:** Zorunlu değil. (Opsiyonel: earnings momentum için `FMP_API_KEY`; özel/kanonik alan adı için `NEXT_PUBLIC_SITE_URL` — OG/paylaşım görsel URL'lerinin mutlak çözülmesi için, ayarlanmazsa Vercel dağıtım URL'si kullanılır.)
 5. **Deploy**'a bas. ~1-2 dakikada canlı URL hazır (`saidterzi.vercel.app` benzeri).
 
 > Her `git push` sonrası Vercel otomatik yeniden deploy eder (CI/CD).
