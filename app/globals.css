@@ -1338,6 +1338,19 @@ table.heatmap.corr td {
   color: var(--text-faint);
   margin-top: auto;
 }
+.sig-margin {
+  font-size: 10.5px;
+  font-weight: 600;
+  margin-top: 4px;
+  padding-top: 4px;
+  border-top: 1px solid var(--border-soft);
+}
+.sig-margin.ok {
+  color: #22d3a6;
+}
+.sig-margin.thin {
+  color: #f59e0b;
+}
 .period-cell {
   font-size: 11px;
   color: var(--text-faint);

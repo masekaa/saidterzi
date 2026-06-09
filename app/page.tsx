@@ -1885,6 +1885,24 @@ function KeyInsights({ data }: { data: AnalysisResult }) {
 function ConsolidatedSignals({ data }: { data: AnalysisResult }) {
   const gem = data.gem;
   const etfCash = gem.positionKey === "cash";
+  const gemWinner = data.signals.assets.find((a) => a.isGemWinner);
+  const gemMargin = etfCash ? null : gemWinner?.excessVsTbill ?? null;
+
+  // Sinyal kırılganlığı: seçimin T-Bill eşiğine payı küçükse (≈ %3 altı) pozisyon
+  // gelecek ay nakde dönebilir — kullanıcıya bu riski göster.
+  const marginLine = (excess: number | null) => {
+    if (excess == null || !isFinite(excess)) return null;
+    const thin = excess < 0.03;
+    return (
+      <div
+        className={`sig-margin ${thin ? "thin" : "ok"}`}
+        title="Seçimin T-Bill eşiğine olan payı (en zayıf seçim). Küçükse sinyal kırılgan: gelecek ay nakde dönebilir."
+      >
+        {thin ? "⚠️ İnce pay" : "Pay"}: T-Bill +{(excess * 100).toFixed(1)}%
+      </div>
+    );
+  };
+
   return (
     <>
       <div className="section-label">
@@ -1901,9 +1919,14 @@ function ConsolidatedSignals({ data }: { data: AnalysisResult }) {
           <div className="sig-foot">
             {etfCash ? "Riskten kaç (nakit)" : "Hissede kal"}
           </div>
+          {marginLine(gemMargin)}
         </div>
         {data.universes.map((u) => {
           const picks = u.momentum.stocks.filter((s) => s.selected);
+          const exc = picks
+            .map((s) => s.excessVsTbill)
+            .filter((x): x is number => x != null && isFinite(x));
+          const minExcess = exc.length ? Math.min(...exc) : null;
           return (
             <div className="sig-card" key={u.id}>
               <div className="sig-head">
@@ -1925,14 +1948,18 @@ function ConsolidatedSignals({ data }: { data: AnalysisResult }) {
                   ? `Top-${u.momentum.topN} momentum seçimi`
                   : "Hiçbiri T-Bill'i geçemedi"}
               </div>
+              {picks.length ? marginLine(minExcess) : null}
             </div>
           );
         })}
       </div>
       <p className="table-note">
         Her evren için bu ay sonu itibarıyla dual momentum (göreceli + mutlak)
-        seçimi. Backtest stüdyosundan farklı look-back denemek için yukarıyı
-        kullan; bu kartlar kitap-standardı 12 aya dayanır.
+        seçimi. <b>Pay</b> = en zayıf seçimin T-Bill eşiğinin ne kadar üstünde
+        olduğu; <b>⚠️ ince pay</b> (≈%3 altı) sinyalin kırılgan olduğunu, küçük
+        bir geri çekilmenin pozisyonu nakde döndürebileceğini gösterir. Backtest
+        stüdyosundan farklı look-back denemek için yukarıyı kullan; bu kartlar
+        kitap-standardı 12 aya dayanır.
       </p>
     </>
   );
