@@ -424,7 +424,7 @@ function MethodCard({
 }) {
   return (
     <div className="method">
-      <button className="method-head" onClick={onToggle}>
+      <button className="method-head" onClick={onToggle} aria-expanded={open}>
         <div className="method-head-left">
           <span className="method-title">{m.title}</span>
           <span className="method-cat">{m.category}</span>
@@ -1358,7 +1358,11 @@ function MethodologyPanel() {
   const [open, setOpen] = useState(false);
   return (
     <div className="howto">
-      <button className="howto-head" onClick={() => setOpen((o) => !o)}>
+      <button
+        className="howto-head"
+        onClick={() => setOpen((o) => !o)}
+        aria-expanded={open}
+      >
         <span className="howto-title">
           📘 Nasıl çalışır? — GEM / Dual Momentum metodolojisi
         </span>
@@ -1477,7 +1481,11 @@ function CollapsibleSection({
   const [open, setOpen] = useState(defaultOpen);
   return (
     <div className="csec">
-      <button className="csec-head" onClick={() => setOpen((o) => !o)}>
+      <button
+        className="csec-head"
+        onClick={() => setOpen((o) => !o)}
+        aria-expanded={open}
+      >
         <span>{title}</span>
         <span className={`chevron ${open ? "up" : ""}`}>▾</span>
       </button>
