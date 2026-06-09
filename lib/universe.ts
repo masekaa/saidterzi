@@ -143,6 +143,21 @@ export const FACTOR_UNIVERSE: Instrument[] = [
 ];
 export const FACTOR_TOP_N = 2;
 
+// --- Tahvil / sabit-getiri evreni ---
+// Tahvil momentumu: getiri eğrisi (kısa↔uzun vade) ve kredi spektrumu (devlet↔
+// yüksek-getiri) arası rotasyon. Hisse/emtiadan farklı bir varlık sınıfı →
+// bileşiğe düşük-korelasyonlu, savunmacı bir sleeve ekler (çeşitlendirme).
+export const BOND_UNIVERSE: Instrument[] = [
+  { key: "shy", name: "Kısa Vade Tahvil", ticker: "SHY", note: "1-3 yıl ABD Hazine" },
+  { key: "ief", name: "Orta Vade Tahvil", ticker: "IEF", note: "7-10 yıl ABD Hazine" },
+  { key: "tlt", name: "Uzun Vade Tahvil", ticker: "TLT", note: "20+ yıl ABD Hazine" },
+  { key: "lqd", name: "Yatırım Sınıfı Tahvil", ticker: "LQD", note: "IG şirket tahvili" },
+  { key: "hyg", name: "Yüksek Getiri", ticker: "HYG", note: "High-yield şirket" },
+  { key: "tip", name: "Enflasyon Korumalı", ticker: "TIP", note: "TIPS" },
+  { key: "emb", name: "Gelişmekte Olan Tahvil", ticker: "EMB", note: "EM dolar tahvili" },
+];
+export const BOND_TOP_N = 2;
+
 // DMSR güvenli liman + trend referansı
 export const AGG: Instrument = {
   key: "agg",
@@ -164,6 +179,7 @@ export function allTickers(): string[] {
     ...INTL_UNIVERSE,
     ...COMMODITIES_UNIVERSE,
     ...FACTOR_UNIVERSE,
+    ...BOND_UNIVERSE,
     AGG,
   ].forEach((i) => set.add(i.ticker));
   return Array.from(set);

@@ -19,6 +19,8 @@ import {
   COMMODITIES_TOP_N,
   FACTOR_UNIVERSE,
   FACTOR_TOP_N,
+  BOND_UNIVERSE,
+  BOND_TOP_N,
   DMSR_TOP_N,
   allTickers,
   LOOKBACK_MONTHS,
@@ -124,6 +126,7 @@ export async function GET(req: Request) {
     const intlRaw = mapBy(INTL_UNIVERSE);
     const commodityRaw = mapBy(COMMODITIES_UNIVERSE);
     const factorRaw = mapBy(FACTOR_UNIVERSE);
+    const bondRaw2 = mapBy(BOND_UNIVERSE);
 
     // İki yavaş dış çağrıyı (Ken French zip + FMP earnings) PARALEL başlat —
     // soğuk yükleme süresini kısaltır (sıralı await yerine örtüşürler).
@@ -240,6 +243,18 @@ export async function GET(req: Request) {
         raw: factorRaw,
         universe: FACTOR_UNIVERSE,
         topN: FACTOR_TOP_N,
+        withEarnings: false,
+      },
+      {
+        id: "bond",
+        emoji: "🏦",
+        label: "Tahvil / Sabit Getiri",
+        sublabel: `${BOND_UNIVERSE.length} tahvil ETF'i`,
+        positionLabel: "Tahvil Momentum",
+        benchLabel: "Eşit Ağırlık (Tüm Tahviller)",
+        raw: bondRaw2,
+        universe: BOND_UNIVERSE,
+        topN: BOND_TOP_N,
         withEarnings: false,
       },
     ];

@@ -13,6 +13,7 @@ import {
   INTL_UNIVERSE,
   COMMODITIES_UNIVERSE,
   FACTOR_UNIVERSE,
+  BOND_UNIVERSE,
   type Instrument,
 } from "@/lib/universe";
 import { runBacktest, runStockBacktest } from "@/lib/backtest";
@@ -64,6 +65,12 @@ const CONFIGS: Record<string, Cfg> = {
     universe: FACTOR_UNIVERSE,
     positionLabel: "Faktör Momentum",
     benchLabel: "Eşit Ağırlık (Tüm Faktörler)",
+    defaultTopN: 2,
+  },
+  bond: {
+    universe: BOND_UNIVERSE,
+    positionLabel: "Tahvil Momentum",
+    benchLabel: "Eşit Ağırlık (Tüm Tahviller)",
     defaultTopN: 2,
   },
 };
