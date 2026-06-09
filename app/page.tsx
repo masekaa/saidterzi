@@ -3481,11 +3481,17 @@ export default function Home() {
           )}
 
           <p className="disclaimer">
-            ⚠️ Yalnızca eğitim/bilgilendirme amaçlıdır; yatırım tavsiyesi
-            değildir. Veriler Yahoo Finance'ten gecikmeli/yaklaşık olabilir.
-            Tüm hesaplamalar kapsam dokümanındaki (dual-momentum-kapsam/)
-            metodolojiye dayanır; backtest işlem maliyeti içermez ve geçmiş
-            performans gelecek getiriyi garanti etmez.
+            ⚠️ <b>Yalnızca eğitim/bilgilendirme amaçlıdır; yatırım tavsiyesi
+            değildir.</b> Tüm strateji sonuçları (GEM, evren momentumları,
+            bileşik, &quot;bu ay al&quot; listeleri) <b>hipotetik backtest</b>'tir
+            — gerçek hesap değildir ve gelecek getiriyi garanti etmez. Backtest&apos;ler
+            işlem maliyeti içermez (yalnızca Stüdyo&apos;da maliyeti test
+            edebilirsin); vergi, kayma (slippage) ve likidite etkileri yoktur.
+            Evrenlerin veri geçmişi farklı başlar, mutlak getiriler doğrudan
+            karşılaştırılamaz. Veriler Yahoo Finance&apos;ten gecikmeli/yaklaşık
+            olabilir; metodoloji <code>dual-momentum-kapsam/</code>
+            dokümanına dayanır. Yatırım kararları için lisanslı bir danışmana
+            başvurun.
           </p>
         </>
       )}
