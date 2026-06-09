@@ -487,6 +487,12 @@ table.metrics tr.row-hl td {
 table.metrics tr.row-hl .left {
   color: var(--accent);
 }
+table.metrics tr.comp-row td:first-child {
+  box-shadow: inset 3px 0 0 #22d3a6;
+}
+table.metrics tr.comp-row .left {
+  font-weight: 700;
+}
 .chart-card {
   background: var(--card);
   border: 1px solid var(--border-soft);

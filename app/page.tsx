@@ -1912,7 +1912,12 @@ function StrategyLeaderboard({ data }: { data: AnalysisResult }) {
           </thead>
           <tbody>
             {rows.map((r, i) => (
-              <tr key={i} className={i === 0 ? "row-hl" : ""}>
+              <tr
+                key={i}
+                className={`${i === 0 ? "row-hl" : ""} ${
+                  r.emoji === "🧩" ? "comp-row" : ""
+                }`}
+              >
                 <td className="rank">{i + 1}</td>
                 <td className="left">
                   {r.emoji} {r.name}
