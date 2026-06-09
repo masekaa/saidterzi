@@ -4144,10 +4144,6 @@ function RobustnessHeatmap() {
   }, [uni]);
 
   return (
-    <>
-      <div className="section-label">
-        🧯 Parametre Dayanıklılık Haritası — look-back × top-N (Sharpe)
-      </div>
       <div className="chart-card">
         <div className="chart-help">
           Strateji yalnız 12-ay/seçili top-N&apos;de mi iyi, yoksa tüm parametre
@@ -4213,7 +4209,6 @@ function RobustnessHeatmap() {
           </>
         )}
       </div>
-    </>
   );
 }
 
@@ -4887,9 +4882,14 @@ export default function Home() {
             <BacktestStudio />
           </ErrorBoundary>
 
-          {/* Parametre dayanıklılık (overfitting) haritası */}
+          {/* Parametre dayanıklılık (overfitting) haritası — açılınca yüklenir */}
           <ErrorBoundary label="Parametre dayanıklılık haritası">
-            <RobustnessHeatmap />
+            <CollapsibleSection
+              title="🧯 Parametre Dayanıklılık Haritası — look-back × top-N (overfitting testi)"
+              defaultOpen={false}
+            >
+              <RobustnessHeatmap />
+            </CollapsibleSection>
           </ErrorBoundary>
 
           {/* Strateji karşılaştırma tablosu */}
