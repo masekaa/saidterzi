@@ -2465,10 +2465,32 @@ function CompositeHoldings({ data }: { data: AnalysisResult }) {
     // tamamen nakit
   }
 
+  const downloadCsv = () => {
+    const lines = ["Varlik,Agirlik_Yuzde"];
+    for (const r of rows)
+      lines.push(`"${r.label}",${(r.weight * 100).toFixed(2)}`);
+    if (cash > 0.0001)
+      lines.push(`"Nakit (T-Bill)",${(cash * 100).toFixed(2)}`);
+    const blob = new Blob([lines.join("\r\n")], {
+      type: "text/csv;charset=utf-8",
+    });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "bilesik-alim-listesi.csv";
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
+
   return (
     <div className="chart-card">
-      <div className="chart-title">
-        🛒 Bileşiği Bu Ay Replike Et — eşit-ağırlık hedef portföy
+      <div className="chart-title chart-title-row">
+        <span>🛒 Bileşiği Bu Ay Replike Et — eşit-ağırlık hedef portföy</span>
+        <button className="mini-btn" onClick={downloadCsv} title="Alım listesini CSV indir">
+          ⭳ CSV
+        </button>
       </div>
       <div className="chart-help">
         Her sleeve (ETF + {data.universes.length} evren) bileşikte %
