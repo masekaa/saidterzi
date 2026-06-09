@@ -990,8 +990,8 @@ function AdvancedMetricsTable({ rows }: { rows: StrategyMetrics[] }) {
   return (
     <>
       <div className="section-label">
-        Gelişmiş Risk Metrikleri (Sortino · Calmar · çarpıklık · basıklık · CVaR
-        · drawdown süreleri)
+        Gelişmiş Risk Metrikleri (Sortino · Calmar · Ulcer · Martin · çarpıklık ·
+        basıklık · CVaR · drawdown süreleri)
       </div>
       <div className="table-scroll">
         <table className="metrics">
@@ -1000,6 +1000,8 @@ function AdvancedMetricsTable({ rows }: { rows: StrategyMetrics[] }) {
               <th className="left">Strateji</th>
               <th>Sortino</th>
               <th>Calmar</th>
+              <th>Ulcer</th>
+              <th>Martin</th>
               <th>Çarpıklık</th>
               <th>Basıklık</th>
               <th>CVaR %5 (aylık)</th>
@@ -1020,6 +1022,10 @@ function AdvancedMetricsTable({ rows }: { rows: StrategyMetrics[] }) {
                 <td className="left">{s.name}</td>
                 <td className="strong">{num(s.sortino)}</td>
                 <td>{num(calmar)}</td>
+                <td className="neg">
+                  {s.ulcerIndex != null ? s.ulcerIndex.toFixed(1) : "—"}
+                </td>
+                <td className="strong">{num(s.martinRatio ?? null)}</td>
                 <td>{num(s.skewness)}</td>
                 <td>{num(s.kurtosis)}</td>
                 <td className="neg">{pct(s.cvar5)}</td>
@@ -1041,7 +1047,12 @@ function AdvancedMetricsTable({ rows }: { rows: StrategyMetrics[] }) {
       </div>
       <p className="table-note">
         <b>Sortino:</b> getiriyi yalnızca aşağı-yön oynaklığına böler (Sharpe&apos;ın
-        ceza vermediği yukarı oynaklığı görmezden gelir). <b>Çarpıklık&lt;0</b>{" "}
+        ceza vermediği yukarı oynaklığı görmezden gelir). <b>Ulcer Index:</b>{" "}
+        drawdown&apos;ların karekök-ortalama-karesi — MaxDD&apos;den farklı olarak hem
+        düşüşün derinliğini hem de su-altı kalma süresini cezalandırır (düşük = az
+        &quot;acı&quot;). <b>Martin oranı:</b> yıllık getiri ÷ Ulcer (acı-başına
+        getiri; Sharpe&apos;ın drawdown-temelli kuzeni, yüksek = iyi).{" "}
+        <b>Çarpıklık&lt;0</b>{" "}
         sol kuyruk (ani büyük kayıp) riskine işaret eder. <b>Basıklık&gt;0</b>{" "}
         kalın kuyruklar (fat tails). <b>CVaR %5:</b> en kötü %5&apos;lik ayların
         ortalama getirisi (beklenen kuyruk kaybı). <b>DD süre/toparlanma:</b> en

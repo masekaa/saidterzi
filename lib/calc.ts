@@ -196,6 +196,24 @@ export function maxDrawdown(monthlyReturns: number[]): number | null {
   return maxDD;
 }
 
+// Ulcer Index (Peter Martin) — drawdown'ların karekök-ortalama-karesi (RMS).
+// MaxDD yalnız en kötü tek anı ölçer; Ulcer hem DERİNLİĞİ hem SÜREYİ cezalandırır:
+// uzun ve derin su-altı dönemler indeksi yükseltir. Yatırımcının "acı" ölçüsü.
+// UI = √( ortalama( dd_i² ) ),  dd_i = (equity_i / peak_i − 1) · 100  (yüzde puan)
+export function ulcerIndex(monthlyReturns: number[]): number | null {
+  if (monthlyReturns.length === 0) return null;
+  let equity = 1;
+  let peak = 1;
+  let sumSq = 0;
+  for (const r of monthlyReturns) {
+    equity *= 1 + r;
+    if (equity > peak) peak = equity;
+    const ddPct = (equity / peak - 1) * 100; // ≤ 0
+    sumSq += ddPct * ddPct;
+  }
+  return Math.sqrt(sumSq / monthlyReturns.length);
+}
+
 // Kârlı ay yüzdesi
 export function pctProfitableMonths(monthlyReturns: number[]): number | null {
   if (monthlyReturns.length === 0) return null;

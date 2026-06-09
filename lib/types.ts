@@ -60,6 +60,8 @@ export interface StrategyMetrics {
   skewness: number | null; // dağılım asimetrisi
   kurtosis: number | null; // fazla basıklık (fat tails)
   cvar5: number | null; // %5 CVaR (beklenen kuyruk kaybı, aylık)
+  ulcerIndex?: number | null; // drawdown RMS (derinlik+süre "acı" ölçüsü)
+  martinRatio?: number | null; // CAGR / UlcerIndex (acı-başına getiri)
   ddDurationMonths?: number | null; // max DD tepe→dip süre
   ddRecoveryMonths?: number | null; // dip→toparlanma süre (null = toparlanmadı)
   switchesPerYear?: number | null;

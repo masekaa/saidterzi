@@ -16,6 +16,7 @@ import {
   kurtosis,
   cvar,
   maxDrawdownDetail,
+  ulcerIndex,
 } from "./calc";
 import {
   CORE_ASSETS,
@@ -35,10 +36,16 @@ function buildMetrics(
   extra?: { switchesPerYear?: number; timeInAsset?: Record<string, number> }
 ): StrategyMetrics {
   const ddDetail = maxDrawdownDetail(rets);
+  const ui = ulcerIndex(rets);
+  const cagrV = cagr(rets);
+  // Martin oranı (Ulcer Performance Index): yıllık getiri ÷ Ulcer Index.
+  // Sharpe'ın vol'e karşılığı; burada payda "acı" (drawdown RMS, yüzde puan).
+  const martin =
+    cagrV != null && ui != null && ui > 1e-9 ? (cagrV * 100) / ui : null;
   return {
     name,
     annualReturnArith: annualReturnArithmetic(rets),
-    cagr: cagr(rets),
+    cagr: cagrV,
     annualVol: annualVolatility(rets),
     sharpe: sharpeRatio(rets, rf),
     maxDrawdown: maxDrawdown(rets),
@@ -48,6 +55,8 @@ function buildMetrics(
     skewness: skewness(rets),
     kurtosis: kurtosis(rets),
     cvar5: cvar(rets, 0.05),
+    ulcerIndex: ui,
+    martinRatio: martin,
     ddDurationMonths: ddDetail?.durationMonths ?? null,
     ddRecoveryMonths: ddDetail?.recoveryMonths ?? null,
     switchesPerYear: extra?.switchesPerYear ?? null,
