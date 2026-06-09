@@ -3140,11 +3140,15 @@ function BootstrapRisk({ bt, label = "Strateji" }: { bt: BacktestResult; label?:
     if (n < 24) return null;
     const N = 500;
     const L = 6; // blok uzunluğu (ay) — kısa-vadeli oto-korelasyonu korur
-    // Sabit-tohumlu LCG: veri sabitken her render aynı sonuç → titreme yok.
+    // Sabit-tohumlu mulberry32: 32-bit güvenli (Math.imul), veri sabitken her
+    // render aynı sonuç → titreme yok. (Basit LCG float64'te taşıp düşük bit
+    // entropisini bozuyordu; mulberry32 yüksek kaliteli ve taşmasız.)
     let seed = (123456789 ^ n) >>> 0;
     const rnd = () => {
-      seed = (1103515245 * seed + 12345) & 0x7fffffff;
-      return seed / 0x7fffffff;
+      seed = (seed + 0x6d2b79f5) | 0;
+      let t = Math.imul(seed ^ (seed >>> 15), 1 | seed);
+      t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+      return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
     };
     const cagrs: number[] = [];
     const dds: number[] = [];
