@@ -2271,6 +2271,190 @@ function MomentumValueAdd({ data }: { data: AnalysisResult }) {
   );
 }
 
+function CustomComposite({ data }: { data: AnalysisResult }) {
+  const sleeves = useMemo(() => {
+    const list: {
+      id: string;
+      label: string;
+      emoji: string;
+      map: Map<string, number>;
+    }[] = [];
+    const add = (id: string, label: string, emoji: string, bt: BacktestResult | null) => {
+      if (!bt) return;
+      const c = bt.equityCurves.find((x) => x.highlight) ?? bt.equityCurves[0];
+      if (!c) return;
+      const m = new Map<string, number>();
+      for (let i = 1; i < c.growth.length && i < bt.dates.length; i++)
+        m.set(bt.dates[i].slice(0, 7), c.growth[i] / c.growth[i - 1] - 1);
+      if (m.size > 12) list.push({ id, label, emoji, map: m });
+    };
+    add("etf", "GEM", "📊", data.backtest);
+    for (const u of data.universes)
+      add(
+        u.id,
+        u.positionLabel.replace(" Momentum", "").replace(" (DMSR)", ""),
+        u.emoji,
+        u.backtest
+      );
+    return list;
+  }, [data]);
+
+  const allIds = sleeves.map((s) => s.id).join(",");
+  const [sel, setSel] = useState<Set<string>>(() => new Set(sleeves.map((s) => s.id)));
+  // Veri yenilenip sleeve kümesi değişirse seçimi tüm sleeve'lere sıfırla.
+  useEffect(() => {
+    setSel(new Set(allIds ? allIds.split(",") : []));
+  }, [allIds]);
+
+  const metricsOf = useCallback(
+    (ids: Set<string>) => {
+      const chosen = sleeves.filter((s) => ids.has(s.id));
+      if (chosen.length < 1) return null;
+      const common = Array.from(chosen[0].map.keys())
+        .filter((ym) => chosen.every((s) => s.map.has(ym)))
+        .sort();
+      if (common.length < 13) return null;
+      const r = common.map(
+        (ym) =>
+          chosen.reduce((acc, s) => acc + (s.map.get(ym) as number), 0) /
+          chosen.length
+      );
+      const n = r.length;
+      let eq = 1,
+        peak = 1,
+        maxdd = 0;
+      for (const x of r) {
+        eq *= 1 + x;
+        if (eq > peak) peak = eq;
+        const dd = eq / peak - 1;
+        if (dd < maxdd) maxdd = dd;
+      }
+      const cagr = Math.pow(eq, 12 / n) - 1;
+      const mean = r.reduce((a, b) => a + b, 0) / n;
+      const variance = r.reduce((a, b) => a + (b - mean) ** 2, 0) / (n - 1);
+      const vol = Math.sqrt(variance) * Math.sqrt(12);
+      const calmar = maxdd < 0 ? cagr / Math.abs(maxdd) : null;
+      return {
+        cagr,
+        vol,
+        maxdd,
+        calmar,
+        n,
+        from: common[0],
+        to: common[common.length - 1],
+        k: chosen.length,
+      };
+    },
+    [sleeves]
+  );
+
+  const cur = useMemo(() => metricsOf(sel), [metricsOf, sel]);
+  const full = useMemo(
+    () => metricsOf(new Set(sleeves.map((s) => s.id))),
+    [metricsOf, sleeves]
+  );
+
+  if (sleeves.length < 2) return null;
+
+  const toggle = (id: string) =>
+    setSel((prev) => {
+      const n = new Set(prev);
+      if (n.has(id)) n.delete(id);
+      else n.add(id);
+      return n;
+    });
+
+  const delta = (a: number | null | undefined, b: number | null | undefined) =>
+    a == null || b == null ? null : a - b;
+
+  return (
+    <>
+      <div className="section-label">
+        🧪 Özel Bileşik Oluşturucu — hangi evrenler dahil olsun?
+      </div>
+      <div className="chart-card">
+        <div className="chart-help">
+          Sleeve&apos;leri aç/kapat; eşit-ağırlık bileşik <b>ortak dönemde</b>{" "}
+          anında yeniden hesaplanır. &quot;Kriptoyu çıkarırsam Calmar ne olur?&quot;
+          gibi soruları dene. Calmar (CAGR ÷ |MaxDD|) risksiz-oran gerektirmez,
+          adil kıyastır.
+        </div>
+        <div className="cc-toggles">
+          {sleeves.map((s) => {
+            const on = sel.has(s.id);
+            return (
+              <button
+                key={s.id}
+                className={`cc-toggle ${on ? "on" : ""}`}
+                aria-pressed={on}
+                onClick={() => toggle(s.id)}
+              >
+                {s.emoji} {s.label}
+              </button>
+            );
+          })}
+        </div>
+        {cur ? (
+          <>
+            <div className="cap-grid">
+              <div className="cap-item">
+                <div className="cap-label">CAGR</div>
+                <div className={`cap-val ${cur.cagr >= 0 ? "pos" : "neg"}`}>
+                  {pct(cur.cagr)}
+                </div>
+              </div>
+              <div className="cap-item">
+                <div className="cap-label">Yıllık Vol</div>
+                <div className="cap-val">{pct(cur.vol)}</div>
+              </div>
+              <div className="cap-item">
+                <div className="cap-label">Max Drawdown</div>
+                <div className="cap-val neg">{pct(cur.maxdd)}</div>
+              </div>
+              <div className="cap-item">
+                <div className="cap-label">Calmar</div>
+                <div className="cap-val">{num(cur.calmar)}</div>
+              </div>
+            </div>
+            <p className="table-note">
+              {cur.k} sleeve · ortak dönem {cur.from} → {cur.to} ({cur.n} ay).
+              {full && (
+                <>
+                  {" "}
+                  Tam bileşiğe ({full.k} sleeve) göre:{" "}
+                  <b
+                    className={
+                      (delta(cur.calmar, full.calmar) ?? 0) >= 0 ? "pos-cell" : "neg"
+                    }
+                  >
+                    Calmar {(delta(cur.calmar, full.calmar) ?? 0) >= 0 ? "+" : ""}
+                    {num(delta(cur.calmar, full.calmar))}
+                  </b>
+                  ,{" "}
+                  <b
+                    className={
+                      (delta(cur.maxdd, full.maxdd) ?? 0) >= 0 ? "pos-cell" : "neg"
+                    }
+                  >
+                    MaxDD {(delta(cur.maxdd, full.maxdd) ?? 0) >= 0 ? "+" : ""}
+                    {pct(delta(cur.maxdd, full.maxdd))}
+                  </b>
+                  . (Not: ortak dönem seçime göre değişebilir; kıyası bu
+                  uyarıyla yorumla.)
+                </>
+              )}
+            </p>
+          </>
+        ) : (
+          <p className="table-note">
+            En az 2 sleeve seç (ve yeterli ortak veri geçmişi gerekir).
+          </p>
+        )}
+      </div>
+    </>
+  );
+}
+
 function CrossUniverseRiskReturn({ data }: { data: AnalysisResult }) {
   type Ser = {
     label: string;
@@ -4477,6 +4661,9 @@ export default function Home() {
           </ErrorBoundary>
           <ErrorBoundary label="Evrenler-arası risk-getiri">
             <CrossUniverseRiskReturn data={data} />
+          </ErrorBoundary>
+          <ErrorBoundary label="Özel bileşik oluşturucu">
+            <CustomComposite data={data} />
           </ErrorBoundary>
 
           {/* Dual Momentum Bileşik — 4 evrenin eşit-ağırlık meta-stratejisi */}

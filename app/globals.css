@@ -629,6 +629,37 @@ table.metrics tr.comp-row .left {
   gap: 12px;
   margin-bottom: 6px;
 }
+
+/* Özel bileşik oluşturucu — sleeve aç/kapat butonları */
+.cc-toggles {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 4px 0 14px;
+}
+.cc-toggle {
+  background: var(--panel);
+  border: 1px solid var(--border-soft);
+  color: var(--text-dim);
+  border-radius: 999px;
+  padding: 6px 14px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.12s, border-color 0.12s, color 0.12s;
+}
+.cc-toggle:hover {
+  border-color: var(--accent);
+}
+.cc-toggle.on {
+  background: rgba(34, 211, 166, 0.16);
+  border-color: #22d3a6;
+  color: var(--text);
+}
+.cc-toggle:not(.on) {
+  opacity: 0.6;
+  text-decoration: line-through;
+}
 .cap-item {
   background: var(--panel);
   border: 1px solid var(--border-soft);
