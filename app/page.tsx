@@ -2220,7 +2220,7 @@ function StrategyLeaderboard({ data }: { data: AnalysisResult }) {
 // ayırt edilebilir mi? t = ortalama / (sd/√n). |t|>1.96 ≈ %95 anlamlılık.
 function excessTStat(
   bt: BacktestResult | null
-): { t: number; meanMonthly: number; n: number } | null {
+): { t: number; ir: number; meanMonthly: number; n: number } | null {
   if (!bt) return null;
   const strat = bt.equityCurves.find((c) => c.highlight) ?? bt.equityCurves[0];
   // Benchmark: önce eşit-ağırlık al-tut (MomentumValueAdd tablosuyla TUTARLI),
@@ -2250,7 +2250,14 @@ function excessTStat(
   const variance = diffs.reduce((a, b) => a + (b - mean) ** 2, 0) / (n - 1);
   const sd = Math.sqrt(variance);
   if (sd <= 0) return null;
-  return { t: mean / (sd / Math.sqrt(n)), meanMonthly: mean, n };
+  // Bilgi Oranı (Information Ratio): yıllık aktif getiri / yıllık takip hatası
+  // = (ort·12) / (sd·√12) = ort·√12/sd. Aktif yönetimin standart kalite ölçüsü.
+  return {
+    t: mean / (sd / Math.sqrt(n)),
+    ir: (mean * Math.sqrt(12)) / sd,
+    meanMonthly: mean,
+    n,
+  };
 }
 
 // |t|'ye göre anlamlılık işareti (iki-yönlü)
@@ -2269,6 +2276,7 @@ function MomentumValueAdd({ data }: { data: AnalysisResult }) {
     mom: StrategyMetrics;
     bench: StrategyMetrics;
     tstat: number | null;
+    ir: number | null;
   };
   const rows: Row[] = [];
   const add = (label: string, emoji: string, bt: BacktestResult | null) => {
@@ -2277,8 +2285,10 @@ function MomentumValueAdd({ data }: { data: AnalysisResult }) {
     const bench =
       bt.strategies.find((s) => s.name.includes("Eşit Ağırlık")) ??
       bt.strategies[bt.strategies.length - 1];
-    if (mom && bench)
-      rows.push({ label, emoji, mom, bench, tstat: excessTStat(bt)?.t ?? null });
+    if (mom && bench) {
+      const ex = excessTStat(bt);
+      rows.push({ label, emoji, mom, bench, tstat: ex?.t ?? null, ir: ex?.ir ?? null });
+    }
   };
   add("ETF (GEM)", "📊", data.backtest);
   for (const u of data.universes) add(u.label, u.emoji, u.backtest);
@@ -2305,6 +2315,7 @@ function MomentumValueAdd({ data }: { data: AnalysisResult }) {
               <th>Momentum Sharpe</th>
               <th>Al-Tut Sharpe</th>
               <th>Sharpe Farkı</th>
+              <th>Bilgi Oranı (IR)</th>
               <th>Aylık Fark t-stat</th>
             </tr>
           </thead>
@@ -2328,6 +2339,14 @@ function MomentumValueAdd({ data }: { data: AnalysisResult }) {
                   <td className={dS >= 0 ? "pos-cell strong" : "neg strong"}>
                     {dS >= 0 ? "+" : ""}
                     {num(dS)}
+                  </td>
+                  <td
+                    className={
+                      r.ir == null ? "" : r.ir >= 0 ? "pos-cell" : "neg"
+                    }
+                    title="Yıllık aktif getiri ÷ takip hatası. >0.5 iyi, >1 mükemmel aktif yönetim."
+                  >
+                    {r.ir == null ? "—" : `${r.ir >= 0 ? "+" : ""}${r.ir.toFixed(2)}`}
                   </td>
                   <td
                     className={
@@ -2381,6 +2400,25 @@ function MomentumValueAdd({ data }: { data: AnalysisResult }) {
                     {num(avgS)}
                   </td>
                   {(() => {
+                    const irs = rows
+                      .map((r) => r.ir)
+                      .filter((x): x is number => x != null && isFinite(x));
+                    const avgIr = irs.length
+                      ? irs.reduce((s, x) => s + x, 0) / irs.length
+                      : null;
+                    return (
+                      <td
+                        className={
+                          avgIr == null ? "" : avgIr >= 0 ? "pos-cell strong" : "neg strong"
+                        }
+                      >
+                        {avgIr == null
+                          ? "—"
+                          : `${avgIr >= 0 ? "+" : ""}${avgIr.toFixed(2)}`}
+                      </td>
+                    );
+                  })()}
+                  {(() => {
                     const sig = rows.filter(
                       (r) => r.tstat != null && Math.abs(r.tstat) >= 1.96
                     ).length;
@@ -2402,7 +2440,10 @@ function MomentumValueAdd({ data }: { data: AnalysisResult }) {
         iyi risk-ayarlı getiri. Şu an <b>{wins}/{rows.length}</b> evrende momentum
         al-tut&apos;u CAGR&apos;da geçiyor; <b>Sharpe farkı</b> (pozitif = momentum
         kazanıyor) risk-ayarlı katma değeri gösterir — düşüş korumasının asıl
-        faydası burada görülür. <b>Aylık Fark t-stat:</b> aylık (momentum −
+        faydası burada görülür. <b>Bilgi Oranı (IR):</b> yıllık aktif getiri ÷
+        takip hatası (momentum − al-tut farkının tutarlılığı, getiri biriminde) —
+        aktif yönetimin standart kalite ölçüsü; <b>&gt;0.5 iyi, &gt;1 mükemmel</b>.{" "}
+        <b>Aylık Fark t-stat:</b> aylık (momentum −
         al-tut) getiri farkının t-istatistiği — üstünlük sıfırdan istatistiksel
         olarak ayırt edilebiliyor mu? <b>✓</b> = %95, <b>✓✓</b> = %99, <b>~</b> =
         %90, <b>·</b> = anlamsız. Not: aylık getiriler oto-korelasyonlu olabilir,
