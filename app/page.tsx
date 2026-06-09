@@ -2576,6 +2576,67 @@ function CompositeStance({ data }: { data: AnalysisResult }) {
   );
 }
 
+function CompositeAttribution({ bt }: { bt: BacktestResult }) {
+  const comp = bt.equityCurves.find((c) => c.highlight);
+  const sleeves = bt.equityCurves.filter(
+    (c) => !c.highlight && !c.name.includes("Bileşik")
+  );
+  if (!comp || sleeves.length < 2) return null;
+  const V = comp.growth; // bileşik NAV (V_0 = 1)
+  const n = sleeves.length;
+  const L = Math.min(...sleeves.map((s) => s.growth.length), V.length) - 1;
+  if (L < 2) return null;
+
+  const contrib = sleeves.map((s) => {
+    let c = 0;
+    for (let t = 0; t < L; t++) {
+      const sret = s.growth[t + 1] / s.growth[t] - 1;
+      c += (1 / n) * sret * V[t]; // ay başı NAV ile ağırlıklı
+    }
+    return { name: s.name, c };
+  });
+  const total = contrib.reduce((s, x) => s + x.c, 0);
+  if (Math.abs(total) < 1e-9) return null;
+  const maxAbs = Math.max(...contrib.map((x) => Math.abs(x.c)), 1e-9);
+  const rows = contrib.slice().sort((a, b) => b.c - a.c);
+
+  return (
+    <>
+      <div className="section-label">
+        Bileşik Getiri Atfı — toplam getiriye hangi evren ne kadar katkı yaptı
+      </div>
+      <div className="chart-card">
+        <div className="chart-help">
+          Bileşiğin ortak-dönem toplam getirisi ({pct(total, 0)}) eşit-ağırlık
+          sleeve&apos;lere ayrıştırıldı (NAV-ağırlıklı, tam toplamsal). Pozitif
+          bar = o evrenin bileşiğe net kazanç katkısı; negatif = net kayıp.
+        </div>
+        <div className="rpw-list">
+          {rows.map((r) => (
+            <div className="rpw-row" key={r.name}>
+              <div className="rpw-name">{r.name.replace(/\s*\(.*\)/, "")}</div>
+              <div className="rpw-bar attr">
+                <div
+                  className={r.c >= 0 ? "attr-fill pos" : "attr-fill neg"}
+                  style={{
+                    width: `${((Math.abs(r.c) / maxAbs) * 50).toFixed(1)}%`,
+                    ...(r.c >= 0 ? { left: "50%" } : { right: "50%" }),
+                  }}
+                />
+              </div>
+              <div className={`rpw-val ${r.c >= 0 ? "" : "neg"}`}>
+                {r.c >= 0 ? "+" : ""}
+                {pct(r.c, 0)}
+              </div>
+              <div className="rpw-vol" />
+            </div>
+          ))}
+        </div>
+      </div>
+    </>
+  );
+}
+
 function RiskParityWeights({ bt }: { bt: BacktestResult }) {
   const sleeves = bt.equityCurves.filter(
     (c) => !c.highlight && !c.name.includes("Bileşik")
@@ -3393,6 +3454,7 @@ export default function Home() {
               <p className="table-note">{data.composite.note}</p>
               <AdvancedMetricsTable rows={data.composite.strategies} />
               <DiversificationStat bt={data.composite} />
+              <CompositeAttribution bt={data.composite} />
               <RiskParityWeights bt={data.composite} />
               <CorrelationMatrix bt={data.composite} />
             </CollapsibleSection>
