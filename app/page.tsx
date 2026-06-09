@@ -2054,8 +2054,9 @@ function StrategyLeaderboard({ data }: { data: AnalysisResult }) {
     });
   }
   if (rows.length < 2) return null;
-  // "Düşük daha iyi" metrikler artan sıralanır (Ulcer = az acı iyidir).
-  const ASC_KEYS: Array<keyof StrategyMetrics> = ["ulcerIndex"];
+  // "Düşük daha iyi" metrikler artan sıralanır: Ulcer (az acı) ve yıllık geçiş
+  // (az devir = düşük işlem maliyeti/vergi) — tabloda "en iyi üstte" tutarlılığı.
+  const ASC_KEYS: Array<keyof StrategyMetrics> = ["ulcerIndex", "switchesPerYear"];
   const asc = ASC_KEYS.includes(sortKey);
   const sval = (m: StrategyMetrics) => {
     const v = m[sortKey];
