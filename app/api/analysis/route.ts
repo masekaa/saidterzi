@@ -51,6 +51,32 @@ export const maxDuration = 60;
 let CACHE: { at: number; result: AnalysisResult } | null = null;
 const CACHE_TTL_MS = 10 * 60 * 1000;
 
+// Eşzamanlılık-sınırlı allSettled: 7 evren ile ~73 ticker tek seferde çekilirse
+// Yahoo rate-limit (429) riski artar. Aynı anda en çok `limit` istek koşar;
+// sonuç sırası girdiyle birebir korunur (allSettled semantiği).
+async function settledLimit<T, R>(
+  items: T[],
+  limit: number,
+  fn: (item: T) => Promise<R>
+): Promise<PromiseSettledResult<R>[]> {
+  const results = new Array<PromiseSettledResult<R>>(items.length);
+  let next = 0;
+  const worker = async () => {
+    while (next < items.length) {
+      const idx = next++;
+      try {
+        results[idx] = { status: "fulfilled", value: await fn(items[idx]) };
+      } catch (reason) {
+        results[idx] = { status: "rejected", reason };
+      }
+    }
+  };
+  await Promise.all(
+    Array.from({ length: Math.min(limit, items.length) }, worker)
+  );
+  return results;
+}
+
 export async function GET(req: Request) {
   const force = new URL(req.url).searchParams.get("refresh") === "1";
   if (!force && CACHE && Date.now() - CACHE.at < CACHE_TTL_MS) {
@@ -61,8 +87,10 @@ export async function GET(req: Request) {
   }
   try {
     const tickers = allTickers();
-    const settled = await Promise.allSettled(
-      tickers.map((t) => fetchMonthlySeries(t, "max"))
+    // En çok 12 eşzamanlı Yahoo isteği — rate-limit riskini azaltır, soğuk
+    // yükleme hâlâ büyük ölçüde paralel (73 ticker / 12 ≈ 6 dalga).
+    const settled = await settledLimit(tickers, 12, (t) =>
+      fetchMonthlySeries(t, "max")
     );
 
     // Yahoo geçici hatalarına karşı: ilk geçişte başarısız olanları BİR kez
@@ -71,8 +99,8 @@ export async function GET(req: Request) {
       .map((s, i) => (s.status === "rejected" ? i : -1))
       .filter((i) => i >= 0);
     if (failed.length) {
-      const retried = await Promise.allSettled(
-        failed.map((i) => fetchMonthlySeries(tickers[i], "max"))
+      const retried = await settledLimit(failed, 8, (i) =>
+        fetchMonthlySeries(tickers[i], "max")
       );
       failed.forEach((i, k) => {
         if (retried[k].status === "fulfilled") settled[i] = retried[k];
