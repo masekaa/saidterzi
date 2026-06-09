@@ -2219,6 +2219,86 @@ function CrossUniverseComparison({ data }: { data: AnalysisResult }) {
   );
 }
 
+function RollingRelative({ bt, label }: { bt: BacktestResult; label: string }) {
+  const mom = bt.equityCurves.find((c) => c.highlight);
+  const bench =
+    bt.equityCurves.find((c) => c.name.includes("Eşit Ağırlık")) ??
+    bt.equityCurves.find((c) => !c.highlight);
+  if (!mom || !bench) return null;
+  const g = mom.growth;
+  const b = bench.growth;
+  const m = Math.min(g.length, b.length);
+  if (m < 26) return null;
+  const WIN = 12;
+  const vals: { i: number; d: number }[] = [];
+  for (let i = WIN; i < m; i++) {
+    const mr = g[i] / g[i - WIN] - 1;
+    const br = b[i] / b[i - WIN] - 1;
+    vals.push({ i, d: mr - br });
+  }
+  if (vals.length < 2) return null;
+
+  const W = 820;
+  const H = 200;
+  const padL = 46;
+  const padR = 14;
+  const padT = 14;
+  const padB = 26;
+  const innerW = W - padL - padR;
+  const innerH = H - padT - padB;
+  const n = bt.dates.length;
+  const ds = vals.map((p) => p.d);
+  const lo = Math.min(0, ...ds);
+  const hi = Math.max(0, ...ds);
+  const span = hi - lo || 1;
+  const X = (i: number) => padL + (innerW * i) / Math.max(1, n - 1);
+  const Y = (v: number) => padT + innerH * (1 - (v - lo) / span);
+  const zeroY = Y(0);
+  const area =
+    `M${X(vals[0].i).toFixed(1)},${zeroY.toFixed(1)} ` +
+    vals.map((p) => `L${X(p.i).toFixed(1)},${Y(p.d).toFixed(1)}`).join(" ") +
+    ` L${X(vals[vals.length - 1].i).toFixed(1)},${zeroY.toFixed(1)} Z`;
+
+  const xTicks: { i: number; label: string }[] = [];
+  let ly = "";
+  bt.dates.forEach((d, i) => {
+    const y = d.slice(0, 4);
+    if (y !== ly) {
+      xTicks.push({ i, label: y });
+      ly = y;
+    }
+  });
+  const step = Math.ceil(xTicks.length / 10);
+  const shown = xTicks.filter((_, idx) => idx % step === 0);
+  const benchName = bench.name.replace(/\s*\(.*\)/, "");
+
+  return (
+    <div className="chart-card">
+      <div className="chart-title">
+        {label} — Kayan 12-Ay Göreli Performans (momentum eksi {benchName})
+      </div>
+      <div className="chart-help">
+        Her nokta: momentumun son 12-ay getirisi eksi al-tut benchmark&apos;ının
+        son 12-ay getirisi. <b>0 üstü</b> = momentum o pencerede önde;{" "}
+        <b>0 altı</b> = geride. Sürekli 0 üstü kalması, momentum kenarının
+        tutarlı olduğunu gösterir.
+      </div>
+      <svg className="equity-svg" viewBox={`0 0 ${W} ${H}`} role="img" aria-label="Finansal analiz grafiği; açıklama hemen üstteki başlık ve metinde">
+        <line x1={padL} x2={W - padR} y1={zeroY} y2={zeroY} className="grid-line zero" />
+        <text x={padL - 8} y={zeroY + 3} className="axis-label" textAnchor="end">
+          0
+        </text>
+        <path d={area} className="relperf-area" />
+        {shown.map((t, idx) => (
+          <text key={idx} x={X(t.i)} y={H - 8} className="axis-label" textAnchor="middle">
+            {t.label}
+          </text>
+        ))}
+      </svg>
+    </div>
+  );
+}
+
 function RollingVol({ bt, label }: { bt: BacktestResult; label: string }) {
   const curve = bt.equityCurves.find((c) => c.highlight) ?? bt.equityCurves[0];
   const g = curve?.growth;
@@ -3083,6 +3163,7 @@ function BacktestCharts({
       <RiskReturnChart rows={bt.strategies} />
       <RollingReturnsChart bt={bt} label={label} />
       <RollingVol bt={bt} label={label} />
+      <RollingRelative bt={bt} label={label} />
       <ScatterGemVsBench bt={bt} label={label} />
       <BoxPlot bt={bt} />
       <Seasonality bt={bt} label={label} />

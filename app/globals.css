@@ -612,6 +612,11 @@ table.metrics tr.row-hl .left {
   stroke: var(--danger);
   stroke-width: 1.3;
 }
+.relperf-area {
+  fill: rgba(34, 211, 166, 0.15);
+  stroke: #22d3a6;
+  stroke-width: 1.3;
+}
 .equity-svg .grid-line.zero {
   stroke: var(--text-faint);
   stroke-dasharray: none;
