@@ -605,9 +605,20 @@ function EquityChart({ bt }: { bt: BacktestResult }) {
         ))}
       </svg>
       <div className="chart-legend">
-        {curves.map((c, idx) => {
-          const final = c.growth[c.growth.length - 1];
-          return (
+        {curves
+          .map((c, idx) => ({
+            c,
+            idx,
+            final: c.growth[c.growth.length - 1],
+          }))
+          // Vurgulu (ana strateji) önce, ardından dönem-sonu çarpana göre azalan
+          // — çok eğrili (bileşik) grafikte legend taranabilir/sıralı olur.
+          .sort(
+            (a, b) =>
+              (b.c.highlight ? 1 : 0) - (a.c.highlight ? 1 : 0) ||
+              b.final - a.final
+          )
+          .map(({ c, idx, final }) => (
             <span className="legend-item" key={c.name}>
               <span
                 className="legend-swatch"
@@ -620,8 +631,7 @@ function EquityChart({ bt }: { bt: BacktestResult }) {
               {c.name}
               <b className="legend-val">{final.toFixed(1)}×</b>
             </span>
-          );
-        })}
+          ))}
       </div>
     </div>
   );
