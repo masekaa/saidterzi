@@ -377,6 +377,22 @@ export function buildComposite(
     return m;
   });
 
+  // Her sleeve'in PASİF (al-tut) benchmark getirisi — meta-stratejinin adil
+  // karşılaştırması: "dual momentum koşmak yerine bu varlık sınıflarını sadece
+  // eşit-ağırlık tutsaydık?" Her sleeve'in kendi benchmark eğrisini kullanır.
+  const benchMaps = valid.map((s) => {
+    const bt = s.bt as BacktestResult;
+    const bc =
+      bt.equityCurves.find(
+        (c) => !c.highlight && /Eşit Ağırlık|Al-Tut|Buy.?Hold|SPY|ACWI/i.test(c.name)
+      ) ?? bt.equityCurves.find((c) => !c.highlight);
+    const m = new Map<string, number>();
+    if (bc)
+      for (let i = 1; i < bc.growth.length && i < bt.dates.length; i++)
+        m.set(bt.dates[i].slice(0, 7), bc.growth[i] / bc.growth[i - 1] - 1);
+    return m;
+  });
+
   const common = Array.from(retMaps[0].keys())
     .filter((ym) => retMaps.every((m) => m.has(ym)))
     .sort();
@@ -412,9 +428,27 @@ export function buildComposite(
     return s;
   });
 
+  // Pasif eşit-ağırlık al-tut: o ay veri olan sleeve benchmark'larının ortalaması.
+  const benchRets = common.map((ym) => {
+    let s = 0,
+      c = 0;
+    for (const bm of benchMaps) {
+      const v = bm.get(ym);
+      if (v != null) {
+        s += v;
+        c++;
+      }
+    }
+    return c > 0 ? s / c : 0;
+  });
+  const hasBench = benchMaps.some((bm) => bm.size > 0);
+
   const strategies: StrategyMetrics[] = [
     buildMetrics("Dual Momentum Bileşik (eşit ağırlık)", compRets, rf),
     buildMetrics("Dual Momentum Bileşik (risk-parity)", compRetsRP, rf),
+    ...(hasBench
+      ? [buildMetrics("Pasif Eşit-Ağırlık (Al-Tut)", benchRets, rf)]
+      : []),
     ...valid.map((s, k) => buildMetrics(s.name, sleeveRets[k], rf)),
   ];
 
@@ -435,6 +469,9 @@ export function buildComposite(
       highlight: true,
     },
     { name: "Bileşik (risk-parity)", growth: toGrowth(compRetsRP) },
+    ...(hasBench
+      ? [{ name: "Pasif Eşit-Ağırlık (Al-Tut)", growth: toGrowth(benchRets) }]
+      : []),
     ...valid.map((s, k) => ({ name: s.name, growth: toGrowth(sleeveRets[k]) })),
   ];
 

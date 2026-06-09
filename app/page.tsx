@@ -1831,7 +1831,7 @@ function KeyInsights({ data }: { data: AnalysisResult }) {
   // 5) En iyi çeşitlendirici (en düşük ortalama korelasyonlu sleeve)
   if (data.composite) {
     const sl = data.composite.equityCurves.filter(
-      (c) => !c.highlight && !c.name.includes("Bileşik")
+      (c) => !c.highlight && !c.name.includes("Bileşik") && !c.name.includes("Pasif")
     );
     if (sl.length >= 3) {
       const rets = sl.map((c) => {
@@ -3062,7 +3062,7 @@ function CompositeStance({ data }: { data: AnalysisResult }) {
 function CompositeAttribution({ bt }: { bt: BacktestResult }) {
   const comp = bt.equityCurves.find((c) => c.highlight);
   const sleeves = bt.equityCurves.filter(
-    (c) => !c.highlight && !c.name.includes("Bileşik")
+    (c) => !c.highlight && !c.name.includes("Bileşik") && !c.name.includes("Pasif")
   );
   if (!comp || sleeves.length < 2) return null;
   const V = comp.growth; // bileşik NAV (V_0 = 1)
@@ -3122,7 +3122,7 @@ function CompositeAttribution({ bt }: { bt: BacktestResult }) {
 
 function RiskParityWeights({ bt }: { bt: BacktestResult }) {
   const sleeves = bt.equityCurves.filter(
-    (c) => !c.highlight && !c.name.includes("Bileşik")
+    (c) => !c.highlight && !c.name.includes("Bileşik") && !c.name.includes("Pasif")
   );
   if (sleeves.length < 2) return null;
   const items = sleeves.map((c) => {
@@ -3179,7 +3179,9 @@ function RiskParityWeights({ bt }: { bt: BacktestResult }) {
 
 function DiversificationStat({ bt }: { bt: BacktestResult }) {
   const comp = bt.strategies.find((s) => s.name.includes("eşit ağırlık"));
-  const sleeves = bt.strategies.filter((s) => !s.name.includes("Bileşik"));
+  const sleeves = bt.strategies.filter(
+    (s) => !s.name.includes("Bileşik") && !s.name.includes("Pasif")
+  );
   if (!comp?.annualVol || sleeves.length < 2) return null;
   const sleeveVols = sleeves
     .map((s) => s.annualVol)
@@ -3203,7 +3205,7 @@ function DiversificationStat({ bt }: { bt: BacktestResult }) {
 
 function CorrelationMatrix({ bt }: { bt: BacktestResult }) {
   const sleeves = bt.equityCurves.filter(
-    (c) => !c.highlight && !c.name.includes("Bileşik")
+    (c) => !c.highlight && !c.name.includes("Bileşik") && !c.name.includes("Pasif")
   );
   if (sleeves.length < 2) return null;
   const rets = sleeves.map((c) => {
@@ -3987,8 +3989,9 @@ export default function Home() {
               }
             >
               <p className="chart-help" style={{ maxWidth: "80ch" }}>
-                GEM + Hisse + Kripto + Sektör momentum stratejilerini her ay{" "}
-                <b>eşit ağırlıkla</b> birleştiren çeşitlendirilmiş meta-strateji.
+                Tüm evrenlerin (GEM, hisse, kripto, sektör, uluslararası, emtia)
+                momentum stratejilerini her ay <b>eşit ağırlıkla</b> birleştiren
+                çeşitlendirilmiş meta-strateji.
                 Sleeve&apos;ler imperfect korelasyonlu olduğundan bileşik
                 genelde tek bir sleeve&apos;den <b>daha yüksek Sharpe / daha
                 düşük drawdown</b> hedefler. Aşağıdaki equity curve&apos;de
