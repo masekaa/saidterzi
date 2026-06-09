@@ -33,20 +33,20 @@ Deploy için → [`DEPLOY.md`](DEPLOY.md). Veri: Yahoo Finance (keyless). Çekir
 ### Dashboard ne gösterir
 
 **Genel bakış (en üst):**
-- **Bu Ayın Sinyalleri:** 4 evrenin güncel pozisyonları tek bakışta.
-- **🎛️ Backtest Stüdyosu:** etkileşimli — *evren × look-back (1–24 ay) × top-N × işlem maliyeti (bps)* seç, equity curve + drawdown + metrikler anında güncellenir.
-- **Strateji Karşılaştırma:** tüm evrenlerin momentum stratejileri Sharpe'a göre sıralı (CAGR/Sharpe/Sortino/MaxDD).
+- **⚡ Öne Çıkanlar:** otomatik içgörüler — en yüksek Sharpe stratejisi, bileşik büyümesi, savunma duruşu, en iyi çeşitlendirici, **piyasa genişliği** (pozitif momentumlu varlık oranı = risk-on/off).
+- **Bu Ayın Sinyalleri:** 5 evrenin güncel pozisyonları tek bakışta.
+- **🎛️ Backtest Stüdyosu:** etkileşimli — *evren × look-back (1–24 ay) × top-N × işlem maliyeti (bps)*; tam grafik paketi + momentum-vs-benchmark farkı anında güncellenir (titremesiz, URL'de paylaşılabilir).
+- **Strateji Karşılaştırma:** tüm stratejiler **sıralanabilir** tabloda (CAGR/Sharpe/Sortino/MaxDD/getiri/devir); "Momentum Al-Tut'u Yeniyor mu?" tablosu + ortalama satırı; **ortak-dönem overlay** (adil kıyas).
+- **🧩 Dual Momentum Bileşik:** 5 evrenin **eşit-ağırlık + risk-parity** meta-stratejisi — güncel duruş, **"bu ay al" listesi (CSV)**, getiri atfı, risk-parity ağırlıkları, çeşitlendirme faydası, korelasyon matrisi, drawdown epizodları.
 
-**Her evren sekmesinde (ETF/Hisse/Kripto/Sektör):**
-- **Sinyal panosu + momentum sıralaması:** 12-ay getiri, T-Bill'e karşı excess, MA trendi, 52-hafta yakınlık, seçimler.
-- **Look-back duyarlılık matrisi:** 1/3/6/9/12 ay pencerelerinde getiri ısı haritası.
-- **Görsel analiz:** equity curve (log) · pozisyon geçmişi bandı · drawdown (underwater) · aylık getiri ısı haritası · risk–getiri dağılımı · 12-ay rolling getiri · getiri scatter · box plot.
-- **Risk metrikleri:** CAGR, vol, Sharpe, Sortino, çarpıklık, basıklık, CVaR, max drawdown (derinlik+süre+toparlanma), % kârlı ay.
-- **Fama-French faktör alpha:** stratejinin risk-ayarlı fazla getirisi (alpha, market/size/value beta, R²).
-- **Şeffaf yöntem kartları:** her yöntem için formül + ara adımlar + sonuç + sinyal (trailing, relative, absolute, MA filtresi, trend-line t-stat, 52-hafta, hızlanan momentum, taze/bayat, trend salience, risk parity; ETF'de ayrıca GBM, DMSR, GEM).
-- **Earnings/Revenue momentum:** (hisse evreni, FMP anahtarı ile) yıllık gelir+net kâr YoY büyümesi sıralaması.
+**Her evren sekmesinde (ETF/Hisse/Kripto/Sektör/Uluslararası):**
+- **Headline stat şeridi** (CAGR/Sharpe/Sortino/MaxDD) + **sinyal panosu** (sıralanabilir) + momentum sıralaması + **look-back duyarlılık matrisi**.
+- **Görsel analiz** (katlanabilir): equity curve (log) · pozisyon bandı · drawdown (underwater) + **en kötü 5 epizod** · aylık ısı haritası · risk–getiri · 12-ay rolling getiri & **volatilite** & **göreli performans** · getiri scatter · **yukarı/aşağı yakalama** · box plot · **mevsimsellik**.
+- **Risk metrikleri:** CAGR, vol, Sharpe, Sortino, **Calmar**, çarpıklık, basıklık, CVaR, max drawdown (derinlik+süre+toparlanma), % kârlı ay.
+- **Fama-French faktör alpha** (alpha, market/size/value beta, R²) + **şeffaf yöntem kartları** (trailing, relative, absolute, MA, trend-line t-stat, 52-hafta, hızlanan, taze/bayat, trend salience, risk parity; ETF'de ayrıca GBM, DMSR, GEM).
+- **Earnings/Revenue momentum:** (hisse evreni, FMP anahtarı ile) yıllık gelir+net kâr YoY büyümesi.
 
-Tüm çıktılar **JSON/CSV** olarak indirilebilir.
+Tüm çıktılar **JSON/CSV** olarak indirilebilir; sonuçlar **10 dk sunucu önbelleğinde**, sayfa mobil-uyumlu ve erişilebilir (ARIA), hata-izolasyonlu (ErrorBoundary).
 
 ## 📂 Yapı
 
