@@ -2017,11 +2017,15 @@ function StrategyLeaderboard({ data }: { data: AnalysisResult }) {
     });
   }
   if (rows.length < 2) return null;
+  // "Düşük daha iyi" metrikler artan sıralanır (Ulcer = az acı iyidir).
+  const ASC_KEYS: Array<keyof StrategyMetrics> = ["ulcerIndex"];
+  const asc = ASC_KEYS.includes(sortKey);
   const sval = (m: StrategyMetrics) => {
     const v = m[sortKey];
-    return typeof v === "number" && isFinite(v) ? v : -Infinity;
+    // Eksik değerler her iki yönde de sona düşsün.
+    return typeof v === "number" && isFinite(v) ? v : asc ? Infinity : -Infinity;
   };
-  rows.sort((a, b) => sval(b.m) - sval(a.m));
+  rows.sort((a, b) => (asc ? sval(a.m) - sval(b.m) : sval(b.m) - sval(a.m)));
 
   const SortableTh = ({
     label,
@@ -2057,6 +2061,8 @@ function StrategyLeaderboard({ data }: { data: AnalysisResult }) {
               <SortableTh label="Sharpe" k="sharpe" />
               <SortableTh label="Sortino" k="sortino" />
               <SortableTh label="Max DD" k="maxDrawdown" />
+              <SortableTh label="Ulcer" k="ulcerIndex" />
+              <SortableTh label="Martin" k="martinRatio" />
               <SortableTh label="Toplam Getiri" k="totalReturn" />
               <SortableTh label="Yıllık Geçiş" k="switchesPerYear" />
               <th className="left">Dönem</th>
@@ -2078,6 +2084,10 @@ function StrategyLeaderboard({ data }: { data: AnalysisResult }) {
                 <td className="strong">{num(r.m.sharpe)}</td>
                 <td>{num(r.m.sortino)}</td>
                 <td className="neg">{pct(r.m.maxDrawdown)}</td>
+                <td className="neg">
+                  {r.m.ulcerIndex != null ? r.m.ulcerIndex.toFixed(1) : "—"}
+                </td>
+                <td className="strong">{num(r.m.martinRatio ?? null)}</td>
                 <td>{pct(r.m.totalReturn, 0)}</td>
                 <td>
                   {r.m.switchesPerYear != null
