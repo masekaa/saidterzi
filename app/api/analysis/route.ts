@@ -102,13 +102,18 @@ export async function GET(req: Request) {
     const cryptoRaw = mapBy(CRYPTO_UNIVERSE);
     const intlRaw = mapBy(INTL_UNIVERSE);
 
-    // Fama-French 3 faktörünü TEK kez çek (non-fatal); tüm stratejilerde paylaş.
-    let factors = null;
-    try {
-      factors = await fetchFamaFrench3();
-    } catch {
-      factors = null;
-    }
+    // İki yavaş dış çağrıyı (Ken French zip + FMP earnings) PARALEL başlat —
+    // soğuk yükleme süresini kısaltır (sıralı await yerine örtüşürler).
+    const factorsP = fetchFamaFrench3().catch(() => null);
+    const earningsP = buildEarningsMomentum().catch(() => ({
+      enabled: false,
+      reason: "Earnings verisi alınamadı.",
+      topN: STOCK_TOP_N,
+      stocks: [],
+    }));
+
+    // Fama-French 3 faktörü (non-fatal); tüm stratejilerde paylaşılır.
+    const factors = await factorsP;
     const monthlyFrom = (bt: BacktestResult | null) => {
       if (!bt) return [];
       const curve =
@@ -213,19 +218,7 @@ export async function GET(req: Request) {
         benchLabel: cfg.benchLabel,
         investedKey: cfg.id,
       });
-      let earnings;
-      if (cfg.withEarnings) {
-        try {
-          earnings = await buildEarningsMomentum();
-        } catch {
-          earnings = {
-            enabled: false,
-            reason: "Earnings verisi alınamadı.",
-            topN: cfg.topN,
-            stocks: [],
-          };
-        }
-      }
+      const earnings = cfg.withEarnings ? await earningsP : undefined;
       universes.push({
         id: cfg.id,
         emoji: cfg.emoji,
