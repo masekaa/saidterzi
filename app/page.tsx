@@ -3245,7 +3245,7 @@ function UniverseSection({ u }: { u: UniverseBundle }) {
 
       {bt && (
         <CollapsibleSection
-          defaultOpen
+          defaultOpen={false}
           title={
             <>
               {u.positionLabel} Backtest &amp; Risk Metrikleri ({bt.startDate} →{" "}
@@ -3621,7 +3621,7 @@ export default function Home() {
           {/* Backtest & Metrikler */}
           {bt && (
             <CollapsibleSection
-              defaultOpen
+              defaultOpen={false}
               title={
                 <>
                   GEM Backtest &amp; Risk Metrikleri ({bt.startDate} →{" "}
