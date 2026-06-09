@@ -605,6 +605,12 @@ table.metrics tr.row-hl .left {
   fill: #22d3a6;
   opacity: 0.55;
 }
+.seas-pos {
+  fill: rgba(34, 211, 166, 0.7);
+}
+.seas-neg {
+  fill: rgba(239, 68, 68, 0.7);
+}
 .box-whisker {
   stroke: var(--text-faint);
   stroke-width: 1.2;

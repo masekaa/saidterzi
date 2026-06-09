@@ -2080,6 +2080,84 @@ function CrossUniverseComparison({ data }: { data: AnalysisResult }) {
   );
 }
 
+function Seasonality({ bt, label }: { bt: BacktestResult; label: string }) {
+  const curve = bt.equityCurves.find((c) => c.highlight) ?? bt.equityCurves[0];
+  const g = curve?.growth;
+  const dates = bt.dates;
+  if (!g || g.length < 25) return null; // ~2 yıl minimum
+
+  const sums = new Array(12).fill(0);
+  const counts = new Array(12).fill(0);
+  for (let i = 1; i < g.length && i < dates.length; i++) {
+    const m = +dates[i].slice(5, 7) - 1;
+    if (m >= 0 && m < 12) {
+      sums[m] += g[i] / g[i - 1] - 1;
+      counts[m]++;
+    }
+  }
+  const avg = sums.map((s, i) => (counts[i] ? s / counts[i] : null));
+  const vals = avg.filter((v): v is number => v != null);
+  if (vals.length < 6) return null;
+  const maxAbs = Math.max(...vals.map((v) => Math.abs(v)), 0.001);
+
+  const W = 820;
+  const H = 180;
+  const padL = 36;
+  const padR = 12;
+  const padT = 14;
+  const padB = 30;
+  const innerW = W - padL - padR;
+  const innerH = H - padT - padB;
+  const mid = padT + innerH / 2;
+  const bw = innerW / 12;
+  const MONTHS = ["O", "Ş", "M", "N", "May", "H", "T", "A", "Ey", "Ek", "K", "Ar"];
+
+  return (
+    <div className="chart-card">
+      <div className="chart-title">
+        {label} Mevsimsellik — takvim ayına göre ortalama aylık getiri
+      </div>
+      <div className="chart-help">
+        Her sütun, o takvim ayının (tüm yıllar ortalaması) tipik getirisi. Momentum
+        stratejilerinde mevsimsel desen genelde zayıftır; istatistiksel olarak
+        anlamlı olması için uzun geçmiş gerekir.
+      </div>
+      <svg className="equity-svg" viewBox={`0 0 ${W} ${H}`} role="img" aria-label="Finansal analiz grafiği; açıklama hemen üstteki başlık ve metinde">
+        <line x1={padL} x2={W - padR} y1={mid} y2={mid} className="grid-line zero" />
+        {avg.map((v, i) => {
+          if (v == null) return null;
+          const h = (Math.abs(v) / maxAbs) * (innerH / 2);
+          const x = padL + i * bw + bw * 0.18;
+          const bwid = bw * 0.64;
+          const y = v >= 0 ? mid - h : mid;
+          return (
+            <g key={i}>
+              <rect
+                x={x}
+                y={y}
+                width={bwid}
+                height={Math.max(1, h)}
+                className={v >= 0 ? "seas-pos" : "seas-neg"}
+              />
+              <text x={x + bwid / 2} y={H - 14} className="axis-label" textAnchor="middle">
+                {MONTHS[i]}
+              </text>
+              <text
+                x={x + bwid / 2}
+                y={v >= 0 ? y - 3 : y + h + 10}
+                className="axis-label"
+                textAnchor="middle"
+              >
+                {(v * 100).toFixed(1)}
+              </text>
+            </g>
+          );
+        })}
+      </svg>
+    </div>
+  );
+}
+
 function DrawdownEpisodes({ bt, label }: { bt: BacktestResult; label: string }) {
   const curve = bt.equityCurves.find((c) => c.highlight) ?? bt.equityCurves[0];
   const g = curve?.growth;
@@ -2741,6 +2819,7 @@ function UniverseSection({ u }: { u: UniverseBundle }) {
           <RollingReturnsChart bt={bt} label={u.positionLabel} />
           <ScatterGemVsBench bt={bt} label={u.positionLabel} />
           <BoxPlot bt={bt} />
+          <Seasonality bt={bt} label={u.positionLabel} />
           <MetricsTable rows={bt.strategies} />
           <p className="table-note">{bt.note}</p>
           {bt.strategies[0]?.timeInAsset && (
@@ -3131,6 +3210,7 @@ export default function Home() {
               <RollingReturnsChart bt={bt} />
               <ScatterGemVsBench bt={bt} />
               <BoxPlot bt={bt} />
+              <Seasonality bt={bt} label="GEM" />
               <MetricsTable rows={bt.strategies} />
               <p className="table-note">{bt.note}</p>
               {bt.strategies[0]?.timeInAsset && (
