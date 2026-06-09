@@ -21,6 +21,56 @@
   --shadow: 0 12px 40px rgba(0, 0, 0, 0.45);
 }
 
+/* Yazdırma / PDF: koyu tema kağıtta okunmaz (tarayıcılar arka plan basmaz →
+   açık metin beyaz üstünde). Değişkenleri açık temaya çevir, etkileşimli
+   chrome'u gizle, kartları sayfa-bölünmesinden koru. */
+@media print {
+  :root {
+    --bg: #ffffff;
+    --bg-grad: #ffffff;
+    --panel: #ffffff;
+    --panel-2: #f6f7f9;
+    --card: #ffffff;
+    --border: #c7ccd6;
+    --border-soft: #dfe3ea;
+    --text: #101218;
+    --text-dim: #3a4151;
+    --text-faint: #5a6273;
+    --shadow: none;
+  }
+  body {
+    background: #ffffff !important;
+  }
+  .skip-link,
+  .back-to-top,
+  .view-tabs,
+  .header-right,
+  .refresh-btn,
+  .mini-btn {
+    display: none !important;
+  }
+  .wrap {
+    max-width: 100% !important;
+  }
+  .chart-card,
+  .table-scroll,
+  .insights,
+  .csec,
+  .stance,
+  .divstat,
+  .studio,
+  .rpw-list,
+  .cap-grid {
+    break-inside: avoid;
+    page-break-inside: avoid;
+    box-shadow: none !important;
+  }
+  a {
+    color: #101218 !important;
+    text-decoration: none;
+  }
+}
+
 * {
   box-sizing: border-box;
 }
