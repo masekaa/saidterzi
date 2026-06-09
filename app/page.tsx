@@ -235,8 +235,19 @@ function LookbackHeatmap({ data }: { data: LookbackData }) {
 }
 
 function StockMomentumBoard({ data }: { data: StockMomentumData }) {
+  const [sortK, setSortK] = useState<"rank" | "excess" | "prox">("rank");
   if (!data?.stocks?.length) return null;
   const selectedCount = data.stocks.filter((s) => s.selected).length;
+  const sorted = [...data.stocks];
+  if (sortK === "excess")
+    sorted.sort(
+      (a, b) => (b.excessVsTbill ?? -Infinity) - (a.excessVsTbill ?? -Infinity)
+    );
+  else if (sortK === "prox")
+    sorted.sort(
+      (a, b) => (b.highProximity ?? -Infinity) - (a.highProximity ?? -Infinity)
+    );
+  const sh = (k: "rank" | "excess" | "prox") => (sortK === k ? " ▾" : "");
   return (
     <>
       <div className="section-label">
@@ -247,19 +258,35 @@ function StockMomentumBoard({ data }: { data: StockMomentumData }) {
         <table className="metrics stockboard">
           <thead>
             <tr>
-              <th>#</th>
+              <th
+                className={`sortable ${sortK === "rank" ? "sorted" : ""}`}
+                onClick={() => setSortK("rank")}
+                title="Momentum sırasına göre"
+              >
+                #{sh("rank")}
+              </th>
               <th className="left">Hisse</th>
               <th className="left">Sektör</th>
               <th>12-Ay Getiri</th>
-              <th>T-Bill&apos;e Karşı</th>
+              <th
+                className={`sortable ${sortK === "excess" ? "sorted" : ""}`}
+                onClick={() => setSortK("excess")}
+              >
+                T-Bill&apos;e Karşı{sh("excess")}
+              </th>
               <th>Mutlak</th>
-              <th>52-Hafta</th>
+              <th
+                className={`sortable ${sortK === "prox" ? "sorted" : ""}`}
+                onClick={() => setSortK("prox")}
+              >
+                52-Hafta{sh("prox")}
+              </th>
               <th>İvme</th>
               <th>Seçim</th>
             </tr>
           </thead>
           <tbody>
-            {data.stocks.map((s) => (
+            {sorted.map((s) => (
               <tr key={s.key} className={s.selected ? "row-hl" : ""}>
                 <td className="rank">{s.rank ?? "—"}</td>
                 <td className="left">
