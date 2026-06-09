@@ -2942,15 +2942,11 @@ function BacktestStudio() {
               </p>
             );
           })()}
-          <EquityChart bt={bt} />
-          <UnderwaterChart bt={bt} label={res?.label ?? "Strateji"} />
-          <DrawdownEpisodes bt={bt} label={res?.label ?? "Strateji"} />
-          <RollingReturnsChart bt={bt} label={res?.label ?? "Strateji"} />
-          <MonthlyHeatmap bt={bt} label={res?.label ?? "Strateji"} />
-          <BoxPlot bt={bt} />
-          <MetricsTable rows={bt.strategies} />
-          <AdvancedMetricsTable rows={bt.strategies} />
-          <p className="table-note">{bt.note}</p>
+          <BacktestCharts
+            bt={bt}
+            label={res?.label ?? "Strateji"}
+            investedKey={res && res.universe !== "etf" ? res.universe : undefined}
+          />
         </>
       )}
       {!busy && !err && !bt && (
