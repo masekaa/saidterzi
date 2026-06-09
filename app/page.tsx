@@ -54,6 +54,13 @@ function num(x: number | null, d = 2): string {
   return x.toFixed(d);
 }
 
+// Kümülatif büyüme eğrisinden aylık getiri serisi
+function growthToRets(g: number[]): number[] {
+  const r: number[] = [];
+  for (let i = 1; i < g.length; i++) r.push(g[i] / g[i - 1] - 1);
+  return r;
+}
+
 // Pearson korelasyon (iki getiri serisi)
 function pearson(a: number[], b: number[]): number {
   const m = Math.min(a.length, b.length);
@@ -1628,10 +1635,7 @@ function KeyInsights({ data }: { data: AnalysisResult }) {
     );
     if (sl.length >= 3) {
       const rets = sl.map((c) => {
-        const r: number[] = [];
-        for (let i = 1; i < c.growth.length; i++)
-          r.push(c.growth[i] / c.growth[i - 1] - 1);
-        return r;
+        return growthToRets(c.growth);
       });
       const avg = rets.map((a, i) => {
         let s = 0;
@@ -2088,8 +2092,7 @@ function RollingVol({ bt, label }: { bt: BacktestResult; label: string }) {
   const curve = bt.equityCurves.find((c) => c.highlight) ?? bt.equityCurves[0];
   const g = curve?.growth;
   if (!g || g.length < 26) return null;
-  const rets: number[] = [];
-  for (let i = 1; i < g.length; i++) rets.push(g[i] / g[i - 1] - 1);
+  const rets = growthToRets(g);
   const WIN = 12;
   const vals: { i: number; v: number }[] = [];
   for (let i = WIN; i <= rets.length; i++) {
@@ -2539,10 +2542,7 @@ function CorrelationMatrix({ bt }: { bt: BacktestResult }) {
   );
   if (sleeves.length < 2) return null;
   const rets = sleeves.map((c) => {
-    const r: number[] = [];
-    for (let i = 1; i < c.growth.length; i++)
-      r.push(c.growth[i] / c.growth[i - 1] - 1);
-    return r;
+    return growthToRets(c.growth);
   });
   const labels = sleeves.map((s) => s.name);
   const k = sleeves.length;
