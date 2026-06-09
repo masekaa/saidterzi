@@ -3582,6 +3582,80 @@ function CrisisPerformance({ bt, label = "Strateji" }: { bt: BacktestResult; lab
   );
 }
 
+function SplitSampleConsistency({ bt, label = "Strateji" }: { bt: BacktestResult; label?: string }) {
+  const curve = bt.equityCurves.find((c) => c.highlight) ?? bt.equityCurves[0];
+  const g = curve?.growth;
+  if (!g || g.length < 49) return null; // her yarıda ≥24 ay
+  const rets = growthToRets(g);
+  const n = rets.length;
+  const mid = Math.floor(n / 2);
+  const stat = (r: number[]) => {
+    const k = r.length;
+    if (k < 12) return null;
+    let acc = 1;
+    for (const x of r) acc *= 1 + x;
+    const cagr = Math.pow(acc, 12 / k) - 1;
+    const m = r.reduce((s, x) => s + x, 0) / k;
+    const sd = Math.sqrt(r.reduce((s, x) => s + (x - m) ** 2, 0) / (k - 1));
+    const sharpe = sd > 0 ? (m * Math.sqrt(12)) / sd : null; // rf≈0
+    return { cagr, sharpe };
+  };
+  const h1 = stat(rets.slice(0, mid));
+  const h2 = stat(rets.slice(mid));
+  if (!h1 || !h2) return null;
+
+  const ym = (i: number) => bt.dates[i]?.slice(0, 7) ?? "—";
+  const p1 = `${ym(1)} → ${ym(mid)}`;
+  const p2 = `${ym(mid + 1)} → ${ym(n)}`;
+
+  // Kenar ikinci yarıda korunmuş mu? Sharpe bazlı kaba bir yargı.
+  const s1 = h1.sharpe ?? 0;
+  const s2 = h2.sharpe ?? 0;
+  const verdict =
+    s2 >= 0.3 && s2 >= s1 * 0.6
+      ? { t: "Kenar korunmuş", c: "ok" }
+      : s2 > 0
+      ? { t: "Kenar zayıflamış", c: "" }
+      : { t: "Kenar kaybolmuş", c: "thin" };
+
+  const cell = (h: { cagr: number; sharpe: number | null }) => (
+    <>
+      <div className="cap-val">{pct(h.cagr)}</div>
+      <div className="cap-label" style={{ marginTop: 2 }}>
+        Sharpe {num(h.sharpe)}
+      </div>
+    </>
+  );
+
+  return (
+    <div className="chart-card">
+      <div className="chart-title">
+        {label} — Yarı-Dönem Tutarlılık (kenar zamanla korunuyor mu?)
+      </div>
+      <div className="chart-help">
+        Veri ortadan ikiye bölünüp her yarının CAGR &amp; Sharpe&apos;ı ayrı
+        hesaplandı. Momentum kenarı zamanla <b>çürüyebilir</b>; ikinci yarıda da
+        benzer performans = sağlam (örneklem-dışı tutarlı), yalnız ilk yarıda
+        iyiydiyse aşırı-uyum/çürüme riski. (Risksiz ≈ 0 ile Sharpe.)
+      </div>
+      <div className="cap-grid">
+        <div className="cap-item">
+          <div className="cap-label">İlk yarı ({p1})</div>
+          {cell(h1)}
+        </div>
+        <div className="cap-item">
+          <div className="cap-label">İkinci yarı ({p2})</div>
+          {cell(h2)}
+        </div>
+      </div>
+      <div className={`rob-verdict ${verdict.c}`}>
+        Değerlendirme: <b>{verdict.t}</b> — ilk yarı Sharpe {num(h1.sharpe)},
+        ikinci yarı Sharpe {num(h2.sharpe)} (CAGR {pct(h1.cagr)} → {pct(h2.cagr)}).
+      </div>
+    </div>
+  );
+}
+
 function BootstrapRisk({ bt, label = "Strateji" }: { bt: BacktestResult; label?: string }) {
   const curve = bt.equityCurves.find((c) => c.highlight) ?? bt.equityCurves[0];
   const g = curve?.growth;
@@ -4781,6 +4855,7 @@ function BacktestCharts({
       <YearlyReturns bt={bt} label={label} />
       <CrisisPerformance bt={bt} label={label} />
       <BootstrapRisk bt={bt} label={label} />
+      <SplitSampleConsistency bt={bt} label={label} />
       <RiskReturnChart rows={bt.strategies} />
       <RollingReturnsChart bt={bt} label={label} />
       <RollingVol bt={bt} label={label} />
