@@ -1,17 +1,11 @@
 import type { Metadata } from "next";
+import { SITE_URL } from "@/lib/site";
 import "./globals.css";
 
 const TITLE =
   "Dual Momentum Analiz — ETF · Hisse · Kripto · Sektör · Uluslararası · Emtia · Faktör · Tahvil";
 const DESC =
   "Antonacci Dual Momentum: GEM + hisse/kripto/sektör/uluslararası/emtia/faktör/tahvil momentum evrenleri, eşit-ağırlık & risk-parity bileşik, interaktif backtest stüdyosu, Fama-French alpha ve tam risk analizi. Canlı, anahtarsız veri.";
-
-// OG/Twitter görsellerinin MUTLAK URL'ye çözülmesi için taban adres. Öncelik:
-// açık env → Vercel dağıtım URL'si → localhost. (Sosyal platformlar göreli
-// URL kabul etmez; ayrıca Next.js metadataBase uyarısını giderir.)
-const SITE_URL =
-  process.env.NEXT_PUBLIC_SITE_URL ||
-  (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "http://localhost:3000");
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
