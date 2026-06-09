@@ -36,7 +36,7 @@ export const metadata: Metadata = {
     siteName: "Dual Momentum Analiz",
   },
   twitter: {
-    card: "summary",
+    card: "summary_large_image",
     title: TITLE,
     description: DESC,
   },
