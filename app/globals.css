@@ -611,6 +611,10 @@ table.metrics tr.comp-row .left {
 .howto-head:hover {
   background: rgba(255, 255, 255, 0.02);
 }
+.howto-title {
+  font-weight: 600;
+  color: var(--text);
+}
 .howto-body {
   padding: 4px 18px 18px;
   font-size: 13px;
