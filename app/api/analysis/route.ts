@@ -14,6 +14,8 @@ import {
   CRYPTO_TOP_N,
   INTL_UNIVERSE,
   INTL_TOP_N,
+  COMMODITIES_UNIVERSE,
+  COMMODITIES_TOP_N,
   DMSR_TOP_N,
   allTickers,
   LOOKBACK_MONTHS,
@@ -115,6 +117,7 @@ export async function GET(req: Request) {
     const lookback = buildLookbackMatrix(coreRaw, tbillRaw);
     const cryptoRaw = mapBy(CRYPTO_UNIVERSE);
     const intlRaw = mapBy(INTL_UNIVERSE);
+    const commodityRaw = mapBy(COMMODITIES_UNIVERSE);
 
     // İki yavaş dış çağrıyı (Ken French zip + FMP earnings) PARALEL başlat —
     // soğuk yükleme süresini kısaltır (sıralı await yerine örtüşürler).
@@ -207,6 +210,18 @@ export async function GET(req: Request) {
         raw: intlRaw,
         universe: INTL_UNIVERSE,
         topN: INTL_TOP_N,
+        withEarnings: false,
+      },
+      {
+        id: "commodity",
+        emoji: "🛢️",
+        label: "Emtia / Reel Varlık",
+        sublabel: `${COMMODITIES_UNIVERSE.length} emtia ETF'i`,
+        positionLabel: "Emtia Momentum",
+        benchLabel: "Eşit Ağırlık (Tüm Emtialar)",
+        raw: commodityRaw,
+        universe: COMMODITIES_UNIVERSE,
+        topN: COMMODITIES_TOP_N,
         withEarnings: false,
       },
     ];

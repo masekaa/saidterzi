@@ -2,9 +2,9 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Dual Momentum Analiz — ETF · Hisse · Kripto · Sektör · Uluslararası",
+  title: "Dual Momentum Analiz — ETF · Hisse · Kripto · Sektör · Uluslararası · Emtia",
   description:
-    "Antonacci Dual Momentum: GEM + hisse/kripto/sektör/uluslararası momentum evrenleri, eşit-ağırlık & risk-parity bileşik, interaktif backtest stüdyosu, Fama-French alpha ve tam risk analizi. Canlı, anahtarsız veri.",
+    "Antonacci Dual Momentum: GEM + hisse/kripto/sektör/uluslararası/emtia momentum evrenleri, eşit-ağırlık & risk-parity bileşik, interaktif backtest stüdyosu, Fama-French alpha ve tam risk analizi. Canlı, anahtarsız veri.",
   icons: {
     icon:
       "data:image/svg+xml," +

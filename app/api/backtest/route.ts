@@ -11,6 +11,7 @@ import {
   CRYPTO_UNIVERSE,
   DMSR_SECTORS,
   INTL_UNIVERSE,
+  COMMODITIES_UNIVERSE,
   type Instrument,
 } from "@/lib/universe";
 import { runBacktest, runStockBacktest } from "@/lib/backtest";
@@ -49,6 +50,12 @@ const CONFIGS: Record<string, Cfg> = {
     universe: INTL_UNIVERSE,
     positionLabel: "Bölgesel Momentum",
     benchLabel: "Eşit Ağırlık (Tüm Bölgeler)",
+    defaultTopN: 3,
+  },
+  commodity: {
+    universe: COMMODITIES_UNIVERSE,
+    positionLabel: "Emtia Momentum",
+    benchLabel: "Eşit Ağırlık (Tüm Emtialar)",
     defaultTopN: 3,
   },
 };

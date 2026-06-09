@@ -112,6 +112,22 @@ export const INTL_UNIVERSE: Instrument[] = [
 ];
 export const INTL_TOP_N = 3;
 
+// --- Emtia / reel-varlık evreni ---
+// Emtialar momentumun en güçlü çalıştığı sınıflardandır (Erb-Harvey 2006,
+// Moskowitz-Ooi-Pedersen 2012). Likit, uzun geçmişli ETF'ler arası dual
+// momentum rotasyonu. Hisse/kripto/sektörle düşük korelasyon → çeşitlendirici.
+export const COMMODITIES_UNIVERSE: Instrument[] = [
+  { key: "gld", name: "Altın", ticker: "GLD", note: "Spot altın" },
+  { key: "slv", name: "Gümüş", ticker: "SLV", note: "Spot gümüş" },
+  { key: "dbc", name: "Geniş Emtia", ticker: "DBC", note: "Çeşitlendirilmiş sepet" },
+  { key: "dba", name: "Tarım", ticker: "DBA", note: "Tarım ürünleri" },
+  { key: "uso", name: "Ham Petrol", ticker: "USO", note: "WTI petrol" },
+  { key: "ung", name: "Doğalgaz", ticker: "UNG", note: "Henry Hub gaz" },
+  { key: "gdx", name: "Altın Madencileri", ticker: "GDX", note: "Madenci hisseleri" },
+  { key: "dbb", name: "Baz Metaller", ticker: "DBB", note: "Bakır/çinko/alüminyum" },
+];
+export const COMMODITIES_TOP_N = 3;
+
 // DMSR güvenli liman + trend referansı
 export const AGG: Instrument = {
   key: "agg",
@@ -131,6 +147,7 @@ export function allTickers(): string[] {
     ...STOCK_UNIVERSE,
     ...CRYPTO_UNIVERSE,
     ...INTL_UNIVERSE,
+    ...COMMODITIES_UNIVERSE,
     AGG,
   ].forEach((i) => set.add(i.ticker));
   return Array.from(set);
