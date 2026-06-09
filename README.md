@@ -4,8 +4,8 @@ Gary Antonacci'nin *Dual Momentum Investing: An Innovative Strategy for Higher R
 
 ## 🚀 Canlı Uygulama (Next.js → Vercel)
 
-Dual momentum'u **altı varlık evreninde** canlı hesaplayan dashboard:
-**📊 ETF (GEM)** · **📈 Hisse** (24 büyük-cap) · **🪙 Kripto** (10 coin) · **🏭 Sektör** (11 SPDR / DMSR) · **🌍 Uluslararası** (8 bölgesel ETF) · **🛢️ Emtia** (8 reel-varlık ETF).
+Dual momentum'u **yedi varlık evreninde** canlı hesaplayan dashboard:
+**📊 ETF (GEM)** · **📈 Hisse** (24 büyük-cap) · **🪙 Kripto** (10 coin) · **🏭 Sektör** (11 SPDR / DMSR) · **🌍 Uluslararası** (8 bölgesel ETF) · **🛢️ Emtia** (8 reel-varlık ETF) · **🎛️ Faktör/Stil** (7 tek-faktör ETF: MTUM/VLUE/QUAL/USMV/SIZE/VUG/HDV).
 Her evren aynı tam analiz paketini alır; üst sekmelerden geçilir. Tüm sleeve'ler ayrıca **eşit-ağırlık + risk-parity bileşik** meta-stratejide birleşir.
 
 ```bash
@@ -19,7 +19,7 @@ Deploy için → [`DEPLOY.md`](DEPLOY.md). Veri: Yahoo Finance (keyless). Çekir
 
 | Kaynak | Anahtar | Kullanım |
 |--------|---------|----------|
-| **Yahoo Finance** (v8 chart) | Yok | Fiyat/total-return serileri (6 evren: ETF, hisse, kripto, sektör, uluslararası, emtia) — aylık normalize |
+| **Yahoo Finance** (v8 chart) | Yok | Fiyat/total-return serileri (7 evren: ETF, hisse, kripto, sektör, uluslararası, emtia, faktör) — aylık normalize |
 | **Ken French Data Library** | Yok | Fama-French 3 faktör → faktör-model alpha (`lib/factors.ts`, ZIP doğrudan çekilir) |
 | **Financial Modeling Prep** (FMP) | **Opsiyonel** | Earnings/revenue momentum (çeyreklik gelir+net kâr). `FMP_API_KEY` env ile etkinleşir |
 
@@ -28,20 +28,21 @@ Deploy için → [`DEPLOY.md`](DEPLOY.md). Veri: Yahoo Finance (keyless). Çekir
 | Yol | İçerik |
 |-----|--------|
 | `app/` | Next.js App Router — `page.tsx` (dashboard + tüm görseller) · `api/analysis/` (tam analiz, 10 dk cache) · `api/backtest/` (hafif etkileşimli backtest) |
-| `lib/` | `yahoo.ts` (veri çekme + aylık normalizasyon) · `calc.ts` (formül-belgeli finansal primitifler) · `universe.ts` (6 evren + parametreler) · `methods.ts` (şeffaf yöntem hesaplayıcıları + evren-bağımsız pano/momentum üreticileri) · `backtest.ts` (momentum rotasyon simülasyonu + işlem maliyeti) · `factors.ts` (Fama-French OLS alpha) · `fundamentals.ts` (FMP earnings) · `zip.ts` (bağımlılıksız ZIP okuyucu) · `types.ts` |
+| `lib/` | `yahoo.ts` (veri çekme + aylık normalizasyon) · `calc.ts` (formül-belgeli finansal primitifler) · `universe.ts` (7 evren + parametreler) · `methods.ts` (şeffaf yöntem hesaplayıcıları + evren-bağımsız pano/momentum üreticileri) · `backtest.ts` (momentum rotasyon simülasyonu + işlem maliyeti) · `factors.ts` (Fama-French OLS alpha) · `fundamentals.ts` (FMP earnings) · `zip.ts` (bağımlılıksız ZIP okuyucu) · `types.ts` |
 
 ### Dashboard ne gösterir
 
 **Genel bakış (en üst):**
 - **⚡ Öne Çıkanlar:** otomatik içgörüler — en yüksek Sharpe stratejisi, bileşik büyümesi, savunma duruşu, en iyi çeşitlendirici, **piyasa genişliği** (pozitif momentumlu varlık oranı = risk-on/off).
-- **Bu Ayın Sinyalleri:** 6 evrenin güncel pozisyonları tek bakışta.
+- **Bu Ayın Sinyalleri:** 7 evrenin güncel pozisyonları tek bakışta.
 - **🎛️ Backtest Stüdyosu:** etkileşimli — *evren × look-back (1–24 ay) × top-N × işlem maliyeti (bps)*; tam grafik paketi + momentum-vs-benchmark farkı anında güncellenir (titremesiz, URL'de paylaşılabilir).
-- **Strateji Karşılaştırma:** tüm stratejiler **sıralanabilir** tabloda (CAGR/Sharpe/Sortino/MaxDD/getiri/devir); "Momentum Al-Tut'u Yeniyor mu?" tablosu + ortalama satırı; **ortak-dönem overlay** (adil kıyas).
-- **🧩 Dual Momentum Bileşik:** 6 evrenin **eşit-ağırlık + risk-parity** meta-stratejisi — güncel duruş, **"bu ay al" listesi (CSV)**, getiri atfı, risk-parity ağırlıkları, çeşitlendirme faydası, korelasyon matrisi, drawdown epizodları.
+- **Strateji Karşılaştırma:** tüm stratejiler **sıralanabilir** tabloda (CAGR/Sharpe/Sortino/MaxDD/getiri/devir); "Momentum Al-Tut'u Yeniyor mu?" tablosu — CAGR/Sharpe farkı + **aylık fark t-stat (istatistiksel anlamlılık)**; **ortak-dönem overlay** + **evrenler-arası risk–getiri dağılımı** (adil kıyas, çeşitlendirme görsel kanıtı).
+- **🧪 Özel Bileşik Oluşturucu:** sleeve'leri aç/kapat → eşit-ağırlık bileşik **ortak dönemde anında** yeniden hesaplanır (CAGR/Vol/MaxDD/Calmar + canlı büyüme eğrisi); "kriptoyu çıkarırsam ne olur?" keşfi.
+- **🧩 Dual Momentum Bileşik:** 7 evrenin **eşit-ağırlık + risk-parity** meta-stratejisi — güncel duruş, **"bu ay al" listesi (CSV)**, **pasif al-tut benchmark karşılaştırması**, getiri atfı, risk-parity ağırlıkları, çeşitlendirme faydası, korelasyon matrisi, drawdown epizodları, **kriz stres testi** ve **blok-bootstrap risk dağılımı**.
 
-**Her evren sekmesinde (ETF/Hisse/Kripto/Sektör/Uluslararası/Emtia):**
+**Her evren sekmesinde (ETF/Hisse/Kripto/Sektör/Uluslararası/Emtia/Faktör):**
 - **Headline stat şeridi** (CAGR/Sharpe/Sortino/MaxDD) + **sinyal panosu** (sıralanabilir) + momentum sıralaması + **look-back duyarlılık matrisi**.
-- **Görsel analiz** (katlanabilir, paylaşılan `BacktestCharts`): equity curve (log) · pozisyon bandı · drawdown (underwater) + **en kötü 5 epizod** · aylık ısı haritası · **takvim-yılı getirileri (strateji vs benchmark)** · risk–getiri · 12-ay rolling getiri & **volatilite** & **Sharpe** & **göreli performans** · getiri scatter · **yukarı/aşağı yakalama** · box plot · **getiri histogramı (normal eğri bindirmeli)** · **mevsimsellik**.
+- **Görsel analiz** (katlanabilir, paylaşılan `BacktestCharts`): equity curve (log) · pozisyon bandı · drawdown (underwater) + **en kötü 5 epizod** · aylık ısı haritası · **takvim-yılı getirileri (strateji vs benchmark)** · **kriz stres testi** (2008/2020/2022 vb.) · **blok-bootstrap risk dağılımı** · risk–getiri · 12-ay rolling getiri & **volatilite** & **Sharpe** & **göreli performans (+ vuruş ortalaması)** · getiri scatter · **yukarı/aşağı yakalama** · box plot · **getiri histogramı (normal eğri bindirmeli)** · **mevsimsellik**.
 - **Risk metrikleri:** CAGR, vol, Sharpe, Sortino, **Calmar**, **Ulcer Index**, **Martin oranı**, çarpıklık, basıklık, CVaR, max drawdown (derinlik+süre+toparlanma), % kârlı ay.
 - **Fama-French faktör alpha** (alpha, market/size/value beta, R²) + **şeffaf yöntem kartları** (trailing, relative, absolute, MA, trend-line t-stat, 52-hafta, hızlanan, taze/bayat, trend salience, risk parity; ETF'de ayrıca GBM, DMSR, GEM).
 - **Earnings/Revenue momentum:** (hisse evreni, FMP anahtarı ile) yıllık gelir+net kâr YoY büyümesi.
