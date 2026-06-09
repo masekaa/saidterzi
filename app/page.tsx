@@ -2963,6 +2963,57 @@ function BacktestStudio() {
   );
 }
 
+function BacktestCharts({
+  bt,
+  label = "GEM",
+  factorAlpha,
+  investedKey,
+}: {
+  bt: BacktestResult;
+  label?: string;
+  factorAlpha?: FactorAlpha | null;
+  investedKey?: string;
+}) {
+  return (
+    <>
+      <EquityChart bt={bt} />
+      <PositionTimeline bt={bt} label={label} />
+      <UnderwaterChart bt={bt} label={label} />
+      <DrawdownEpisodes bt={bt} label={label} />
+      <MonthlyHeatmap bt={bt} label={label} />
+      <RiskReturnChart rows={bt.strategies} />
+      <RollingReturnsChart bt={bt} label={label} />
+      <RollingVol bt={bt} label={label} />
+      <ScatterGemVsBench bt={bt} label={label} />
+      <BoxPlot bt={bt} />
+      <Seasonality bt={bt} label={label} />
+      <MetricsTable rows={bt.strategies} />
+      <p className="table-note">{bt.note}</p>
+      {bt.strategies[0]?.timeInAsset && (
+        <p className="table-note">
+          Zaman dağılımı:{" "}
+          {Object.entries(bt.strategies[0].timeInAsset)
+            .map(([k, v]) => {
+              const lbl =
+                k === investedKey
+                  ? "Yatırımda"
+                  : k === "bil"
+                  ? "Nakit"
+                  : k.toUpperCase();
+              return `${lbl} %${v}`;
+            })
+            .join(" · ")}{" "}
+          · Yıllık ~{num(bt.strategies[0].switchesPerYear ?? null)} geçiş
+        </p>
+      )}
+      <AdvancedMetricsTable rows={bt.strategies} />
+      {factorAlpha && (
+        <FactorAlphaPanel fa={factorAlpha} subject={`${label} stratejisi`} />
+      )}
+    </>
+  );
+}
+
 function UniverseSection({ u }: { u: UniverseBundle }) {
   const bt = u.backtest;
   return (
@@ -3022,39 +3073,12 @@ function UniverseSection({ u }: { u: UniverseBundle }) {
             </>
           }
         >
-          <EquityChart bt={bt} />
-          <PositionTimeline bt={bt} label={u.positionLabel} />
-          <UnderwaterChart bt={bt} label={u.positionLabel} />
-          <DrawdownEpisodes bt={bt} label={u.positionLabel} />
-          <MonthlyHeatmap bt={bt} label={u.positionLabel} />
-          <RiskReturnChart rows={bt.strategies} />
-          <RollingReturnsChart bt={bt} label={u.positionLabel} />
-          <RollingVol bt={bt} label={u.positionLabel} />
-          <ScatterGemVsBench bt={bt} label={u.positionLabel} />
-          <BoxPlot bt={bt} />
-          <Seasonality bt={bt} label={u.positionLabel} />
-          <MetricsTable rows={bt.strategies} />
-          <p className="table-note">{bt.note}</p>
-          {bt.strategies[0]?.timeInAsset && (
-            <p className="table-note">
-              Zaman dağılımı:{" "}
-              {Object.entries(bt.strategies[0].timeInAsset)
-                .map(([k, v]) => {
-                  const lbl =
-                    k === u.id ? "Yatırımda" : k === "bil" ? "Nakit" : k;
-                  return `${lbl} %${v}`;
-                })
-                .join(" · ")}{" "}
-              · Yıllık ~{num(bt.strategies[0].switchesPerYear ?? null)} geçiş
-            </p>
-          )}
-          <AdvancedMetricsTable rows={bt.strategies} />
-          {u.factorAlpha && (
-            <FactorAlphaPanel
-              fa={u.factorAlpha}
-              subject={`${u.positionLabel} stratejisi`}
-            />
-          )}
+          <BacktestCharts
+            bt={bt}
+            label={u.positionLabel}
+            factorAlpha={u.factorAlpha}
+            investedKey={u.id}
+          />
         </CollapsibleSection>
       )}
 
@@ -3424,30 +3448,7 @@ export default function Home() {
                 </>
               }
             >
-              <EquityChart bt={bt} />
-              <PositionTimeline bt={bt} />
-              <UnderwaterChart bt={bt} />
-              <DrawdownEpisodes bt={bt} label="GEM" />
-              <MonthlyHeatmap bt={bt} />
-              <RiskReturnChart rows={bt.strategies} />
-              <RollingReturnsChart bt={bt} />
-              <RollingVol bt={bt} label="GEM" />
-              <ScatterGemVsBench bt={bt} />
-              <BoxPlot bt={bt} />
-              <Seasonality bt={bt} label="GEM" />
-              <MetricsTable rows={bt.strategies} />
-              <p className="table-note">{bt.note}</p>
-              {bt.strategies[0]?.timeInAsset && (
-                <p className="table-note">
-                  GEM zaman dağılımı:{" "}
-                  {Object.entries(bt.strategies[0].timeInAsset)
-                    .map(([k, v]) => `${k.toUpperCase()} %${v}`)
-                    .join(" · ")}{" "}
-                  · Yıllık ~{num(bt.strategies[0].switchesPerYear ?? null)} geçiş
-                </p>
-              )}
-              <AdvancedMetricsTable rows={bt.strategies} />
-              {data.factorAlpha && <FactorAlphaPanel fa={data.factorAlpha} />}
+              <BacktestCharts bt={bt} factorAlpha={data.factorAlpha} />
             </CollapsibleSection>
           )}
 
