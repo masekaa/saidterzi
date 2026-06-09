@@ -2185,6 +2185,169 @@ function MomentumValueAdd({ data }: { data: AnalysisResult }) {
   );
 }
 
+function CrossUniverseRiskReturn({ data }: { data: AnalysisResult }) {
+  type Ser = {
+    label: string;
+    emoji: string;
+    growthMap: Map<string, number>;
+    hl: boolean;
+    bench: boolean;
+  };
+  const sers: Ser[] = [];
+  const add = (
+    label: string,
+    emoji: string,
+    bt: BacktestResult | null,
+    opts?: { curveName?: string; hl?: boolean; bench?: boolean }
+  ) => {
+    if (!bt) return;
+    const curve = opts?.curveName
+      ? bt.equityCurves.find((c) => c.name.includes(opts.curveName as string))
+      : bt.equityCurves.find((c) => c.highlight) ?? bt.equityCurves[0];
+    if (!curve) return;
+    const m = new Map<string, number>();
+    for (let i = 0; i < bt.dates.length && i < curve.growth.length; i++)
+      m.set(bt.dates[i].slice(0, 7), curve.growth[i]);
+    sers.push({ label, emoji, growthMap: m, hl: !!opts?.hl, bench: !!opts?.bench });
+  };
+  add("GEM", "📊", data.backtest);
+  for (const u of data.universes)
+    add(
+      u.positionLabel.replace(" Momentum", "").replace(" (DMSR)", ""),
+      u.emoji,
+      u.backtest
+    );
+  add("Bileşik", "🧩", data.composite, { hl: true });
+  add("Pasif", "⚪", data.composite, { curveName: "Pasif", bench: true });
+  if (sers.length < 3) return null;
+
+  // Ortak ay aralığında hesapla → CAGR/vol adil (apples-to-apples) karşılaştırılır.
+  const common = Array.from(sers[0].growthMap.keys())
+    .filter((d) => sers.every((s) => s.growthMap.has(d)))
+    .sort();
+  if (common.length < 13) return null;
+
+  const pts = sers
+    .map((s) => {
+      const g = common.map((d) => s.growthMap.get(d) as number);
+      const rets: number[] = [];
+      for (let i = 1; i < g.length; i++) rets.push(g[i] / g[i - 1] - 1);
+      if (rets.length < 2) return null;
+      const finalMult = g[g.length - 1] / g[0];
+      const cagr = Math.pow(finalMult, 12 / (common.length - 1)) - 1;
+      const mean = rets.reduce((a, b) => a + b, 0) / rets.length;
+      const variance =
+        rets.reduce((a, b) => a + (b - mean) ** 2, 0) / (rets.length - 1);
+      const vol = Math.sqrt(variance) * Math.sqrt(12);
+      const sharpe = vol > 0 ? (mean * 12) / vol : null;
+      return {
+        label: s.label,
+        emoji: s.emoji,
+        x: vol,
+        y: cagr,
+        sharpe,
+        hl: s.hl,
+        bench: s.bench,
+      };
+    })
+    .filter(
+      (
+        p
+      ): p is {
+        label: string;
+        emoji: string;
+        x: number;
+        y: number;
+        sharpe: number | null;
+        hl: boolean;
+        bench: boolean;
+      } => !!p && isFinite(p.x) && isFinite(p.y)
+    );
+  if (pts.length < 3) return null;
+
+  const W = 820;
+  const H = 380;
+  const padL = 52;
+  const padR = 132;
+  const padT = 16;
+  const padB = 40;
+  const innerW = W - padL - padR;
+  const innerH = H - padT - padB;
+
+  const xMax = Math.max(...pts.map((p) => p.x)) * 1.12 || 0.1;
+  const yMin = Math.min(0, ...pts.map((p) => p.y));
+  const yMax = Math.max(...pts.map((p) => p.y)) * 1.12;
+  const ySpan = yMax - yMin || 1;
+  const X = (v: number) => padL + (innerW * v) / xMax;
+  const Y = (v: number) => padT + innerH * (1 - (v - yMin) / ySpan);
+
+  const xTicks = [0, 0.05, 0.1, 0.15, 0.2, 0.25, 0.3, 0.4, 0.5].filter(
+    (v) => v <= xMax
+  );
+  const yTicks: number[] = [];
+  for (let v = Math.floor(yMin * 20) / 20; v <= yMax; v += 0.05)
+    yTicks.push(Number(v.toFixed(2)));
+
+  return (
+    <div className="chart-card">
+      <div className="chart-title">
+        Evrenler-Arası Risk–Getiri — her evrenin momentum stratejisi + bileşik +
+        pasif (ortak dönem)
+      </div>
+      <div className="chart-help">
+        Her nokta bir evrenin dual-momentum stratejisi; hepsi <b>ortak ay
+        aralığında</b> hesaplandığından CAGR/volatilite adil karşılaştırılır.{" "}
+        <b>Sol-üst köşe idealdir</b> (düşük risk + yüksek getiri). 🧩 Bileşiğin
+        (yeşil) tekil evrenlerin sol-üstünde oturması = çeşitlendirme faydası; ⚪
+        Pasif (gri) hiçbir şey yapmama alternatifidir.
+      </div>
+      <svg
+        className="equity-svg"
+        viewBox={`0 0 ${W} ${H}`}
+        preserveAspectRatio="xMidYMid meet"
+        role="img" aria-label="Finansal analiz grafiği; açıklama hemen üstteki başlık ve metinde"
+      >
+        {yTicks.map((v, i) => (
+          <g key={`y${i}`}>
+            <line x1={padL} x2={W - padR} y1={Y(v)} y2={Y(v)} className="grid-line" />
+            <text x={padL - 8} y={Y(v) + 3} className="axis-label" textAnchor="end">
+              {(v * 100).toFixed(0)}%
+            </text>
+          </g>
+        ))}
+        {xTicks.map((v, i) => (
+          <text key={`x${i}`} x={X(v)} y={H - 16} className="axis-label" textAnchor="middle">
+            {(v * 100).toFixed(0)}%
+          </text>
+        ))}
+        <text x={(padL + W - padR) / 2} y={H - 3} className="axis-label" textAnchor="middle">
+          Volatilite (yıllık)
+        </text>
+        {pts.map((p, i) => (
+          <g key={i}>
+            <circle
+              cx={X(p.x)}
+              cy={Y(p.y)}
+              r={p.hl ? 7.5 : 5}
+              className={
+                p.hl ? "rr-dot rr-hl" : p.bench ? "rr-dot rr-bench" : "rr-dot"
+              }
+            />
+            <text
+              x={X(p.x) + (p.hl ? 11 : 9)}
+              y={Y(p.y) + 3}
+              className={`rr-label ${p.hl ? "rr-label-hl" : ""}`}
+            >
+              {p.emoji} {p.label}
+              {p.sharpe != null ? ` · S ${p.sharpe.toFixed(2)}` : ""}
+            </text>
+          </g>
+        ))}
+      </svg>
+    </div>
+  );
+}
+
 function CrossUniverseComparison({ data }: { data: AnalysisResult }) {
   type Ser = {
     label: string;
@@ -3973,6 +4136,9 @@ export default function Home() {
           {/* Ortak-dönem equity curve overlay (adil kıyas) */}
           <ErrorBoundary label="Ortak-dönem karşılaştırması">
             <CrossUniverseComparison data={data} />
+          </ErrorBoundary>
+          <ErrorBoundary label="Evrenler-arası risk-getiri">
+            <CrossUniverseRiskReturn data={data} />
           </ErrorBoundary>
 
           {/* Dual Momentum Bileşik — 4 evrenin eşit-ağırlık meta-stratejisi */}

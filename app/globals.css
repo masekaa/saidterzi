@@ -848,6 +848,13 @@ table.heatmap.corr td {
   fill: #22d3a6;
   opacity: 1;
 }
+.rr-dot.rr-bench {
+  fill: none;
+  stroke: var(--text-faint);
+  stroke-width: 1.5;
+  stroke-dasharray: 3 2;
+  opacity: 0.9;
+}
 .rr-label {
   fill: var(--text-dim);
   font-size: 10.5px;
