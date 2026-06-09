@@ -2050,17 +2050,19 @@ function StrategyLeaderboard({ data }: { data: AnalysisResult }) {
       months: data.composite.months,
     });
   }
-  const rp = data.composite?.strategies.find((s) =>
-    s.name.includes("risk-parity")
-  );
-  if (rp && data.composite) {
-    rows.push({
-      name: rp.name,
-      emoji: "🧩",
-      m: rp,
-      period: `${data.composite.startDate} → ${data.composite.endDate}`,
-      months: data.composite.months,
-    });
+  // Risk-parity varyantlarının ikisini de ekle (saf + tavanlı).
+  const rpVariants =
+    data.composite?.strategies.filter((s) => s.name.includes("risk-parity")) ??
+    [];
+  for (const rp of rpVariants) {
+    if (data.composite)
+      rows.push({
+        name: rp.name,
+        emoji: "🧩",
+        m: rp,
+        period: `${data.composite.startDate} → ${data.composite.endDate}`,
+        months: data.composite.months,
+      });
   }
   if (rows.length < 2) return null;
   // "Düşük daha iyi" metrikler artan sıralanır: Ulcer (az acı) ve yıllık geçiş
@@ -5084,6 +5086,14 @@ export default function Home() {
               <MonthlyHeatmap bt={data.composite} label="Bileşik" />
               <MetricsTable rows={data.composite.strategies} />
               <p className="table-note">{data.composite.note}</p>
+              <p className="table-note">
+                <b>Üç ağırlıklandırma:</b> <b>eşit-ağırlık</b> (her sleeve 1/n) ·{" "}
+                <b>risk-parity</b> (ters-volatilite, w=(1/σ)/Σ(1/σ); düşük-vol
+                sleeve&apos;lere ağırlık) · <b>risk-parity tavanlı</b> (aynı ama
+                hiçbir sleeve adil payın 2.5×&apos;ini geçemez — tahvil gibi
+                ultra-düşük-vol sleeve&apos;lerin bloğu domine etmesini önler).
+                Tablodaki üç 🧩 satırını karşılaştır.
+              </p>
               <AdvancedMetricsTable rows={data.composite.strategies} />
               <CrisisPerformance bt={data.composite} label="Bileşik" />
               <BootstrapRisk bt={data.composite} label="Bileşik" />
