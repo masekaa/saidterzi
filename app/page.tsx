@@ -3818,7 +3818,11 @@ function CompositeHoldings({ data }: { data: AnalysisResult }) {
   }
 
   const downloadCsv = () => {
-    const lines = ["Varlik,Agirlik_Yuzde"];
+    const asOf = data.generatedAt.slice(0, 10);
+    const lines = [
+      `# Bilesik bu-ay-al listesi (esit-agirlik) — ${asOf}`,
+      "Varlik,Agirlik_Yuzde",
+    ];
     for (const r of rows)
       lines.push(`"${r.label}",${(r.weight * 100).toFixed(2)}`);
     if (cash > 0.0001)
@@ -3829,7 +3833,7 @@ function CompositeHoldings({ data }: { data: AnalysisResult }) {
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = "bilesik-alim-listesi.csv";
+    a.download = `bilesik-alim-listesi-${asOf}.csv`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
@@ -5076,7 +5080,7 @@ export default function Home() {
             <CustomComposite data={data} />
           </ErrorBoundary>
 
-          {/* Dual Momentum Bileşik — 4 evrenin eşit-ağırlık meta-stratejisi */}
+          {/* Dual Momentum Bileşik — tüm evrenlerin eşit-ağırlık meta-stratejisi */}
           {data.composite && (
             <ErrorBoundary label="Bileşik bölümü">
             <CollapsibleSection
