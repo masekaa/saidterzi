@@ -1745,6 +1745,7 @@ function ConsolidatedSignals({ data }: { data: AnalysisResult }) {
 }
 
 function StrategyLeaderboard({ data }: { data: AnalysisResult }) {
+  const [sortKey, setSortKey] = useState<keyof StrategyMetrics>("sharpe");
   type Row = {
     name: string;
     emoji: string;
@@ -1783,13 +1784,35 @@ function StrategyLeaderboard({ data }: { data: AnalysisResult }) {
     });
   }
   if (rows.length < 2) return null;
-  rows.sort((a, b) => (b.m.sharpe ?? -99) - (a.m.sharpe ?? -99));
+  const sval = (m: StrategyMetrics) => {
+    const v = m[sortKey];
+    return typeof v === "number" && isFinite(v) ? v : -Infinity;
+  };
+  rows.sort((a, b) => sval(b.m) - sval(a.m));
+
+  const SortableTh = ({
+    label,
+    k,
+    left,
+  }: {
+    label: string;
+    k: keyof StrategyMetrics;
+    left?: boolean;
+  }) => (
+    <th
+      className={`sortable ${left ? "left" : ""} ${sortKey === k ? "sorted" : ""}`}
+      onClick={() => setSortKey(k)}
+    >
+      {label}
+      {sortKey === k ? " ▾" : ""}
+    </th>
+  );
 
   return (
     <>
       <div className="section-label">
-        Strateji Karşılaştırma — tüm evrenlerin momentum stratejileri (Sharpe&apos;a
-        göre sıralı)
+        Strateji Karşılaştırma — tüm evrenlerin momentum stratejileri (sütun
+        başlığına tıkla → sırala)
       </div>
       <div className="table-scroll">
         <table className="metrics">
@@ -1797,12 +1820,12 @@ function StrategyLeaderboard({ data }: { data: AnalysisResult }) {
             <tr>
               <th>#</th>
               <th className="left">Strateji</th>
-              <th>CAGR</th>
-              <th>Sharpe</th>
-              <th>Sortino</th>
-              <th>Max DD</th>
-              <th>Toplam Getiri</th>
-              <th>Yıllık Geçiş</th>
+              <SortableTh label="CAGR" k="cagr" />
+              <SortableTh label="Sharpe" k="sharpe" />
+              <SortableTh label="Sortino" k="sortino" />
+              <SortableTh label="Max DD" k="maxDrawdown" />
+              <SortableTh label="Toplam Getiri" k="totalReturn" />
+              <SortableTh label="Yıllık Geçiş" k="switchesPerYear" />
               <th className="left">Dönem</th>
             </tr>
           </thead>

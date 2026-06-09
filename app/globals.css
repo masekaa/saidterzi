@@ -469,6 +469,17 @@ table.metrics .neg {
 table.metrics .pos-cell {
   color: var(--success, #22d3a6);
 }
+table.metrics th.sortable {
+  cursor: pointer;
+  user-select: none;
+  white-space: nowrap;
+}
+table.metrics th.sortable:hover {
+  color: var(--text);
+}
+table.metrics th.sorted {
+  color: var(--accent);
+}
 table.metrics tr.row-hl td {
   background: rgba(91, 140, 255, 0.08);
   color: var(--text);
