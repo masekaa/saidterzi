@@ -63,7 +63,7 @@
 | Kaynak | Katkı | saidterzi |
 |--------|-------|-----------|
 | **Faber, M. (2007/2013)**, *A Quantitative Approach to Tactical Asset Allocation*, J. of Wealth Mgmt | 10-ay basit hareketli ortalama (SMA) ile piyasaya giriş/çıkış; basit kural, büyük drawdown azaltımı (GTAA / "Ivy"). | 🟡 MA-timing yöntem kartı (10/12-ay SMA); mutlak momentum benzer rolü oynar |
-| **Gray, W. & Vogel, J. (2016)**, *Quantitative Momentum*, Wiley | Hisse momentum **seçimi**: "yol kalitesi" (smooth vs sıçramalı momentum), mevsimsellik, en güçlü momentum hisseleri. | 🟡 "Hızlanan / taze-bayat / trend-salience" yöntem kartları bu kalite fikrini yakalar |
+| **Gray, W. & Vogel, J. (2016)**, *Quantitative Momentum*, Wiley | Hisse momentum **seçimi**: "yol kalitesi" (smooth vs sıçramalı momentum), mevsimsellik, en güçlü momentum hisseleri. | ✅ Momentum panosunda **Kalite kolonu** (trailing 12-ay % pozitif ay) + 🟡 "hızlanan / taze-bayat / trend-salience" yöntem kartları |
 
 ---
 
@@ -109,8 +109,11 @@ Literatür taraması, uygulamaya **gerçek değer katacak** ve henüz olmayan y�
 
 1. ✅ **Çok-pencereli ensemble** (Hoffstein 2019 fikrinin look-back uyarlaması) — `runLookbackEnsemble` + 🪟 Çok-Pencereli Ensemble paneli. *Uygulandı (yol haritası #1).*
 2. ✅ **Vol-hedefli ölçekleme** (Barroso–Santa-Clara 2015) — Vol-Hedefli Versiyon paneli. *Uygulandı (yol haritası #2).*
-3. ⬜ **"Yol kalitesi" momentum seçimi** (Gray–Vogel 2016) — düzgün (smooth) momentumu sıçramalıya tercih et (FIP / % pozitif ay); hisse evreninde seçim kalitesini artırır. *Sıradaki aday.*
-4. ⬜ **Ay-içi ofsetli tranched rebalans** (Hoffstein 2019, tam biçim) — alt-aylık veri gerektirir; mevcut aylık veriyle uygulanamaz.
+3. ✅ **"Yol kalitesi" momentum** (Gray–Vogel 2016) — momentum panosunda Kalite kolonu (trailing 12-ay % pozitif ay). *Uygulandı (yol haritası #3).*
+4. ⬜ **Ay-içi ofsetli tranched rebalans** (Hoffstein 2019, tam biçim) — alt-aylık veri gerektirir; mevcut aylık veriyle uygulanamaz (veri kaynağı sınırı).
+
+> **Durum:** Aylık veriyle uygulanabilir literatür-yöntemleri (#1–#3) tamamlandı.
+> Kalan #4 alt-aylık veri gerektirir (gelecekte Stooq/günlük veri eklenirse açılır).
 
 > Bu liste, gelecekteki geliştirme turlarının önceliklendirmesi için referanstır;
 > her madde literatürde kanıtlanmış, uygulamaya doğrudan oturan bir yöntemdir.
