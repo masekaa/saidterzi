@@ -3582,6 +3582,99 @@ function CrisisPerformance({ bt, label = "Strateji" }: { bt: BacktestResult; lab
   );
 }
 
+function VolTargetPanel({ bt, label = "Strateji" }: { bt: BacktestResult; label?: string }) {
+  const curve = bt.equityCurves.find((c) => c.highlight) ?? bt.equityCurves[0];
+  const g = curve?.growth;
+  if (!g || g.length < 37) return null; // warmup + örneklem
+  const r = growthToRets(g);
+  const n = r.length;
+  const W = 12; // trailing oynaklık penceresi (ay)
+  const MAXLEV = 2; // kaldıraç tavanı
+
+  const annVol = (x: number[]) => {
+    const k = x.length;
+    if (k < 2) return 0;
+    const m = x.reduce((s, v) => s + v, 0) / k;
+    return Math.sqrt(x.reduce((s, v) => s + (v - m) ** 2, 0) / (k - 1)) * Math.sqrt(12);
+  };
+  // Hedef = stratejinin kendi tam-örneklem oynaklığı (risk-nötr kıyas; sadece
+  // zamanlama faydasını izole eder, ortalama riski sabit tutar).
+  const targetAnn = annVol(r);
+  if (targetAnn <= 0) return null;
+
+  const orig: number[] = [];
+  const vt: number[] = [];
+  for (let i = W; i < n; i++) {
+    const trailing = annVol(r.slice(i - W, i)); // GEÇMİŞ pencere → lookahead yok
+    const w = trailing > 0 ? Math.min(MAXLEV, targetAnn / trailing) : 1;
+    orig.push(r[i]);
+    vt.push(w * r[i]);
+  }
+  if (orig.length < 24) return null;
+
+  const stat = (x: number[]) => {
+    const k = x.length;
+    let acc = 1,
+      peak = 1,
+      maxdd = 0;
+    for (const v of x) {
+      acc *= 1 + v;
+      if (acc > peak) peak = acc;
+      const dd = acc / peak - 1;
+      if (dd < maxdd) maxdd = dd;
+    }
+    const cagr = Math.pow(acc, 12 / k) - 1;
+    const m = x.reduce((s, v) => s + v, 0) / k;
+    const sd = Math.sqrt(x.reduce((s, v) => s + (v - m) ** 2, 0) / (k - 1));
+    const sharpe = sd > 0 ? (m * Math.sqrt(12)) / sd : null;
+    return { cagr, vol: sd * Math.sqrt(12), sharpe, maxdd };
+  };
+  const o = stat(orig);
+  const t = stat(vt);
+  const dS = (t.sharpe ?? 0) - (o.sharpe ?? 0);
+
+  return (
+    <div className="chart-card">
+      <div className="chart-title">
+        {label} — Vol-Hedefli Versiyon (oynaklık-yönetimli momentum)
+      </div>
+      <div className="chart-help">
+        Pozisyon, geçmiş 12-ayın oynaklığına göre ölçeklenir (sakin dönemde
+        ↑, çalkantıda ↓; hedef = stratejinin kendi uzun-dönem oynaklığı, kaldıraç
+        ≤{MAXLEV}×). Momentum çöküşleri yüksek-vol dönemlerde olur; oynaklık
+        yönetimi bunları yumuşatır ve Sharpe&apos;ı artırır (Barroso–Santa-Clara
+        2015). Ölçekleme yalnız <b>geçmiş</b> oynaklık kullanır (lookahead yok).
+      </div>
+      <div className="cap-grid">
+        <div className="cap-item">
+          <div className="cap-label">Orijinal (CAGR · Sharpe · MaxDD)</div>
+          <div className="cap-val">
+            {pct(o.cagr)} · {num(o.sharpe)} · {pct(o.maxdd)}
+          </div>
+        </div>
+        <div className="cap-item">
+          <div className="cap-label">Vol-Hedefli (CAGR · Sharpe · MaxDD)</div>
+          <div className="cap-val">
+            {pct(t.cagr)} · {num(t.sharpe)} · {pct(t.maxdd)}
+          </div>
+        </div>
+      </div>
+      <div className={`rob-verdict ${dS >= 0.05 ? "ok" : dS <= -0.05 ? "thin" : ""}`}>
+        Sharpe etkisi: <b className={dS >= 0 ? "pos-cell" : "neg"}>
+          {dS >= 0 ? "+" : ""}
+          {num(dS)}
+        </b>{" "}
+        — {dS >= 0.05
+          ? "oynaklık yönetimi risk-ayarlı getiriyi artırdı."
+          : dS <= -0.05
+          ? "bu seride yardımcı olmadı (kaldıraç/maliyet dikkate alınmalı)."
+          : "etki nötr."}{" "}
+        (Not: ≤{MAXLEV}× kaldıraç ve işlem maliyeti varsayımı; hipotetik.)
+      </div>
+    </div>
+  );
+}
+
 function SplitSampleConsistency({ bt, label = "Strateji" }: { bt: BacktestResult; label?: string }) {
   const curve = bt.equityCurves.find((c) => c.highlight) ?? bt.equityCurves[0];
   const g = curve?.growth;
@@ -4922,6 +5015,7 @@ function BacktestCharts({
       <CrisisPerformance bt={bt} label={label} />
       <BootstrapRisk bt={bt} label={label} />
       <SplitSampleConsistency bt={bt} label={label} />
+      <VolTargetPanel bt={bt} label={label} />
       <RiskReturnChart rows={bt.strategies} />
       <RollingReturnsChart bt={bt} label={label} />
       <RollingVol bt={bt} label={label} />
