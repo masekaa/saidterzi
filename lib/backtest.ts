@@ -384,8 +384,11 @@ export function runLookbackEnsemble(
     return m;
   });
 
-  // Al-tut benchmark look-back'ten bağımsızdır → ilk koşudan al.
-  const benchBt = runs[0].bt;
+  // Al-tut benchmark look-back'ten bağımsızdır → EN KISA look-back'li koşudan al
+  // (en geniş benchmark geçmişi; `common`'ı garanti kapsar — sıralamadan bağımsız
+  // sağlam). Pozisyonel `runs[0]` lookback uzun-önce sıralanırsa 0-getiri enjekte
+  // edip benchmark metriğini bozardı.
+  const benchBt = runs.reduce((a, b) => (b.lb < a.lb ? b : a)).bt;
   const benchCurve =
     benchBt.equityCurves.find(
       (c) => !c.highlight && /Eşit Ağırlık|Al-Tut|Buy.?Hold|SPY|ACWI/i.test(c.name)
