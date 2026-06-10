@@ -74,6 +74,7 @@ Başlangıç noktası: **[`dual-momentum-kapsam/00-INDEX.md`](dual-momentum-kaps
 | 07 | `07-akademik-arkaplan.md` | MPT/EMH eleştirisi, momentum tarihi, davranışsal temeller |
 | 08 | `08-terimce.md` | Sözlük (TR + EN) |
 | 09 | `09-implementasyon-spec.md` | ⭐ Python implementasyon planı, pseudo-code, edge-case'ler |
+| 10 | `10-literatur-ve-kaynaklar.md` | Annotated bibliography — momentum/trend literatürünün en iyi kaynakları, her biri uygulamaya bağlı (✅/🟡/⬜) + yol haritası |
 
 ## ⚡ GEM — 30 Saniyede
 

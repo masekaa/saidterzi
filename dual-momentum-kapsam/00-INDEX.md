@@ -30,6 +30,7 @@
 | 07 | `07-akademik-arkaplan.md` | MPT/CAPM/EMH eleştirisi, momentum tarihi, davranışsal temeller | Orta |
 | 08 | `08-terimce.md` | Sözlük (TR + EN), tüm terimler | Referans |
 | 09 | `09-implementasyon-spec.md` | **Python implementasyon planı** — pseudo-code, modül yapısı, edge-case'ler | ⭐ KRİTİK (kod) |
+| 10 | `10-literatur-ve-kaynaklar.md` | **Annotated bibliography** — momentum/trend/kantitatif literatürün en iyi kaynakları, her biri uygulamaya bağlı (✅/🟡/⬜) + yol haritası | Referans |
 
 ---
 
