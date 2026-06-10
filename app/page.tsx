@@ -320,6 +320,7 @@ function StockMomentumBoard({ data }: { data: StockMomentumData }) {
                 52-Hafta{sh("prox")}
               </th>
               <th>İvme</th>
+              <th>Kalite</th>
               <th>Seçim</th>
             </tr>
           </thead>
@@ -355,6 +356,20 @@ function StockMomentumBoard({ data }: { data: StockMomentumData }) {
                     <span className="sb-down">▼ yavaşlıyor</span>
                   )}
                 </td>
+                <td
+                  className={
+                    s.quality == null
+                      ? ""
+                      : s.quality >= 0.6
+                      ? "pos-cell"
+                      : s.quality < 0.45
+                      ? "neg"
+                      : ""
+                  }
+                  title="Trailing 12-ayın % pozitif ayı (yol kalitesi / düzgünlük). Yüksek = tutarlı yükseliş; düşük = birkaç büyük sıçrama (kırılgan momentum). Gray-Vogel 2016."
+                >
+                  {s.quality == null ? "—" : `%${Math.round(s.quality * 100)}`}
+                </td>
                 <td>
                   {s.selected ? (
                     <span className="pill-sel">★ SEÇİLDİ</span>
@@ -373,7 +388,10 @@ function StockMomentumBoard({ data }: { data: StockMomentumData }) {
         12-ay getirisi T-Bill&apos;i ({pct(data.tbillRet12m)}) geçerse seçilir —
         şu an <b>{selectedCount}</b> hisse seçili. Dual momentum portföyü bu
         seçili hisselere eşit ağırlık verir; hiçbiri geçemezse nakitte kalınır.
-        İvme = son 12 ayın log-fiyat kavisi (hızlanan trend daha kalıcı olur).
+        İvme = son 12 ayın log-fiyat kavisi (hızlanan trend daha kalıcı olur).{" "}
+        <b>Kalite</b> = trailing 12-ayın % pozitif ayı (Gray-Vogel 2016): yüksek =
+        düzgün/tutarlı yükseliş; düşük = birkaç büyük sıçramaya dayanan kırılgan
+        momentum. Sıralamayı değiştirmez, seçimin sağlamlığını gösterir.
       </p>
     </>
   );

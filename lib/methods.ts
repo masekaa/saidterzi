@@ -884,12 +884,26 @@ export function buildStockMomentum(
       hi.price != null && hi.high != null && hi.high !== 0 ? hi.price / hi.high : null;
     // İvmelenme: son 12+1 ayın log-fiyatına kuadratik uyum, c işareti.
     let accelerating: boolean | null = null;
+    // Yol kalitesi (Gray–Vogel 2016): trailing 12-ayın % pozitif ayı. Yüksek =
+    // düzgün/tutarlı yükseliş (kaliteli momentum); düşük = birkaç büyük sıçrama
+    // (kırılgan). Momentum sıralamasını DEĞİŞTİRMEZ — yalnız bilgilendirici.
+    let quality: number | null = null;
     if (raw && raw.series.length >= LOOKBACK_MONTHS + 1) {
       const win = raw.series.slice(raw.series.length - (LOOKBACK_MONTHS + 1));
       const fit = quadraticFit(win.map((p) => Math.log(p.close)));
       if (fit) accelerating = fit.c > 0;
+      let pos = 0,
+        tot = 0;
+      for (let j = 1; j < win.length; j++) {
+        const ret = win[j].close / win[j - 1].close - 1;
+        if (isFinite(ret)) {
+          tot++;
+          if (ret > 0) pos++;
+        }
+      }
+      quality = tot > 0 ? pos / tot : null;
     }
-    return { s, ret12m, highProximity, accelerating };
+    return { s, ret12m, highProximity, accelerating, quality };
   });
 
   // 2) 12-ay getiriye göre azalan sırala (null'lar sona)
@@ -918,6 +932,7 @@ export function buildStockMomentum(
       selected,
       highProximity: x.highProximity,
       accelerating: x.accelerating,
+      quality: x.quality,
     };
   });
 

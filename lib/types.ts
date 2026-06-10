@@ -136,6 +136,7 @@ export interface StockSignal {
   selected: boolean; // top-N içinde VE absolute pozitif
   highProximity: number | null; // fiyat / 12-ay zirve
   accelerating: boolean | null; // kuadratik kavis c>0
+  quality?: number | null; // yol kalitesi: trailing 12-ay % pozitif ay (Gray-Vogel)
 }
 
 export interface StockMomentum {
