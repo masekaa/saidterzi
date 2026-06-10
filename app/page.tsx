@@ -5505,6 +5505,7 @@ export default function Home() {
               <CrisisPerformance bt={data.composite} label="Bileşik" />
               <BootstrapRisk bt={data.composite} label="Bileşik" />
               <SplitSampleConsistency bt={data.composite} label="Bileşik" />
+              <VolTargetPanel bt={data.composite} label="Bileşik" />
               <DiversificationStat bt={data.composite} />
               <CompositeAttribution bt={data.composite} />
               <RiskParityWeights bt={data.composite} />
