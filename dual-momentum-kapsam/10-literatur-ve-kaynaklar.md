@@ -72,7 +72,7 @@
 | Kaynak | Katkı | saidterzi |
 |--------|-------|-----------|
 | **Daniel, K. & Moskowitz, T. (2016)**, *Momentum Crashes*, J. of Financial Economics | Momentum nadiren ama şiddetli çöker (örn. 2009 dip-sonrası ralli); sol-kuyruk riski. | ✅ Kriz Stres Testi, CVaR, çarpıklık/basıklık, getiri histogramı bu kuyruk riskini ölçer |
-| **Barroso, P. & Santa-Clara, P. (2015)**, *Momentum Has Its Moments*, J. of Financial Economics | Momentumu **oynaklığa göre ölçeklemek** (vol-targeting) Sharpe'ı belirgin artırır ve çöküşleri yumuşatır. | ⬜ **Aday:** vol-hedefli pozisyon ölçekleme varyantı |
+| **Barroso, P. & Santa-Clara, P. (2015)**, *Momentum Has Its Moments*, J. of Financial Economics | Momentumu **oynaklığa göre ölçeklemek** (vol-targeting) Sharpe'ı belirgin artırır ve çöküşleri yumuşatır. | ✅ **Vol-Hedefli Versiyon paneli** (post-hoc, trailing-vol ölçekleme, ≤2× kaldıraç, lookahead'siz) |
 
 ---
 
@@ -80,7 +80,7 @@
 
 | Kaynak | Katkı | saidterzi |
 |--------|-------|-----------|
-| **Hoffstein, C., Faber, N. & Braun, S. (2019)**, *Rebalance Timing Luck*, J. of Index Investing 10(1) (Newfound Research) | Rebalans **gününün** seçimi başlı başına yıllık 100+ bps fark yaratabilir ("timing luck"). Çözüm: **örtüşen portföyler / tranching** (sermayeyi farklı günlerde rebalanslanan alt-portföylere böl → zamanda çeşitlendirme). | ⬜ **Aday (yüksek değer):** ay-içi ofsetli ensemble rebalans — şu an tek ay-sonu rebalans timing-luck'a açık |
+| **Hoffstein, C., Faber, N. & Braun, S. (2019)**, *Rebalance Timing Luck*, J. of Index Investing 10(1) (Newfound Research) | Rebalans **gününün** seçimi başlı başına yıllık 100+ bps fark yaratabilir ("timing luck"). Çözüm: **örtüşen portföyler / tranching** (sermayeyi farklı günlerde rebalanslanan alt-portföylere böl → zamanda çeşitlendirme). | 🟡 **Çok-Pencereli Ensemble** uygulandı (fikrin look-back uyarlaması: {3,6,9,12} ay harmanı → parametre/timing luck söndürülür). Ay-içi ofsetli rebalans aylık veriyle uygulanamaz (alt-aylık veri gerekir). |
 
 ---
 
@@ -107,10 +107,10 @@
 
 Literatür taraması, uygulamaya **gerçek değer katacak** ve henüz olmayan yöntemleri işaret eder:
 
-1. **Ensemble / tranched rebalans** (Hoffstein 2019) — ay-içi farklı günlerde rebalanslanan alt-portföyler ortalaması; "rebalance timing luck"ı azaltır. *En yüksek katma değerli aday.*
-2. **Vol-hedefli ölçekleme** (Barroso–Santa-Clara 2015) — pozisyonu hedef oynaklığa göre ölçekle; Sharpe artar, çöküş yumuşar.
-3. **Çok-pencereli (multi-lookback) harmanlı sinyal** — 1/3/6/12 ay sinyallerini ortalayarak tek-pencere bağımlılığını azalt (dayanıklılık haritası bu duyarlılığı zaten görselleştiriyor).
-4. **"Yol kalitesi" momentum seçimi** (Gray–Vogel 2016) — düzgün (smooth) momentumu sıçramalıya tercih et; hisse evreninde seçim kalitesini artırır.
+1. ✅ **Çok-pencereli ensemble** (Hoffstein 2019 fikrinin look-back uyarlaması) — `runLookbackEnsemble` + 🪟 Çok-Pencereli Ensemble paneli. *Uygulandı (yol haritası #1).*
+2. ✅ **Vol-hedefli ölçekleme** (Barroso–Santa-Clara 2015) — Vol-Hedefli Versiyon paneli. *Uygulandı (yol haritası #2).*
+3. ⬜ **"Yol kalitesi" momentum seçimi** (Gray–Vogel 2016) — düzgün (smooth) momentumu sıçramalıya tercih et (FIP / % pozitif ay); hisse evreninde seçim kalitesini artırır. *Sıradaki aday.*
+4. ⬜ **Ay-içi ofsetli tranched rebalans** (Hoffstein 2019, tam biçim) — alt-aylık veri gerektirir; mevcut aylık veriyle uygulanamaz.
 
 > Bu liste, gelecekteki geliştirme turlarının önceliklendirmesi için referanstır;
 > her madde literatürde kanıtlanmış, uygulamaya doğrudan oturan bir yöntemdir.
