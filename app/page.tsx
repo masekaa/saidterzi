@@ -3600,6 +3600,93 @@ function CrisisPerformance({ bt, label = "Strateji" }: { bt: BacktestResult; lab
   );
 }
 
+function ProbabilisticSharpe({ bt, label = "Strateji" }: { bt: BacktestResult; label?: string }) {
+  // Probabilistic Sharpe Ratio — Bailey & López de Prado (2012).
+  // Gözlenen Sharpe'ın gerçek (true) Sharpe > 0 olma olasılığını, örneklem
+  // uzunluğu + çarpıklık + fazla-basıklık (fat tails) düzelterek verir.
+  const curve = bt.equityCurves.find((c) => c.highlight) ?? bt.equityCurves[0];
+  const g = curve?.growth;
+  if (!g || g.length < 37) return null; // ≥36 aylık getiri
+  const r = growthToRets(g);
+  const n = r.length;
+  if (n < 36) return null;
+
+  const m = r.reduce((s, v) => s + v, 0) / n;
+  const sd = Math.sqrt(r.reduce((s, v) => s + (v - m) ** 2, 0) / (n - 1));
+  if (sd <= 0) return null;
+  // Standartlaştırılmış 3. ve 4. momentler (normal: g3=0, g4=3)
+  const zs = r.map((v) => (v - m) / sd);
+  const g3 = zs.reduce((s, v) => s + v ** 3, 0) / n;
+  const g4 = zs.reduce((s, v) => s + v ** 4, 0) / n;
+
+  const srHat = m / sd; // aylık (yıllıklaştırılmamış) Sharpe
+  if (srHat <= 0) return null; // PSR yalnız pozitif Sharpe için anlamlı
+
+  // Standart normal CDF (Abramowitz–Stegun 7.1.26)
+  const Phi = (x: number) => {
+    const t = 1 / (1 + 0.2316419 * Math.abs(x));
+    const d = 0.3989422804014327 * Math.exp((-x * x) / 2);
+    let p =
+      d *
+      t *
+      (0.31938153 +
+        t * (-0.356563782 + t * (1.781477937 + t * (-1.821255978 + t * 1.330274429))));
+    p = x >= 0 ? 1 - p : p;
+    return p;
+  };
+
+  const varTerm = 1 - g3 * srHat + ((g4 - 1) / 4) * srHat * srHat; // = denom²
+  if (!isFinite(varTerm) || varTerm <= 0) return null;
+  const psr = Phi((srHat * Math.sqrt(n - 1)) / Math.sqrt(varTerm));
+
+  // MinTRL: %95 güven için gereken minimum gözlem (ay)
+  const Z95 = 1.644853626951;
+  const minTRL = 1 + varTerm * (Z95 / srHat) ** 2;
+
+  const srAnn = srHat * Math.sqrt(12); // yıllık Sharpe (gösterim)
+  const enough = psr >= 0.95;
+  const weak = psr < 0.9;
+
+  return (
+    <div className="chart-card">
+      <div className="chart-title">{label} — Olasılıksal Sharpe (PSR)</div>
+      <div className="chart-help">
+        Gözlenen Sharpe&apos;ın <b>gerçekte &gt; 0</b> olma olasılığı — örneklem
+        uzunluğu, çarpıklık ve şişman kuyruklar (fat tails) için düzeltilmiş
+        (Bailey–López de Prado 2012). Yüksek Sharpe kısa/çarpık seride yanıltıcı
+        olabilir; PSR bunu cezalandırır. <b>MinTRL</b> = bu Sharpe&apos;ın %95
+        güvenle anlamlı sayılması için gereken minimum ay sayısı.
+      </div>
+      <div className="cap-grid">
+        <div className="cap-item">
+          <div className="cap-label">Yıllık Sharpe</div>
+          <div className="cap-val">{num(srAnn)}</div>
+        </div>
+        <div className="cap-item">
+          <div className="cap-label">PSR (Sharpe &gt; 0)</div>
+          <div className={`cap-val ${enough ? "pos-cell" : weak ? "neg" : ""}`}>
+            {pct(psr, 1)}
+          </div>
+        </div>
+        <div className="cap-item">
+          <div className="cap-label">MinTRL · Örneklem</div>
+          <div className={`cap-val ${n >= minTRL ? "pos-cell" : "neg"}`}>
+            {Math.ceil(minTRL)} ay · {n} ay
+          </div>
+        </div>
+      </div>
+      <div className={`rob-verdict ${enough ? "ok" : weak ? "thin" : ""}`}>
+        {enough
+          ? "Sharpe istatistiksel olarak sağlam — örneklem, çarpıklık/kuyruk riski hesaba katıldığında pozitif risk-ayarlı getiri yüksek güvenle gerçek."
+          : weak
+          ? "Sharpe zayıf destekleniyor — bu Sharpe'a güvenmek için daha uzun geçmiş gerekir (MinTRL henüz karşılanmadı)."
+          : "Sınırda — pozitif Sharpe muhtemelen gerçek ama güven marjı dar."}{" "}
+        (γ₃={num(g3)}, fazla basıklık={num(g4 - 3)})
+      </div>
+    </div>
+  );
+}
+
 function VolTargetPanel({ bt, label = "Strateji" }: { bt: BacktestResult; label?: string }) {
   const curve = bt.equityCurves.find((c) => c.highlight) ?? bt.equityCurves[0];
   const g = curve?.growth;
@@ -5033,6 +5120,7 @@ function BacktestCharts({
       <CrisisPerformance bt={bt} label={label} />
       <BootstrapRisk bt={bt} label={label} />
       <SplitSampleConsistency bt={bt} label={label} />
+      <ProbabilisticSharpe bt={bt} label={label} />
       <VolTargetPanel bt={bt} label={label} />
       <RiskReturnChart rows={bt.strategies} />
       <RollingReturnsChart bt={bt} label={label} />
@@ -5505,6 +5593,7 @@ export default function Home() {
               <CrisisPerformance bt={data.composite} label="Bileşik" />
               <BootstrapRisk bt={data.composite} label="Bileşik" />
               <SplitSampleConsistency bt={data.composite} label="Bileşik" />
+              <ProbabilisticSharpe bt={data.composite} label="Bileşik" />
               <VolTargetPanel bt={data.composite} label="Bileşik" />
               <DiversificationStat bt={data.composite} />
               <CompositeAttribution bt={data.composite} />
