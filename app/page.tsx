@@ -4397,6 +4397,72 @@ function cagrHeat(c: number | null): string {
   return "rgba(16,185,129,0.72)";
 }
 
+function EnsembleLookback() {
+  const [uni, setUni] = useState("etf");
+  const [bt, setBt] = useState<BacktestResult | null>(null);
+  const [label, setLabel] = useState("GEM");
+  const [loading, setLoading] = useState(false);
+  const [err, setErr] = useState<string | null>(null);
+
+  useEffect(() => {
+    let alive = true;
+    setLoading(true);
+    setErr(null);
+    fetch(`/api/ensemble?universe=${uni}`)
+      .then((r) => r.json())
+      .then((d) => {
+        if (!alive) return;
+        if (d.error) {
+          setErr(d.error);
+          setBt(null);
+        } else {
+          setBt(d.backtest ?? null);
+          setLabel(d.label ?? "Strateji");
+        }
+      })
+      .catch((e) => alive && setErr(String(e)))
+      .finally(() => alive && setLoading(false));
+    return () => {
+      alive = false;
+    };
+  }, [uni]);
+
+  return (
+    <>
+      <div className="chart-card">
+        <div className="chart-help">
+          Aynı strateji <b>{`{3, 6, 9, 12}`}</b> ay look-back pencerelerinde
+          koşulup <b>eşit-ağırlık harmanlanır</b>. Tek bir formasyon penceresine
+          (örn. yalnız 12 ay) bağımlılığı azaltır — &quot;hangi look-back?&quot;
+          parametre/timing luck&apos;ını söndürür (Hoffstein 2019 ensemble
+          fikrinin look-back uyarlaması). Aşağıda <b>Ensemble</b> ana eğri;
+          tekil pencereler kıyas için ayrıca çizilir.
+        </div>
+        <div className="cc-toggles">
+          {STUDIO_UNIVERSES.map((u) => (
+            <button
+              key={u.id}
+              className={`cc-toggle ${uni === u.id ? "on" : ""}`}
+              aria-pressed={uni === u.id}
+              onClick={() => setUni(u.id)}
+            >
+              {u.label}
+            </button>
+          ))}
+        </div>
+        {loading && <p className="table-note">Hesaplanıyor… (4 pencere)</p>}
+        {err && <p className="table-note neg">Hata: {err}</p>}
+        {!loading && !err && !bt && (
+          <p className="table-note">Bu evrende ensemble üretilemedi.</p>
+        )}
+      </div>
+      {bt && !loading && (
+        <BacktestCharts bt={bt} label={`${label} Ensemble`} />
+      )}
+    </>
+  );
+}
+
 function RobustnessHeatmap() {
   const [uni, setUni] = useState("etf");
   const [metric, setMetric] = useState<"sharpe" | "cagr">("sharpe");
@@ -5232,6 +5298,16 @@ export default function Home() {
               defaultOpen={false}
             >
               <RobustnessHeatmap />
+            </CollapsibleSection>
+          </ErrorBoundary>
+
+          {/* Çok-pencereli (look-back) ensemble — açılınca yüklenir */}
+          <ErrorBoundary label="Ensemble look-back">
+            <CollapsibleSection
+              title="🪟 Çok-Pencereli Ensemble — look-back timing-luck'ını söndür"
+              defaultOpen={false}
+            >
+              <EnsembleLookback />
             </CollapsibleSection>
           </ErrorBoundary>
 

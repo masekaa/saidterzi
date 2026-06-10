@@ -355,6 +355,114 @@ export function runStockBacktest(
 //  İmperfect korelasyonlu sleeve'ler → çeşitlendirme (daha düşük oynaklık).
 //  BacktestResult şeklinde döner; tüm grafikler yeniden kullanılır.
 // ===========================================================================
+// ===========================================================================
+//  ÇOK-PENCERELİ (LOOK-BACK) ENSEMBLE
+//  Aynı stratejiyi {3,6,9,12...} ay look-back'lerinde koşup eşit-ağırlık
+//  harmanlar. Tek bir formasyon penceresine bağımlılığı (parametre/"timing
+//  luck", Hoffstein 2019) azaltır. Çekirdek sinyali DEĞİŞTİRMEZ — verified
+//  runBacktest/runStockBacktest'i her pencerede çağırır, eğrileri harmanlar.
+// ===========================================================================
+export function runLookbackEnsemble(
+  runner: (lookback: number) => BacktestResult | null,
+  lookbacks: number[],
+  tbill: RawSeries,
+  stratLabel: string,
+  benchLabel: string
+): BacktestResult | null {
+  const runs = lookbacks
+    .map((lb) => ({ lb, bt: runner(lb) }))
+    .filter((x): x is { lb: number; bt: BacktestResult } => !!x.bt);
+  if (runs.length < 2) return null;
+
+  // Her look-back'in strateji (highlighted) eğrisinin aylık getirisi.
+  const retMaps = runs.map(({ bt }) => {
+    const curve = bt.equityCurves.find((c) => c.highlight) ?? bt.equityCurves[0];
+    const m = new Map<string, number>();
+    if (curve)
+      for (let i = 1; i < curve.growth.length && i < bt.dates.length; i++)
+        m.set(bt.dates[i].slice(0, 7), curve.growth[i] / curve.growth[i - 1] - 1);
+    return m;
+  });
+
+  // Al-tut benchmark look-back'ten bağımsızdır → ilk koşudan al.
+  const benchBt = runs[0].bt;
+  const benchCurve =
+    benchBt.equityCurves.find(
+      (c) => !c.highlight && /Eşit Ağırlık|Al-Tut|Buy.?Hold|SPY|ACWI/i.test(c.name)
+    ) ?? benchBt.equityCurves.find((c) => !c.highlight);
+  const benchMap = new Map<string, number>();
+  if (benchCurve)
+    for (let i = 1; i < benchCurve.growth.length && i < benchBt.dates.length; i++)
+      benchMap.set(
+        benchBt.dates[i].slice(0, 7),
+        benchCurve.growth[i] / benchCurve.growth[i - 1] - 1
+      );
+
+  const common = Array.from(retMaps[0].keys())
+    .filter((ym) => retMaps.every((m) => m.has(ym)))
+    .sort();
+  if (common.length < 13) return null;
+
+  const rfMap = new Map<string, number>();
+  for (let i = 1; i < tbill.series.length; i++) {
+    const prev = tbill.series[i - 1].close;
+    if (prev > 0)
+      rfMap.set(tbill.series[i].date.slice(0, 7), tbill.series[i].close / prev - 1);
+  }
+  const rf = common.map((ym) => rfMap.get(ym) ?? 0);
+
+  const lbRets = retMaps.map((m) => common.map((ym) => m.get(ym) as number));
+  const ensembleRets = common.map((_, i) => {
+    let s = 0;
+    for (const r of lbRets) s += r[i];
+    return s / lbRets.length;
+  });
+  const benchRets = common.map((ym) => benchMap.get(ym) ?? 0);
+  const hasBench = benchMap.size > 0;
+
+  const toGrowth = (rets: number[]): number[] => {
+    const g: number[] = [1];
+    let acc = 1;
+    for (const r of rets) {
+      acc *= 1 + r;
+      g.push(acc);
+    }
+    return g;
+  };
+
+  const strategies: StrategyMetrics[] = [
+    buildMetrics(`${stratLabel} — Ensemble (çok-pencereli)`, ensembleRets, rf),
+    ...(hasBench ? [buildMetrics(benchLabel, benchRets, rf)] : []),
+    ...runs.map(({ lb }, k) => buildMetrics(`${lb} ay look-back`, lbRets[k], rf)),
+  ];
+
+  const dates = [common[0], ...common];
+  const equityCurves = [
+    {
+      name: `${stratLabel} — Ensemble`,
+      growth: toGrowth(ensembleRets),
+      highlight: true,
+    },
+    ...(hasBench ? [{ name: benchLabel, growth: toGrowth(benchRets) }] : []),
+    ...runs.map(({ lb }, k) => ({ name: `${lb} ay`, growth: toGrowth(lbRets[k]) })),
+  ];
+
+  return {
+    startDate: common[0],
+    endDate: common[common.length - 1],
+    months: ensembleRets.length,
+    strategies,
+    dates,
+    equityCurves,
+    timeline: [],
+    note: `${runs.length} farklı look-back (${runs
+      .map((r) => r.lb)
+      .join(
+        ", "
+      )} ay) penceresinde aynı stratejinin eşit-ağırlık harmanı. Tek bir formasyon penceresine bağımlılığı (parametre / "timing luck") azaltır — Hoffstein (2019) ensemble/tranching fikrinin look-back uyarlaması. Tekil pencereler kıyas için ayrıca çizilir.`,
+  };
+}
+
 export function buildComposite(
   sleeves: { name: string; bt: BacktestResult | null }[],
   tbill: RawSeries
