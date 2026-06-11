@@ -2692,6 +2692,29 @@ function ConsolidatedSignals({ data }: { data: AnalysisResult }) {
           ⭳ CSV
         </button>
       </div>
+      {(() => {
+        const investedUni = data.universes.filter((u) =>
+          u.momentum.stocks.some((s) => s.selected)
+        ).length;
+        const invested = investedUni + (etfCash ? 0 : 1);
+        const total = data.universes.length + 1;
+        const ratio = total > 0 ? invested / total : 0;
+        return (
+          <p className="table-note" style={{ marginTop: 0, marginBottom: 10 }}>
+            Bu ay:{" "}
+            <b className={ratio >= 0.6 ? "pos-cell" : ratio <= 0.4 ? "neg" : ""}>
+              {invested}/{total}
+            </b>{" "}
+            evren yatırımda · <b>{total - invested}</b> nakitte —{" "}
+            {ratio >= 0.6
+              ? "geniş risk-on duruş"
+              : ratio <= 0.4
+              ? "savunmacı (risk-off) duruş"
+              : "karışık/nötr duruş"}
+            .
+          </p>
+        );
+      })()}
       <div className="signals-grid">
         <div className="sig-card">
           <div className="sig-head">📊 ETF (GEM)</div>
