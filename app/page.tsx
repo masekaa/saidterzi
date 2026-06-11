@@ -2601,10 +2601,61 @@ function ConsolidatedSignals({ data }: { data: AnalysisResult }) {
     );
   };
 
+  const downloadCsv = () => {
+    const q = (s: string) => `"${s.replace(/"/g, "'")}"`;
+    const lines = [
+      "# Bu ayin sinyalleri — tum evrenlerde guncel secimler (12-ay dual momentum)",
+      "Evren,Secimler,Durum,TBill_Pay_Yuzde",
+    ];
+    lines.push(
+      [
+        q("ETF (GEM)"),
+        q(gem.positionName),
+        etfCash ? "Nakit" : "Yatirimda",
+        gemMargin != null ? (gemMargin * 100).toFixed(1) : "",
+      ].join(",")
+    );
+    for (const u of data.universes) {
+      const picks = u.momentum.stocks.filter((s) => s.selected);
+      const exc = picks
+        .map((s) => s.excessVsTbill)
+        .filter((x): x is number => x != null && isFinite(x));
+      const minExcess = exc.length ? Math.min(...exc) : null;
+      lines.push(
+        [
+          q(u.label),
+          q(picks.length ? picks.map((p) => p.ticker).join(" ") : "Nakit"),
+          picks.length ? "Yatirimda" : "Nakit",
+          minExcess != null ? (minExcess * 100).toFixed(1) : "",
+        ].join(",")
+      );
+    }
+    const blob = new Blob([lines.join("\r\n")], {
+      type: "text/csv;charset=utf-8",
+    });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `bu-ayin-sinyalleri-${data.generatedAt.slice(0, 10)}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
+
   return (
     <>
-      <div className="section-label" role="heading" aria-level={2}>
-        Bu Ayın Sinyalleri — tüm evrenlerde güncel pozisyonlar
+      <div className="section-head">
+        <div className="section-label" role="heading" aria-level={2}>
+          Bu Ayın Sinyalleri — tüm evrenlerde güncel pozisyonlar
+        </div>
+        <button
+          className="mini-btn"
+          onClick={downloadCsv}
+          title="Tüm evrenlerin bu ayki seçimlerini CSV indir"
+        >
+          ⭳ CSV
+        </button>
       </div>
       <div className="signals-grid">
         <div className="sig-card">
