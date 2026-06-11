@@ -1838,6 +1838,82 @@ function BoxPlot({ bt }: { bt: BacktestResult }) {
   );
 }
 
+function StreakStats({ bt, label = "Strateji" }: { bt: BacktestResult; label?: string }) {
+  const curve = bt.equityCurves.find((c) => c.highlight) ?? bt.equityCurves[0];
+  const g = curve?.growth;
+  if (!g || g.length < 13) return null;
+  const r = growthToRets(g);
+  if (r.length < 12) return null;
+
+  const sign = (x: number) => (x > 0 ? 1 : x < 0 ? -1 : 0);
+  let maxWin = 0;
+  let maxLoss = 0;
+  let worstLossRet = 0; // en kötü kayıp serisinin bileşik getirisi
+  let i = 0;
+  while (i < r.length) {
+    const s = sign(r[i]);
+    if (s === 0) {
+      i++;
+      continue;
+    }
+    let j = i;
+    let comp = 1;
+    while (j < r.length && sign(r[j]) === s) {
+      comp *= 1 + r[j];
+      j++;
+    }
+    const len = j - i;
+    if (s > 0 && len > maxWin) maxWin = len;
+    if (s < 0) {
+      if (len > maxLoss) maxLoss = len;
+      if (comp - 1 < worstLossRet) worstLossRet = comp - 1;
+    }
+    i = j;
+  }
+  // Güncel (sondaki) seri
+  let curLen = 0;
+  let curSign = 0;
+  for (let k = r.length - 1; k >= 0; k--) {
+    const s = sign(r[k]);
+    if (k === r.length - 1) {
+      if (s === 0) break;
+      curSign = s;
+      curLen = 1;
+    } else if (s === curSign) curLen++;
+    else break;
+  }
+
+  return (
+    <div className="chart-card">
+      <div className="chart-title">{label} — Kazanç / Kayıp Serileri (sıra riski)</div>
+      <div className="chart-help">
+        Art arda gelen kazançlı/kayıplı ayların en uzun dizileri. Uzun kayıp
+        serileri ve onların bileşik etkisi, <b>sıra riskini</b> (sequence risk) ve
+        psikolojik dayanma süresini gösterir — strateji uzun vadede kazansa bile
+        bu dizileri yaşamayı göze almak gerekir.
+      </div>
+      <div className="cap-grid">
+        <div className="cap-item">
+          <div className="cap-label">En uzun kazanç serisi</div>
+          <div className="cap-val pos-cell">{maxWin} ay</div>
+        </div>
+        <div className="cap-item">
+          <div className="cap-label">En uzun kayıp serisi</div>
+          <div className="cap-val neg">
+            {maxLoss} ay{maxLoss > 0 ? ` (${pct(worstLossRet, 1)})` : ""}
+          </div>
+        </div>
+        <div className="cap-item">
+          <div className="cap-label">Güncel seri</div>
+          <div className={`cap-val ${curSign > 0 ? "pos-cell" : curSign < 0 ? "neg" : ""}`}>
+            {curSign > 0 ? `▲ ${curLen} ay` : curSign < 0 ? `▼ ${curLen} ay` : "—"}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function ReturnHistogram({ bt, label = "GEM" }: { bt: BacktestResult; label?: string }) {
   const curve = bt.equityCurves.find((c) => c.highlight) ?? bt.equityCurves[0];
   const g = curve?.growth;
@@ -6198,6 +6274,7 @@ function BacktestCharts({
       <CaptureRatios bt={bt} />
       <BoxPlot bt={bt} />
       <ReturnHistogram bt={bt} label={label} />
+      <StreakStats bt={bt} label={label} />
       <Seasonality bt={bt} label={label} />
       <MetricsTable rows={bt.strategies} />
       <p className="table-note">{bt.note}</p>
