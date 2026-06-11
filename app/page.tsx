@@ -2798,6 +2798,122 @@ function sigMark(t: number): string {
   return "·";
 }
 
+function MomentumDispersion({ data }: { data: AnalysisResult }) {
+  // Kesitsel momentum dağılımı: bir evrendeki varlıkların 12-ay getirileri ne
+  // kadar ayrışıyor? Yüksek dağılım → relative momentum'un seçecek "lider-takipçi
+  // farkı" büyük; düşük → varlıklar birlikte hareket eder, sıralama kırılgan.
+  type Row = { emoji: string; label: string; disp: number; n: number };
+  const rows: Row[] = [];
+  const addRow = (emoji: string, label: string, rets: (number | null)[]) => {
+    const xs = rets.filter((x): x is number => x != null && isFinite(x));
+    if (xs.length < 3) return;
+    const m = xs.reduce((s, v) => s + v, 0) / xs.length;
+    const sd = Math.sqrt(
+      xs.reduce((s, v) => s + (v - m) ** 2, 0) / (xs.length - 1)
+    );
+    rows.push({ emoji, label, disp: sd, n: xs.length });
+  };
+  addRow(
+    "📊",
+    "ETF (GEM)",
+    data.signals.assets.map((a) => a.ret12m)
+  );
+  for (const u of data.universes)
+    addRow(
+      u.emoji,
+      u.label,
+      u.momentum.stocks.map((s) => s.ret12m)
+    );
+  if (rows.length < 2) return null;
+  rows.sort((a, b) => b.disp - a.disp);
+  const max = rows[0].disp || 1;
+  const lo = rows[rows.length - 1];
+
+  return (
+    <div className="chart-card">
+      <div className="chart-title">
+        📊 Momentum Dağılımı — relative momentum şu an ne kadar ayırt edici?
+      </div>
+      <div className="chart-help">
+        Her evrenin varlıklarının son 12-ay getirileri arasındaki{" "}
+        <b>kesitsel standart sapma</b>. <b>Yüksek</b> = lider ile takipçi arasında
+        büyük fark → relative momentum seçimi daha anlamlı/güçlü. <b>Düşük</b> =
+        varlıklar birlikte hareket ediyor → sıralama daha kırılgan, momentum katma
+        değeri zayıf. (Yüksek-dağılım dönemleri, momentumun tarihsel olarak daha iyi
+        çalıştığı dönemlerdir.)
+      </div>
+      <div>
+        {rows.map((r, i) => (
+          <div
+            key={i}
+            style={{ display: "flex", alignItems: "center", gap: 8, margin: "3px 0" }}
+          >
+            <span
+              style={{
+                width: 160,
+                fontSize: 13,
+                whiteSpace: "nowrap",
+                overflow: "hidden",
+                textOverflow: "ellipsis",
+              }}
+            >
+              {r.emoji} {r.label}
+            </span>
+            <span
+              style={{
+                flex: 1,
+                background: "rgba(148,163,184,0.15)",
+                borderRadius: 4,
+                height: 14,
+                position: "relative",
+              }}
+            >
+              <span
+                style={{
+                  position: "absolute",
+                  left: 0,
+                  top: 0,
+                  bottom: 0,
+                  width: `${(r.disp / max) * 100}%`,
+                  background:
+                    i === 0
+                      ? "#34d399"
+                      : i === rows.length - 1
+                      ? "#f87171"
+                      : "#60a5fa",
+                  borderRadius: 4,
+                }}
+              />
+            </span>
+            <span
+              style={{
+                width: 56,
+                textAlign: "right",
+                fontVariantNumeric: "tabular-nums",
+                fontSize: 13,
+              }}
+            >
+              {pct(r.disp, 0)}
+            </span>
+          </div>
+        ))}
+      </div>
+      <div className="rob-verdict ok" style={{ marginTop: 8 }}>
+        En ayırt edici:{" "}
+        <b>
+          {rows[0].emoji} {rows[0].label}
+        </b>{" "}
+        (dağılım {pct(rows[0].disp, 0)}) — relative momentum burada en güçlü sinyali
+        veriyor · en az ayrışan:{" "}
+        <b>
+          {lo.emoji} {lo.label}
+        </b>{" "}
+        ({pct(lo.disp, 0)}) — burada seçim daha kırılgan.
+      </div>
+    </div>
+  );
+}
+
 function MomentumValueAdd({ data }: { data: AnalysisResult }) {
   type Row = {
     label: string;
@@ -6148,6 +6264,11 @@ export default function Home() {
 
           {/* Momentum vs al-tut katma değeri */}
           <MomentumValueAdd data={data} />
+
+          {/* Kesitsel momentum dağılımı (relative momentum ayırt ediciliği) */}
+          <ErrorBoundary label="Momentum dağılımı">
+            <MomentumDispersion data={data} />
+          </ErrorBoundary>
 
           {/* Ortak-dönem equity curve overlay (adil kıyas) */}
           <ErrorBoundary label="Ortak-dönem karşılaştırması">
