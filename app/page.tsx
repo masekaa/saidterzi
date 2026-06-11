@@ -943,7 +943,7 @@ function UnderwaterCompare({
 }) {
   const strat = bt.equityCurves.find((c) => c.highlight) ?? bt.equityCurves[0];
   const bench =
-    bt.equityCurves.find((c) => !c.highlight && /Eşit Ağırlık/i.test(c.name)) ??
+    bt.equityCurves.find((c) => !c.highlight && /Eşit[\s-]Ağırlık/i.test(c.name)) ??
     bt.equityCurves.find(
       (c) => !c.highlight && /Pasif|Al-Tut|Buy.?Hold|SPY|ACWI/i.test(c.name)
     ) ??
@@ -3052,7 +3052,7 @@ function excessTStat(
   // yoksa tekil al-tut/endeks, yoksa ilk vurgusuz eğri. GEM'de hem tekil varlık
   // hem eşit-ağırlık eğrisi var; eşit-ağırlığı seçmek satır-içi tutarlılık sağlar.
   const bench =
-    bt.equityCurves.find((c) => !c.highlight && /Eşit Ağırlık/i.test(c.name)) ??
+    bt.equityCurves.find((c) => !c.highlight && /Eşit[\s-]Ağırlık/i.test(c.name)) ??
     bt.equityCurves.find(
       (c) => !c.highlight && /Al-Tut|Buy.?Hold|SPY|ACWI/i.test(c.name)
     ) ??
@@ -4165,7 +4165,7 @@ function CrossUniverseComparison({ data }: { data: AnalysisResult }) {
 function RollingRelative({ bt, label }: { bt: BacktestResult; label: string }) {
   const mom = bt.equityCurves.find((c) => c.highlight);
   const bench =
-    bt.equityCurves.find((c) => c.name.includes("Eşit Ağırlık")) ??
+    bt.equityCurves.find((c) => /Eşit[\s-]Ağırlık/.test(c.name)) ??
     bt.equityCurves.find((c) => !c.highlight);
   if (!mom || !bench) return null;
   const g = mom.growth;
@@ -4458,7 +4458,7 @@ function YearlyReturns({ bt, label }: { bt: BacktestResult; label: string }) {
   if (!strat) return null;
   const bench =
     bt.equityCurves.find(
-      (c) => !c.highlight && /Eşit Ağırlık|Al-Tut|Buy.?Hold|SPY|ACWI/i.test(c.name)
+      (c) => !c.highlight && /Eşit[\s-]Ağırlık|Al-Tut|Buy.?Hold|SPY|ACWI/i.test(c.name)
     ) ?? bt.equityCurves.find((c) => !c.highlight);
   const sY = yearlyReturns(strat.growth, bt.dates);
   if (sY.length < 2) return null;
@@ -4575,7 +4575,7 @@ function CrisisPerformance({ bt, label = "Strateji" }: { bt: BacktestResult; lab
   const strat = bt.equityCurves.find((c) => c.highlight) ?? bt.equityCurves[0];
   if (!strat) return null;
   const bench =
-    bt.equityCurves.find((c) => !c.highlight && /Eşit Ağırlık/i.test(c.name)) ??
+    bt.equityCurves.find((c) => !c.highlight && /Eşit[\s-]Ağırlık/i.test(c.name)) ??
     bt.equityCurves.find(
       (c) => !c.highlight && /Al-Tut|Buy.?Hold|SPY|ACWI|Pasif/i.test(c.name)
     ) ??
@@ -6354,7 +6354,7 @@ function BacktestStudio() {
           {(() => {
             const mom = bt.strategies[0];
             const bench =
-              bt.strategies.find((s) => s.name.includes("Eşit Ağırlık")) ??
+              bt.strategies.find((s) => /Eşit[\s-]Ağırlık/.test(s.name)) ??
               bt.strategies[bt.strategies.length - 1];
             if (!mom || !bench || mom === bench) return null;
             const dC = (mom.cagr ?? 0) - (bench.cagr ?? 0);
@@ -6396,7 +6396,7 @@ function BacktestStudio() {
 function CaptureRatios({ bt }: { bt: BacktestResult }) {
   const mom = bt.equityCurves.find((c) => c.highlight);
   const bench =
-    bt.equityCurves.find((c) => c.name.includes("Eşit Ağırlık")) ??
+    bt.equityCurves.find((c) => /Eşit[\s-]Ağırlık/.test(c.name)) ??
     bt.equityCurves.find((c) => !c.highlight);
   if (!mom || !bench) return null;
   const m = Math.min(mom.growth.length, bench.growth.length);
