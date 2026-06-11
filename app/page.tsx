@@ -6515,9 +6515,14 @@ export default function Home() {
           <MomentumValueAdd data={data} />
 
           {/* Kesitsel momentum dağılımı (relative momentum ayırt ediciliği) */}
-          <ErrorBoundary label="Momentum dağılımı">
-            <MomentumDispersion data={data} />
-          </ErrorBoundary>
+          <CollapsibleSection
+            title="📊 Momentum Dağılımı — relative momentum şu an ne kadar ayırt edici?"
+            defaultOpen={false}
+          >
+            <ErrorBoundary label="Momentum dağılımı">
+              <MomentumDispersion data={data} />
+            </ErrorBoundary>
+          </CollapsibleSection>
 
           {/* Ortak-dönem equity curve overlay (adil kıyas) */}
           <ErrorBoundary label="Ortak-dönem karşılaştırması">
@@ -6526,15 +6531,25 @@ export default function Home() {
           <ErrorBoundary label="Evrenler-arası risk-getiri">
             <CrossUniverseRiskReturn data={data} />
           </ErrorBoundary>
-          <ErrorBoundary label="Yıllık getiri matrisi">
-            <AnnualReturnsMatrix data={data} />
-          </ErrorBoundary>
+          <CollapsibleSection
+            title="📅 Yıllık Getiri Matrisi — stratejiler × takvim yılları (liderlik rotasyonu)"
+            defaultOpen={false}
+          >
+            <ErrorBoundary label="Yıllık getiri matrisi">
+              <AnnualReturnsMatrix data={data} />
+            </ErrorBoundary>
+          </CollapsibleSection>
           <ErrorBoundary label="Özel bileşik oluşturucu">
             <CustomComposite data={data} />
           </ErrorBoundary>
-          <ErrorBoundary label="Marjinal sleeve katkısı">
-            <MarginalContribution data={data} />
-          </ErrorBoundary>
+          <CollapsibleSection
+            title="🧮 Marjinal Sleeve Katkısı (leave-one-out) — her evren değer katıyor mu?"
+            defaultOpen={false}
+          >
+            <ErrorBoundary label="Marjinal sleeve katkısı">
+              <MarginalContribution data={data} />
+            </ErrorBoundary>
+          </CollapsibleSection>
 
           {/* Dual Momentum Bileşik — tüm evrenlerin eşit-ağırlık meta-stratejisi */}
           {data.composite && (
