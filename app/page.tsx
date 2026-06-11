@@ -3962,14 +3962,16 @@ function CrossUniverseRiskReturn({ data }: { data: AnalysisResult }) {
     <div className="chart-card">
       <div className="chart-title">
         Evrenler-Arası Risk–Getiri — her evrenin momentum stratejisi + bileşik +
-        pasif (ortak dönem)
+        pasif + 60/40 (ortak dönem)
       </div>
       <div className="chart-help">
         Her nokta bir evrenin dual-momentum stratejisi; hepsi <b>ortak ay
         aralığında</b> hesaplandığından CAGR/volatilite adil karşılaştırılır.{" "}
         <b>Sol-üst köşe idealdir</b> (düşük risk + yüksek getiri). 🧩 Bileşiğin
         (yeşil) tekil evrenlerin sol-üstünde oturması = çeşitlendirme faydası; ⚪
-        Pasif (gri) hiçbir şey yapmama alternatifidir.
+        Pasif (gri) hiçbir şey yapmama alternatifidir; <b>⚖️ 60/40</b> (SPY/AGG)
+        evrensel &quot;tembel portföy&quot; referansıdır — stratejilerin ona göre
+        nerede durduğuna bak.
       </div>
       <svg
         className="equity-svg"
