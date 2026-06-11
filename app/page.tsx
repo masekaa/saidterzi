@@ -788,6 +788,7 @@ function TradeLog({ bt, label = "Strateji" }: { bt: BacktestResult; label?: stri
           className="mini-btn"
           onClick={downloadCsv}
           title="Tüm işlemleri CSV indir"
+          aria-label="İşlem günlüğünü CSV indir"
         >
           ⭳ CSV
         </button>
@@ -1266,6 +1267,7 @@ function AnnualReturnsMatrix({ data }: { data: AnalysisResult }) {
           className="mini-btn"
           onClick={downloadCsv}
           title="Yıllık getiri matrisini CSV indir"
+          aria-label="Yıllık getiri matrisini CSV indir"
         >
           ⭳ CSV
         </button>
@@ -2688,6 +2690,7 @@ function ConsolidatedSignals({ data }: { data: AnalysisResult }) {
           className="mini-btn"
           onClick={downloadCsv}
           title="Tüm evrenlerin bu ayki seçimlerini CSV indir"
+          aria-label="Bu ayın sinyallerini CSV indir"
         >
           ⭳ CSV
         </button>
@@ -5441,7 +5444,7 @@ function CompositeHoldings({ data }: { data: AnalysisResult }) {
     <div className="chart-card">
       <div className="chart-title chart-title-row">
         <span>🛒 Bileşiği Bu Ay Replike Et — eşit-ağırlık hedef portföy</span>
-        <button className="mini-btn" onClick={downloadCsv} title="Alım listesini CSV indir">
+        <button className="mini-btn" onClick={downloadCsv} title="Alım listesini CSV indir" aria-label="Bileşik bu-ay-al listesini CSV indir">
           ⭳ CSV
         </button>
       </div>
@@ -6993,6 +6996,7 @@ export default function Home() {
             onClick={exportCsv}
             disabled={!data}
             title="Metrikleri ve sinyalleri CSV olarak indir"
+            aria-label="Tüm metrikleri ve sinyalleri CSV indir"
           >
             ⭳ CSV
           </button>
@@ -7001,6 +7005,7 @@ export default function Home() {
             onClick={exportJson}
             disabled={!data}
             title="Tüm analizi JSON olarak indir"
+            aria-label="Tüm analizi JSON indir"
           >
             ⭳ JSON
           </button>
