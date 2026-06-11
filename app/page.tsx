@@ -5483,6 +5483,84 @@ function DiversificationStat({ bt }: { bt: BacktestResult }) {
   );
 }
 
+function DiversificationRatio({ bt }: { bt: BacktestResult }) {
+  // Çeşitlendirme Oranı (Choueifaty–Coignard 2008): DR = (Σ wᵢσᵢ) / σ_portföy.
+  // Eşit ağırlıkta = ortalama sleeve oynaklığı / bileşik oynaklığı. DR yüksek =
+  // sleeve'ler birbirini dengeliyor (düşük korelasyon). Etkin bağımsız bahis ≈ DR².
+  const sleeves = bt.equityCurves.filter(
+    (c) => !c.highlight && !c.name.includes("Bileşik") && !c.name.includes("Pasif")
+  );
+  if (sleeves.length < 3) return null;
+  const rets = sleeves.map((c) => growthToRets(c.growth));
+  const minLen = Math.min(...rets.map((r) => r.length));
+  if (minLen < 13) return null;
+  const trimmed = rets.map((r) => r.slice(r.length - minLen));
+
+  const vol = (xs: number[]) => {
+    const m = xs.reduce((s, v) => s + v, 0) / xs.length;
+    return (
+      Math.sqrt(xs.reduce((s, v) => s + (v - m) ** 2, 0) / (xs.length - 1)) *
+      Math.sqrt(12)
+    );
+  };
+  const sleeveVols = trimmed.map(vol);
+  const avgVol = sleeveVols.reduce((s, v) => s + v, 0) / sleeveVols.length;
+  // Eşit-ağırlık portföy aylık getirisi
+  const n = sleeves.length;
+  const port: number[] = [];
+  for (let t = 0; t < minLen; t++) {
+    let s = 0;
+    for (let i = 0; i < n; i++) s += trimmed[i][t];
+    port.push(s / n);
+  }
+  const portVol = vol(port);
+  if (portVol <= 0) return null;
+  const DR = avgVol / portVol;
+  const effBets = DR * DR;
+  const strong = effBets >= n * 0.5;
+
+  return (
+    <div className="chart-card">
+      <div className="chart-title">
+        🎯 Çeşitlendirme Oranı — kaç bağımsız bahis alıyorsun?
+      </div>
+      <div className="chart-help">
+        <b>DR = ortalama sleeve oynaklığı ÷ bileşik oynaklığı</b>
+        (Choueifaty–Coignard 2008). DR &gt; 1 ise sleeve&apos;ler birbirini dengeler
+        (düşük korelasyon → risk azalır). <b>Etkin bağımsız bahis ≈ DR²</b>: {n}{" "}
+        sleeve&apos;in kaçının gerçekten <i>bağımsız</i> risk kaynağı olduğunu söyler
+        (yüksek korelasyon bunu düşürür).
+      </div>
+      <div className="cap-grid">
+        <div className="cap-item">
+          <div className="cap-label">Çeşitlendirme Oranı (DR)</div>
+          <div className="cap-val">{num(DR)}</div>
+        </div>
+        <div className="cap-item">
+          <div className="cap-label">Etkin bağımsız bahis</div>
+          <div className={`cap-val ${strong ? "pos-cell" : ""}`}>
+            ≈ {effBets.toFixed(1)} / {n}
+          </div>
+        </div>
+        <div className="cap-item">
+          <div className="cap-label">Ort. sleeve vol → bileşik vol</div>
+          <div className="cap-val">
+            {pct(avgVol, 0)} → {pct(portVol, 0)}
+          </div>
+        </div>
+      </div>
+      <div className={`rob-verdict ${strong ? "ok" : "thin"}`}>
+        {n} sleeve&apos;den <b>≈ {effBets.toFixed(1)} bağımsız bahis</b> elde
+        ediliyor — {strong
+          ? "çeşitlendirme güçlü: sleeve'ler büyük ölçüde bağımsız risk taşıyor."
+          : "çeşitlendirme orta/zayıf: sleeve'ler beklenenden korelasyonlu, etkin bahis sayısı düşük."}{" "}
+        Bileşik oynaklığı, ortalama sleeve oynaklığının{" "}
+        <b>%{Math.round((portVol / avgVol) * 100)}</b>&apos;i (düşük = iyi).
+      </div>
+    </div>
+  );
+}
+
 function RollingCorrelation({
   bt,
   label = "Bileşik",
@@ -6775,6 +6853,7 @@ export default function Home() {
               <CompositeAttribution bt={data.composite} />
               <RiskParityWeights bt={data.composite} />
               <CorrelationMatrix bt={data.composite} />
+              <DiversificationRatio bt={data.composite} />
               <RollingCorrelation bt={data.composite} label="Bileşik" />
             </CollapsibleSection>
             </ErrorBoundary>
