@@ -225,6 +225,7 @@ export interface AnalysisResult {
     sharpe: number | null;
     maxDrawdown: number;
     months: number;
+    growth: number[]; // composite.dates ile hizalı birikimli büyüme (1$)
   } | null;
   warnings: string[];
   fromCache?: boolean; // sonuç sunucu önbelleğinden mi geldi

@@ -372,16 +372,19 @@ export async function GET(req: Request) {
       const aggM = retMap(byTicker["AGG"]);
       const rfM = retMap(tbillRaw);
       const dates = composite?.dates ?? [];
+      if (dates.length < 25) return null;
       const rets: number[] = [];
       const exc: number[] = [];
-      for (const d of dates) {
-        const ym = d.slice(0, 7);
+      // Büyüme eğrisi composite.dates ile 1:1 hizalı (anchor growth[0]=1).
+      const growth: number[] = [1];
+      for (let i = 1; i < dates.length; i++) {
+        const ym = dates[i].slice(0, 7);
         const sp = spyM.get(ym);
         const ag = aggM.get(ym);
-        if (sp == null || ag == null) continue;
-        const r = 0.6 * sp + 0.4 * ag;
+        const r = sp != null && ag != null ? 0.6 * sp + 0.4 * ag : 0;
         rets.push(r);
         exc.push(r - (rfM.get(ym) ?? 0));
+        growth.push(growth[growth.length - 1] * (1 + r));
       }
       if (rets.length < 24) return null;
       const n = rets.length;
@@ -404,7 +407,7 @@ export async function GET(req: Request) {
         exc.reduce((a, b) => a + (b - me) ** 2, 0) / (exc.length - 1)
       );
       const sharpe = se > 0 ? (me / se) * Math.sqrt(12) : null;
-      return { cagr, vol, sharpe, maxDrawdown: maxdd, months: n };
+      return { cagr, vol, sharpe, maxDrawdown: maxdd, months: n, growth };
     })();
 
     const result: AnalysisResult = {

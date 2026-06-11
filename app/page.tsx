@@ -5703,6 +5703,94 @@ function Benchmark6040({ data }: { data: AnalysisResult }) {
   );
 }
 
+function Composite6040Overlay({ data }: { data: AnalysisResult }) {
+  const b = data.benchmark6040;
+  const comp = data.composite;
+  if (!b || !comp) return null;
+  const cc = comp.equityCurves.find((c) => c.highlight) ?? comp.equityCurves[0];
+  if (!cc?.growth?.length) return null;
+  const n = Math.min(cc.growth.length, b.growth.length, comp.dates.length);
+  if (n < 13) return null;
+  const cg = cc.growth.slice(0, n);
+  const bg = b.growth.slice(0, n);
+  const dates = comp.dates.slice(0, n);
+
+  const W = 820;
+  const H = 220;
+  const padL = 50;
+  const padR = 16;
+  const padT = 14;
+  const padB = 26;
+  const innerW = W - padL - padR;
+  const innerH = H - padT - padB;
+  const all = [...cg, ...bg].filter((v) => v > 0);
+  const lo = Math.log(Math.min(...all));
+  const hi = Math.log(Math.max(...all));
+  const X = (i: number) => padL + (innerW * i) / Math.max(1, n - 1);
+  const Y = (v: number) =>
+    padT + innerH * (1 - (Math.log(v) - lo) / (hi - lo || 1));
+  const path = (arr: number[]) =>
+    arr
+      .map((v, i) => `${i === 0 ? "M" : "L"}${X(i).toFixed(1)},${Y(v).toFixed(1)}`)
+      .join(" ");
+
+  const xTicks: { i: number; label: string }[] = [];
+  let ly = "";
+  dates.forEach((d, i) => {
+    const y = d.slice(0, 4);
+    if (y !== ly) {
+      xTicks.push({ i, label: y });
+      ly = y;
+    }
+  });
+  const step = Math.ceil(xTicks.length / 10);
+  const shown = xTicks.filter((_, idx) => idx % step === 0);
+
+  return (
+    <div className="chart-card">
+      <div className="chart-title">
+        🧩 Bileşik vs 60/40 — Büyüme Eğrisi (log, ortak dönem)
+      </div>
+      <div className="chart-help">
+        1$ başlangıçla birikimli büyüme (log eksen). <b style={{ color: "#60a5fa" }}>
+        Mavi</b> = Dual Momentum Bileşik, <b style={{ color: "#94a3b8" }}>gri kesik</b> =
+        60/40 (SPY/AGG). Eğrilerin ayrışması, momentum stratejisinin evrensel standarda
+        kıyasla zaman içindeki üstünlüğünü/geriliğini görsel olarak gösterir.
+      </div>
+      <svg
+        className="equity-svg"
+        viewBox={`0 0 ${W} ${H}`}
+        role="img"
+        aria-label="Bileşik ve 60/40 birikimli büyüme karşılaştırma grafiği. Detay: üstteki başlık ve açıklamada."
+      >
+        {shown.map((t, idx) => (
+          <text key={idx} x={X(t.i)} y={H - 8} className="axis-label" textAnchor="middle">
+            {t.label}
+          </text>
+        ))}
+        <path
+          d={path(bg)}
+          fill="none"
+          stroke="#94a3b8"
+          strokeDasharray="4 3"
+          style={{ strokeWidth: 1.6 }}
+        />
+        <path
+          d={path(cg)}
+          className="equity-line"
+          stroke="#60a5fa"
+          style={{ strokeWidth: 2 }}
+        />
+      </svg>
+      <div className="rob-verdict ok">
+        Dönem sonu büyüme —{" "}
+        <b className="pos-cell">Bileşik {cg[n - 1].toFixed(1)}×</b> vs{" "}
+        <b>60/40 {bg[n - 1].toFixed(1)}×</b>.
+      </div>
+    </div>
+  );
+}
+
 function DiversificationRatio({ bt }: { bt: BacktestResult }) {
   // Çeşitlendirme Oranı (Choueifaty–Coignard 2008): DR = (Σ wᵢσᵢ) / σ_portföy.
   // Eşit ağırlıkta = ortalama sleeve oynaklığı / bileşik oynaklığı. DR yüksek =
@@ -7085,6 +7173,7 @@ export default function Home() {
               )}
               <DiversificationRatio bt={data.composite} />
               <Benchmark6040 data={data} />
+              <Composite6040Overlay data={data} />
               <RollingCorrelation bt={data.composite} label="Bileşik" />
             </CollapsibleSection>
             </ErrorBoundary>
