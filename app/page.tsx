@@ -7155,12 +7155,17 @@ export default function Home() {
                   </p>
                 );
               })()}
-              <CrisisPerformance bt={data.composite} label="Bileşik" />
-              <BootstrapRisk bt={data.composite} label="Bileşik" />
-              <SplitSampleConsistency bt={data.composite} label="Bileşik" />
-              <StartDateSensitivity bt={data.composite} label="Bileşik" />
-              <ProbabilisticSharpe bt={data.composite} label="Bileşik" />
-              <VolTargetPanel bt={data.composite} label="Bileşik" />
+              <CollapsibleSection
+                title="🔬 Bileşik — Derin Risk & Dayanıklılık Analizi (kriz · bootstrap · örneklem · PSR · vol-hedef)"
+                defaultOpen={false}
+              >
+                <CrisisPerformance bt={data.composite} label="Bileşik" />
+                <BootstrapRisk bt={data.composite} label="Bileşik" />
+                <SplitSampleConsistency bt={data.composite} label="Bileşik" />
+                <StartDateSensitivity bt={data.composite} label="Bileşik" />
+                <ProbabilisticSharpe bt={data.composite} label="Bileşik" />
+                <VolTargetPanel bt={data.composite} label="Bileşik" />
+              </CollapsibleSection>
               <DiversificationStat bt={data.composite} />
               <CompositeAttribution bt={data.composite} />
               <RiskParityWeights bt={data.composite} />
