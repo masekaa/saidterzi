@@ -4862,6 +4862,139 @@ function DiversificationStat({ bt }: { bt: BacktestResult }) {
   );
 }
 
+function RollingCorrelation({
+  bt,
+  label = "Bileşik",
+}: {
+  bt: BacktestResult;
+  label?: string;
+}) {
+  const sleeves = bt.equityCurves.filter(
+    (c) => !c.highlight && !c.name.includes("Bileşik") && !c.name.includes("Pasif")
+  );
+  if (sleeves.length < 3) return null;
+  const rets = sleeves.map((c) => growthToRets(c.growth));
+  const minLen = Math.min(...rets.map((r) => r.length));
+  const WIN = 24;
+  if (minLen < WIN + 6) return null;
+
+  // Her trailing pencere için tüm sleeve çiftlerinin ortalama korelasyonu
+  const vals: { i: number; v: number }[] = [];
+  for (let end = WIN; end <= minLen; end++) {
+    let sum = 0;
+    let cnt = 0;
+    for (let a = 0; a < rets.length; a++)
+      for (let b = a + 1; b < rets.length; b++) {
+        const c = pearson(rets[a].slice(end - WIN, end), rets[b].slice(end - WIN, end));
+        if (isFinite(c)) {
+          sum += c;
+          cnt++;
+        }
+      }
+    if (cnt) vals.push({ i: end, v: sum / cnt });
+  }
+  if (vals.length < 2) return null;
+
+  const W = 820;
+  const H = 200;
+  const padL = 46;
+  const padR = 14;
+  const padT = 14;
+  const padB = 26;
+  const innerW = W - padL - padR;
+  const innerH = H - padT - padB;
+  const n = sleeves[0].growth.length;
+  const vMax = Math.max(...vals.map((p) => p.v));
+  const vMin = Math.min(...vals.map((p) => p.v));
+  const lo = Math.min(0, vMin) - 0.03;
+  const hi = Math.max(0.3, vMax) + 0.03;
+  const X = (i: number) => padL + (innerW * i) / Math.max(1, n - 1);
+  const Y = (v: number) => padT + innerH * (1 - (v - lo) / (hi - lo));
+  const line = vals
+    .map((p, k) => `${k === 0 ? "M" : "L"}${X(p.i).toFixed(1)},${Y(p.v).toFixed(1)}`)
+    .join(" ");
+  const mean = vals.reduce((s, p) => s + p.v, 0) / vals.length;
+  const last = vals[vals.length - 1].v;
+  const peak = vMax;
+
+  const yTicks: number[] = [];
+  for (let v = Math.ceil(lo / 0.2) * 0.2; v <= hi; v += 0.2)
+    yTicks.push(Number(v.toFixed(2)));
+  const xTicks: { i: number; label: string }[] = [];
+  let ly = "";
+  bt.dates.forEach((d, i) => {
+    const y = d.slice(0, 4);
+    if (y !== ly) {
+      xTicks.push({ i, label: y });
+      ly = y;
+    }
+  });
+  const step = Math.ceil(xTicks.length / 10);
+  const shown = xTicks.filter((_, idx) => idx % step === 0);
+
+  return (
+    <div className="chart-card">
+      <div className="chart-title">
+        {label} — 24-Ay Rolling Ortalama Sleeve Korelasyonu
+      </div>
+      <div className="chart-help">
+        Her nokta, o aydan geriye 24 ayın tüm sleeve çiftleri arası{" "}
+        <b>ortalama</b> korelasyonu. Düşük = güçlü çeşitlendirme. Tepe noktalar
+        tipik olarak kriz aylarıdır: korelasyonlar 1&apos;e yaklaşır ve
+        çeşitlendirme <b>tam ihtiyaç anında</b> zayıflar (korelasyon kümelenmesi).
+        Kesik çizgi = tüm-dönem ortalaması.
+      </div>
+      <svg
+        className="equity-svg"
+        viewBox={`0 0 ${W} ${H}`}
+        role="img"
+        aria-label="Finansal analiz grafiği; açıklama hemen üstteki başlık ve metinde"
+      >
+        {yTicks.map((v, i) => (
+          <g key={i}>
+            <line x1={padL} x2={W - padR} y1={Y(v)} y2={Y(v)} className="grid-line" />
+            <text x={padL - 8} y={Y(v) + 3} className="axis-label" textAnchor="end">
+              {v.toFixed(1)}
+            </text>
+          </g>
+        ))}
+        <line
+          x1={padL}
+          x2={W - padR}
+          y1={Y(mean)}
+          y2={Y(mean)}
+          stroke="#94a3b8"
+          strokeDasharray="4 4"
+          style={{ strokeWidth: 1 }}
+        />
+        <path
+          d={line}
+          className="equity-line"
+          stroke="#38bdf8"
+          style={{ strokeWidth: 1.8 }}
+        />
+        {shown.map((t, idx) => (
+          <text key={idx} x={X(t.i)} y={H - 8} className="axis-label" textAnchor="middle">
+            {t.label}
+          </text>
+        ))}
+      </svg>
+      <div
+        className={`rob-verdict ${
+          last <= mean ? "ok" : last >= peak - 0.05 ? "thin" : ""
+        }`}
+      >
+        Güncel: <b>{last.toFixed(2)}</b> · tüm-dönem ort: <b>{mean.toFixed(2)}</b> ·
+        tepe (kriz): <b>{peak.toFixed(2)}</b>
+        {" — "}
+        {last <= mean
+          ? "şu an çeşitlendirme ortalamanın üstünde (korelasyon düşük)."
+          : "şu an korelasyon ortalamanın üstünde — çeşitlendirme faydası geçici olarak zayıf."}
+      </div>
+    </div>
+  );
+}
+
 function CorrelationMatrix({ bt }: { bt: BacktestResult }) {
   const sleeves = bt.equityCurves.filter(
     (c) => !c.highlight && !c.name.includes("Bileşik") && !c.name.includes("Pasif")
@@ -5991,6 +6124,7 @@ export default function Home() {
               <CompositeAttribution bt={data.composite} />
               <RiskParityWeights bt={data.composite} />
               <CorrelationMatrix bt={data.composite} />
+              <RollingCorrelation bt={data.composite} label="Bileşik" />
             </CollapsibleSection>
             </ErrorBoundary>
           )}
