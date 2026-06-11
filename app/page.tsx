@@ -3223,8 +3223,10 @@ function MomentumValueAdd({ data }: { data: AnalysisResult }) {
   const add = (label: string, emoji: string, bt: BacktestResult | null) => {
     if (!bt || bt.strategies.length < 2) return;
     const mom = bt.strategies[0];
+    // Benchmark = eşit-ağırlık al-tut. Per-evren "Eşit Ağırlık" (boşluk),
+    // bileşik "Pasif Eşit-Ağırlık" (tire) — ikisini de yakala.
     const bench =
-      bt.strategies.find((s) => s.name.includes("Eşit Ağırlık")) ??
+      bt.strategies.find((s) => /Eşit[\s-]Ağırlık/.test(s.name)) ??
       bt.strategies[bt.strategies.length - 1];
     if (mom && bench) {
       const ex = excessTStat(bt);
@@ -3233,6 +3235,7 @@ function MomentumValueAdd({ data }: { data: AnalysisResult }) {
   };
   add("ETF (GEM)", "📊", data.backtest);
   for (const u of data.universes) add(u.label, u.emoji, u.backtest);
+  add("Bileşik (meta-strateji)", "🧩", data.composite);
   if (rows.length < 2) return null;
 
   const wins = rows.filter(
