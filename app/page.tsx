@@ -2778,7 +2778,8 @@ function deflatedSharpe(
 }
 
 function StrategyLeaderboard({ data }: { data: AnalysisResult }) {
-  const [sortKey, setSortKey] = useState<keyof StrategyMetrics>("sharpe");
+  type SortKey = keyof StrategyMetrics | "psr";
+  const [sortKey, setSortKey] = useState<SortKey>("sharpe");
   type Row = {
     name: string;
     emoji: string;
@@ -2834,13 +2835,17 @@ function StrategyLeaderboard({ data }: { data: AnalysisResult }) {
   // "Düşük daha iyi" metrikler artan sıralanır: Ulcer (az acı) ve yıllık geçiş
   // (az devir = düşük işlem maliyeti/vergi) — tabloda "en iyi üstte" tutarlılığı.
   const ASC_KEYS: Array<keyof StrategyMetrics> = ["ulcerIndex", "switchesPerYear"];
-  const asc = ASC_KEYS.includes(sortKey);
-  const sval = (m: StrategyMetrics) => {
-    const v = m[sortKey];
+  const asc = sortKey !== "psr" && ASC_KEYS.includes(sortKey);
+  const rowVal = (row: Row) => {
+    if (sortKey === "psr") {
+      const p = psrFromMetrics(row.m, row.months);
+      return p == null ? -Infinity : p; // PSR yüksek = iyi
+    }
+    const v = row.m[sortKey];
     // Eksik değerler her iki yönde de sona düşsün.
     return typeof v === "number" && isFinite(v) ? v : asc ? Infinity : -Infinity;
   };
-  rows.sort((a, b) => (asc ? sval(a.m) - sval(b.m) : sval(b.m) - sval(a.m)));
+  rows.sort((a, b) => (asc ? rowVal(a) - rowVal(b) : rowVal(b) - rowVal(a)));
 
   const SortableTh = ({
     label,
@@ -2848,7 +2853,7 @@ function StrategyLeaderboard({ data }: { data: AnalysisResult }) {
     left,
   }: {
     label: string;
-    k: keyof StrategyMetrics;
+    k: SortKey;
     left?: boolean;
   }) => {
     const active = sortKey === k;
@@ -2886,9 +2891,7 @@ function StrategyLeaderboard({ data }: { data: AnalysisResult }) {
               <th className="left">Strateji</th>
               <SortableTh label="CAGR" k="cagr" />
               <SortableTh label="Sharpe" k="sharpe" />
-              <th title="Olasılıksal Sharpe — gözlenen Sharpe'ın gerçekte > 0 olma olasılığı (örneklem + çarpıklık + kuyruk düzeltmeli, Bailey–López de Prado)">
-                PSR
-              </th>
+              <SortableTh label="PSR" k="psr" />
               <SortableTh label="Sortino" k="sortino" />
               <SortableTh label="Max DD" k="maxDrawdown" />
               <SortableTh label="Ulcer" k="ulcerIndex" />
