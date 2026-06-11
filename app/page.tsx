@@ -4176,7 +4176,9 @@ function CrossUniverseComparison({ data }: { data: AnalysisResult }) {
           {common[0]} → {common[n - 1]}, {n} ay) 1$&apos;dan başlatılıp yeniden
           normalize edildi — böylece leaderboard&apos;ın aksine{" "}
           <b>doğrudan ve adil</b> karşılaştırılabilirler. En genç evren (kripto)
-          başlangıcı dönemi belirler.
+          başlangıcı dönemi belirler. <b>🧩 Bileşik</b> (kalın yeşil) ve{" "}
+          <b>⚖️ 60/40</b> (gri kesik, SPY/AGG evrensel referans) kıyas için öne
+          çıkar.
         </div>
         <svg className="equity-svg" viewBox={`0 0 ${W} ${H}`} role="img" aria-label="Ortak dönem birikimli getiri karşılaştırma grafiği. Detay: üstteki başlık ve açıklamada.">
           {yTicks.map((v, i) => (
