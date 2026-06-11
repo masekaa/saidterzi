@@ -2101,6 +2101,92 @@ function psrFromMetrics(m: StrategyMetrics, months: number): number | null {
   return normCdf((srHat * Math.sqrt(months - 1)) / Math.sqrt(varTerm));
 }
 
+// Ters standart normal CDF (probit) — Acklam'ın rasyonel yaklaşımı (~1e-9 hata)
+function invNorm(p: number): number {
+  const a = [
+    -3.969683028665376e1, 2.209460984245205e2, -2.759285104469687e2,
+    1.38357751867269e2, -3.066479806614716e1, 2.506628277459239e0,
+  ];
+  const b = [
+    -5.447609879822406e1, 1.615858368580409e2, -1.556989798598866e2,
+    6.680131188771972e1, -1.328068155288572e1,
+  ];
+  const c = [
+    -7.784894002430293e-3, -3.223964580411365e-1, -2.400758277161838e0,
+    -2.549732539343734e0, 4.374664141464968e0, 2.938163982698783e0,
+  ];
+  const d = [
+    7.784695709041462e-3, 3.224671290700398e-1, 2.445134137142996e0,
+    3.754408661907416e0,
+  ];
+  const pl = 0.02425;
+  const ph = 1 - pl;
+  if (p < pl) {
+    const q = Math.sqrt(-2 * Math.log(p));
+    return (
+      (((((c[0] * q + c[1]) * q + c[2]) * q + c[3]) * q + c[4]) * q + c[5]) /
+      ((((d[0] * q + d[1]) * q + d[2]) * q + d[3]) * q + 1)
+    );
+  }
+  if (p <= ph) {
+    const q = p - 0.5;
+    const r = q * q;
+    return (
+      ((((((a[0] * r + a[1]) * r + a[2]) * r + a[3]) * r + a[4]) * r + a[5]) * q) /
+      (((((b[0] * r + b[1]) * r + b[2]) * r + b[3]) * r + b[4]) * r + 1)
+    );
+  }
+  const q = Math.sqrt(-2 * Math.log(1 - p));
+  return (
+    -(((((c[0] * q + c[1]) * q + c[2]) * q + c[3]) * q + c[4]) * q + c[5]) /
+    ((((d[0] * q + d[1]) * q + d[2]) * q + d[3]) * q + 1)
+  );
+}
+
+// Deflated Sharpe Ratio (Bailey–López de Prado 2014) — çoklu-deneme düzeltmesi.
+// N strateji denendiğinde, şans eseri beklenen EN YÜKSEK Sharpe yükselir; DSR
+// en iyi stratejiyi bu beklenen-maksimuma göre deflate eder. items = denenen
+// stratejilerin metrik+ay sayıları. Yaklaşım: heterojen evrenler bağımsız
+// deneme proxysi olarak kullanılır (saf BLdP aynı backtest'in konfigürasyonlarını
+// varsayar) — yorum bu uyarıyla verilir.
+function deflatedSharpe(
+  items: { m: StrategyMetrics; months: number; name: string }[]
+): { dsr: number; srStar0Ann: number; n: number; bestName: string; bestSharpe: number } | null {
+  const valid = items.filter(
+    (it) => it.m.sharpe != null && isFinite(it.m.sharpe as number) && it.months >= 24
+  );
+  const N = valid.length;
+  if (N < 3) return null; // çok az deneme → DSR anlamsız
+  const srs = valid.map((it) => (it.m.sharpe as number) / Math.sqrt(12)); // aylık
+  const mean = srs.reduce((a, b) => a + b, 0) / N;
+  const varSR = srs.reduce((a, b) => a + (b - mean) ** 2, 0) / (N - 1);
+  if (!(varSR > 0)) return null;
+  const sd = Math.sqrt(varSR);
+  const EM = 0.5772156649015329; // Euler–Mascheroni
+  // Beklenen maksimum Sharpe (null hipotez, N bağımsız deneme)
+  const srStar0 =
+    sd * ((1 - EM) * invNorm(1 - 1 / N) + EM * invNorm(1 - 1 / (N * Math.E)));
+  // En yüksek Sharpe'lı strateji deflate edilir
+  let best = valid[0];
+  for (const it of valid)
+    if ((it.m.sharpe as number) > (best.m.sharpe as number)) best = it;
+  const srHat = (best.m.sharpe as number) / Math.sqrt(12);
+  const g3 = best.m.skewness ?? 0;
+  const g4 = (best.m.kurtosis ?? 0) + 3; // fazla → ham basıklık
+  const varTerm = 1 - g3 * srHat + ((g4 - 1) / 4) * srHat * srHat;
+  if (!isFinite(varTerm) || varTerm <= 0) return null;
+  const dsr = normCdf(
+    ((srHat - srStar0) * Math.sqrt(best.months - 1)) / Math.sqrt(varTerm)
+  );
+  return {
+    dsr,
+    srStar0Ann: srStar0 * Math.sqrt(12),
+    n: N,
+    bestName: best.name,
+    bestSharpe: best.m.sharpe as number,
+  };
+}
+
 function StrategyLeaderboard({ data }: { data: AnalysisResult }) {
   const [sortKey, setSortKey] = useState<keyof StrategyMetrics>("sharpe");
   type Row = {
@@ -2277,6 +2363,35 @@ function StrategyLeaderboard({ data }: { data: AnalysisResult }) {
         kısa/çarpık/şişman-kuyruklu seride yüksek Sharpe cezalandırılır —
         Bailey–López de Prado 2012). %95+ yeşil, %90&apos;ın altı kırmızı.
       </p>
+      {(() => {
+        const ds = deflatedSharpe(
+          rows.map((r) => ({ m: r.m, months: r.months, name: `${r.emoji} ${r.name}` }))
+        );
+        if (!ds) return null;
+        const ok = ds.dsr >= 0.95;
+        const weak = ds.dsr < 0.9;
+        return (
+          <p className="table-note" style={{ marginTop: 6 }}>
+            🧪 <b>Deflated Sharpe (çoklu-deneme düzeltmesi)</b>: {ds.n} strateji
+            karşılaştırıldı; şans eseri beklenen <i>en yüksek</i> yıllık Sharpe ≈{" "}
+            <b>{num(ds.srStar0Ann)}</b>. En iyi strateji ({ds.bestName}, Sharpe{" "}
+            {num(ds.bestSharpe)}) bu eşiğe göre deflate edildiğinde{" "}
+            <b className={ok ? "pos-cell" : weak ? "neg" : ""}>
+              DSR = {pct(ds.dsr, 0)}
+            </b>{" "}
+            —{" "}
+            {ok
+              ? "en iyi sonuç çoklu-denemeden arındırıldığında bile anlamlı (şans eseri parlamadı)."
+              : weak
+              ? "çoklu-deneme arındırınca anlam zayıflıyor: en iyi Sharpe kısmen seçim-yanlılığı olabilir."
+              : "sınırda — çoklu-deneme sonrası anlam marjı dar."}{" "}
+            <span style={{ opacity: 0.7 }}>
+              (Yaklaşım: farklı evrenler bağımsız deneme proxysi; saf BLdP aynı
+              backtest&apos;in parametre taramasını varsayar.)
+            </span>
+          </p>
+        );
+      })()}
     </>
   );
 }
