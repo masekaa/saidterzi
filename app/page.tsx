@@ -2072,6 +2072,35 @@ function ConsolidatedSignals({ data }: { data: AnalysisResult }) {
   );
 }
 
+// Standart normal CDF (Abramowitz–Stegun 7.1.26)
+function normCdf(x: number): number {
+  const t = 1 / (1 + 0.2316419 * Math.abs(x));
+  const d = 0.3989422804014327 * Math.exp((-x * x) / 2);
+  let p =
+    d *
+    t *
+    (0.31938153 +
+      t * (-0.356563782 + t * (1.781477937 + t * (-1.821255978 + t * 1.330274429))));
+  p = x >= 0 ? 1 - p : p;
+  return p;
+}
+
+// Probabilistic Sharpe Ratio (Bailey–López de Prado 2012) — StrategyMetrics'ten.
+// Gözlenen Sharpe'ın gerçekte > 0 olma olasılığı; örneklem uzunluğu + çarpıklık +
+// fazla-basıklık için düzeltilmiş. m.sharpe yıllık; m.kurtosis fazla-basıklık
+// (normal=0). null = hesaplanamaz.
+function psrFromMetrics(m: StrategyMetrics, months: number): number | null {
+  if (m.sharpe == null || m.skewness == null || m.kurtosis == null) return null;
+  if (!isFinite(months) || months < 24) return null;
+  const srHat = m.sharpe / Math.sqrt(12); // aylık (yıllıklaştırılmamış)
+  if (srHat <= 0) return 0; // pozitif olmayan Sharpe → güven ~0
+  const g3 = m.skewness;
+  const g4 = m.kurtosis + 3; // fazla → ham basıklık (normal=3)
+  const varTerm = 1 - g3 * srHat + ((g4 - 1) / 4) * srHat * srHat;
+  if (!isFinite(varTerm) || varTerm <= 0) return null;
+  return normCdf((srHat * Math.sqrt(months - 1)) / Math.sqrt(varTerm));
+}
+
 function StrategyLeaderboard({ data }: { data: AnalysisResult }) {
   const [sortKey, setSortKey] = useState<keyof StrategyMetrics>("sharpe");
   type Row = {
@@ -2181,6 +2210,9 @@ function StrategyLeaderboard({ data }: { data: AnalysisResult }) {
               <th className="left">Strateji</th>
               <SortableTh label="CAGR" k="cagr" />
               <SortableTh label="Sharpe" k="sharpe" />
+              <th title="Olasılıksal Sharpe — gözlenen Sharpe'ın gerçekte > 0 olma olasılığı (örneklem + çarpıklık + kuyruk düzeltmeli, Bailey–López de Prado)">
+                PSR
+              </th>
               <SortableTh label="Sortino" k="sortino" />
               <SortableTh label="Max DD" k="maxDrawdown" />
               <SortableTh label="Ulcer" k="ulcerIndex" />
@@ -2204,6 +2236,18 @@ function StrategyLeaderboard({ data }: { data: AnalysisResult }) {
                 </td>
                 <td>{pct(r.m.cagr)}</td>
                 <td className="strong">{num(r.m.sharpe)}</td>
+                <td>
+                  {(() => {
+                    const p = psrFromMetrics(r.m, r.months);
+                    return p == null ? (
+                      "—"
+                    ) : (
+                      <span className={p >= 0.95 ? "pos-cell" : p < 0.9 ? "neg" : ""}>
+                        {pct(p, 0)}
+                      </span>
+                    );
+                  })()}
+                </td>
                 <td>{num(r.m.sortino)}</td>
                 <td className="neg">{pct(r.m.maxDrawdown)}</td>
                 <td className="neg">
@@ -2228,7 +2272,10 @@ function StrategyLeaderboard({ data }: { data: AnalysisResult }) {
         ⚠️ Dönemler farklı (her evrenin ortak veri geçmişi farklı başlar) — Sharpe
         gibi risk-ayarlı oranlar daha adil kıyas sağlar, ama mutlak getiriler
         doğrudan karşılaştırılamaz. Her strateji kendi evreninin eşit-ağırlık
-        al-tut benchmark'ını ilgili sekmede görebilirsin.
+        al-tut benchmark'ını ilgili sekmede görebilirsin. <b>PSR</b> = Sharpe&apos;ın
+        gerçekte &gt; 0 olma olasılığı (yüksek = istatistiksel olarak sağlam;
+        kısa/çarpık/şişman-kuyruklu seride yüksek Sharpe cezalandırılır —
+        Bailey–López de Prado 2012). %95+ yeşil, %90&apos;ın altı kırmızı.
       </p>
     </>
   );
