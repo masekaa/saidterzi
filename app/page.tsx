@@ -614,7 +614,7 @@ function EquityChart({ bt }: { bt: BacktestResult }) {
         className="equity-svg"
         viewBox={`0 0 ${W} ${H}`}
         preserveAspectRatio="xMidYMid meet"
-        role="img" aria-label="Finansal analiz grafiği; açıklama hemen üstteki başlık ve metinde"
+        role="img" aria-label="Birikimli büyüme (equity) eğrisi grafiği — strateji ve benchmark. Detay: üstteki başlık ve açıklamada."
       >
         {yTicks.map((v, idx) => (
           <g key={`y${idx}`}>
@@ -892,7 +892,7 @@ function PositionTimeline({ bt, label = "GEM" }: { bt: BacktestResult; label?: s
         className="equity-svg"
         viewBox={`0 0 ${W} ${H}`}
         preserveAspectRatio="none"
-        role="img" aria-label="Finansal analiz grafiği; açıklama hemen üstteki başlık ve metinde"
+        role="img" aria-label="Pozisyon geçmişi şeridi — her ay tutulan varlık. Detay: üstteki başlık ve açıklamada."
       >
         {tl.map((p, i) => (
           <rect
@@ -1019,7 +1019,7 @@ function UnderwaterCompare({
         viewBox={`0 0 ${W} ${H}`}
         preserveAspectRatio="xMidYMid meet"
         role="img"
-        aria-label="Finansal analiz grafiği; açıklama hemen üstteki başlık ve metinde"
+        aria-label="Karşılaştırmalı drawdown (underwater) grafiği — strateji ve benchmark. Detay: üstteki başlık ve açıklamada."
       >
         {yTicks.map((v, idx) => (
           <g key={idx}>
@@ -1118,7 +1118,7 @@ function UnderwaterChart({ bt, label = "GEM" }: { bt: BacktestResult; label?: st
         className="equity-svg"
         viewBox={`0 0 ${W} ${H}`}
         preserveAspectRatio="xMidYMid meet"
-        role="img" aria-label="Finansal analiz grafiği; açıklama hemen üstteki başlık ve metinde"
+        role="img" aria-label="Drawdown (underwater) grafiği — zirveden düşüş. Detay: üstteki başlık ve açıklamada."
       >
         {yTicks.map((v, idx) => (
           <g key={idx}>
@@ -1468,7 +1468,7 @@ function RiskReturnChart({ rows }: { rows: StrategyMetrics[] }) {
         className="equity-svg"
         viewBox={`0 0 ${W} ${H}`}
         preserveAspectRatio="xMidYMid meet"
-        role="img" aria-label="Finansal analiz grafiği; açıklama hemen üstteki başlık ve metinde"
+        role="img" aria-label="Risk-getiri dağılım grafiği — yıllık getiri ve oynaklık. Detay: üstteki başlık ve açıklamada."
       >
         {yTicks.map((v, i) => (
           <g key={`y${i}`}>
@@ -1640,7 +1640,7 @@ function RollingReturnsChart({ bt, label = "GEM" }: { bt: BacktestResult; label?
         bölgeler = GEM&apos;in 1 yıllık kayıpta olduğu dönemler (nadir ve sığ
         olması beklenir).
       </div>
-      <svg className="equity-svg" viewBox={`0 0 ${W} ${H}`} role="img" aria-label="Finansal analiz grafiği; açıklama hemen üstteki başlık ve metinde">
+      <svg className="equity-svg" viewBox={`0 0 ${W} ${H}`} role="img" aria-label="12-ay rolling getiri grafiği. Detay: üstteki başlık ve açıklamada.">
         {yTicks.map((v, i) => (
           <g key={i}>
             <line
@@ -1711,7 +1711,7 @@ function ScatterGemVsBench({ bt, label = "GEM" }: { bt: BacktestResult; label?: 
         className="equity-svg scatter"
         viewBox={`0 0 ${W} ${H}`}
         preserveAspectRatio="xMidYMid meet"
-        role="img" aria-label="Finansal analiz grafiği; açıklama hemen üstteki başlık ve metinde"
+        role="img" aria-label="Strateji-benchmark aylık getiri saçılım grafiği. Detay: üstteki başlık ve açıklamada."
       >
         <line x1={X(0)} y1={pad} x2={X(0)} y2={H - pad} className="grid-line zero" />
         <line x1={pad} y1={Y(0)} x2={W - pad} y2={Y(0)} className="grid-line zero" />
@@ -1795,7 +1795,7 @@ function BoxPlot({ bt }: { bt: BacktestResult }) {
         kayıp ayların büyüklüğü. GEM&apos;in kutusunu hisse al-tut ile
         karşılaştır.
       </div>
-      <svg className="equity-svg" viewBox={`0 0 ${W} ${H}`} role="img" aria-label="Finansal analiz grafiği; açıklama hemen üstteki başlık ve metinde">
+      <svg className="equity-svg" viewBox={`0 0 ${W} ${H}`} role="img" aria-label="Aylık getiri dağılımı kutu grafiği. Detay: üstteki başlık ve açıklamada.">
         {xTicks.map((v, i) => (
           <g key={i}>
             <line
@@ -1981,7 +1981,7 @@ function ReturnHistogram({ bt, label = "GEM" }: { bt: BacktestResult; label?: st
         kalın kuyruk (basıklık&gt;0); sol/sağ asimetri = çarpıklık. Bu seri:
         çarpıklık <b>{skew.toFixed(2)}</b>, fazla basıklık <b>{kurt.toFixed(2)}</b>.
       </div>
-      <svg className="equity-svg" viewBox={`0 0 ${W} ${H}`} role="img" aria-label="Finansal analiz grafiği; açıklama hemen üstteki başlık ve metinde">
+      <svg className="equity-svg" viewBox={`0 0 ${W} ${H}`} role="img" aria-label="Aylık getiri histogramı — normal eğri bindirmeli. Detay: üstteki başlık ve açıklamada.">
         {xTicks.map((v, i) => (
           <line
             key={`g${i}`}
@@ -3891,7 +3891,7 @@ function CrossUniverseRiskReturn({ data }: { data: AnalysisResult }) {
         className="equity-svg"
         viewBox={`0 0 ${W} ${H}`}
         preserveAspectRatio="xMidYMid meet"
-        role="img" aria-label="Finansal analiz grafiği; açıklama hemen üstteki başlık ve metinde"
+        role="img" aria-label="Evrenler-arası risk-getiri dağılım grafiği. Detay: üstteki başlık ve açıklamada."
       >
         {yTicks.map((v, i) => (
           <g key={`y${i}`}>
@@ -4040,7 +4040,7 @@ function CrossUniverseComparison({ data }: { data: AnalysisResult }) {
           <b>doğrudan ve adil</b> karşılaştırılabilirler. En genç evren (kripto)
           başlangıcı dönemi belirler.
         </div>
-        <svg className="equity-svg" viewBox={`0 0 ${W} ${H}`} role="img" aria-label="Finansal analiz grafiği; açıklama hemen üstteki başlık ve metinde">
+        <svg className="equity-svg" viewBox={`0 0 ${W} ${H}`} role="img" aria-label="Ortak dönem birikimli getiri karşılaştırma grafiği. Detay: üstteki başlık ve açıklamada.">
           {yTicks.map((v, i) => (
             <g key={i}>
               <line
@@ -4185,7 +4185,7 @@ function RollingRelative({ bt, label }: { bt: BacktestResult; label: string }) {
         şanstan çok tutarlılığa dayandığını gösterir; ortalama (t-stat) ile
         birlikte yorumla.
       </div>
-      <svg className="equity-svg" viewBox={`0 0 ${W} ${H}`} role="img" aria-label="Finansal analiz grafiği; açıklama hemen üstteki başlık ve metinde">
+      <svg className="equity-svg" viewBox={`0 0 ${W} ${H}`} role="img" aria-label="12-ay rolling göreli performans grafiği — strateji eksi benchmark. Detay: üstteki başlık ve açıklamada.">
         <line x1={padL} x2={W - padR} y1={zeroY} y2={zeroY} className="grid-line zero" />
         <text x={padL - 8} y={zeroY + 3} className="axis-label" textAnchor="end">
           0
@@ -4256,7 +4256,7 @@ function RollingVol({ bt, label }: { bt: BacktestResult; label: string }) {
         = stratejinin en riskli olduğu dönemler (örn. kriz/çöküş); düşük platolar =
         sakin rejimler.
       </div>
-      <svg className="equity-svg" viewBox={`0 0 ${W} ${H}`} role="img" aria-label="Finansal analiz grafiği; açıklama hemen üstteki başlık ve metinde">
+      <svg className="equity-svg" viewBox={`0 0 ${W} ${H}`} role="img" aria-label="12-ay rolling oynaklık grafiği. Detay: üstteki başlık ve açıklamada.">
         {yTicks.map((v, i) => (
           <g key={i}>
             <line x1={padL} x2={W - padR} y1={Y(v)} y2={Y(v)} className="grid-line" />
@@ -4342,7 +4342,7 @@ function RollingSharpe({ bt, label }: { bt: BacktestResult; label: string }) {
         platolar güçlü rejimleri, sıfır altı dönemler kayıp rejimlerini gösterir.
         Son 12 ay: <b>{last.toFixed(2)}</b>.
       </div>
-      <svg className="equity-svg" viewBox={`0 0 ${W} ${H}`} role="img" aria-label="Finansal analiz grafiği; açıklama hemen üstteki başlık ve metinde">
+      <svg className="equity-svg" viewBox={`0 0 ${W} ${H}`} role="img" aria-label="12-ay rolling Sharpe oranı grafiği. Detay: üstteki başlık ve açıklamada.">
         {yTicks.map((v, i) => (
           <g key={i}>
             <line
@@ -4450,7 +4450,7 @@ function YearlyReturns({ bt, label }: { bt: BacktestResult; label: string }) {
         kırmızı (zarar); ince benchmark çubuğu kıyas içindir. <b>*</b> ile işaretli
         yıllar kısmi (veri Ocak&apos;ta başlamıyor / Aralık&apos;ta bitmiyor).
       </div>
-      <svg className="equity-svg" viewBox={`0 0 ${W} ${H}`} role="img" aria-label="Finansal analiz grafiği; açıklama hemen üstteki başlık ve metinde">
+      <svg className="equity-svg" viewBox={`0 0 ${W} ${H}`} role="img" aria-label="Takvim-yılı getirileri çubuk grafiği — strateji ve benchmark. Detay: üstteki başlık ve açıklamada.">
         {yTicks.map((v, i) => {
           const y = mid - (v / maxAbs) * (innerH / 2);
           return (
@@ -5025,7 +5025,7 @@ function Seasonality({ bt, label }: { bt: BacktestResult; label: string }) {
         stratejilerinde mevsimsel desen genelde zayıftır; istatistiksel olarak
         anlamlı olması için uzun geçmiş gerekir.
       </div>
-      <svg className="equity-svg" viewBox={`0 0 ${W} ${H}`} role="img" aria-label="Finansal analiz grafiği; açıklama hemen üstteki başlık ve metinde">
+      <svg className="equity-svg" viewBox={`0 0 ${W} ${H}`} role="img" aria-label="Mevsimsellik grafiği — ay-bazlı ortalama getiri. Detay: üstteki başlık ve açıklamada.">
         <line x1={padL} x2={W - padR} y1={mid} y2={mid} className="grid-line zero" />
         {avg.map((v, i) => {
           if (v == null) return null;
@@ -5647,7 +5647,7 @@ function RollingCorrelation({
         className="equity-svg"
         viewBox={`0 0 ${W} ${H}`}
         role="img"
-        aria-label="Finansal analiz grafiği; açıklama hemen üstteki başlık ve metinde"
+        aria-label="24-ay rolling ortalama sleeve korelasyonu grafiği. Detay: üstteki başlık ve açıklamada."
       >
         {yTicks.map((v, i) => (
           <g key={i}>
