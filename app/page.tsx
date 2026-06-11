@@ -1168,7 +1168,12 @@ function AnnualReturnsMatrix({ data }: { data: AnalysisResult }) {
   // "Getirilerin periyodik tablosu": yıllar × tüm stratejiler. Her hücre o
   // stratejinin o takvim yılı (bileşik) getirisi; renk = yeşil/kırmızı yoğunluk.
   // Yıldan yıla liderlik rotasyonunu tek bakışta gösterir.
-  type Col = { emoji: string; label: string; byYear: Map<string, number> };
+  type Col = {
+    emoji: string;
+    label: string;
+    byYear: Map<string, number>;
+    cagr: number | null;
+  };
   const cols: Col[] = [];
   const addCol = (emoji: string, label: string, bt: BacktestResult | null) => {
     if (!bt) return;
@@ -1184,7 +1189,7 @@ function AnnualReturnsMatrix({ data }: { data: AnalysisResult }) {
     if (prod.size < 1) return;
     const byYear = new Map<string, number>();
     prod.forEach((v, yr) => byYear.set(yr, v - 1));
-    cols.push({ emoji, label, byYear });
+    cols.push({ emoji, label, byYear, cagr: bt.strategies[0]?.cagr ?? null });
   };
   addCol("📊", "GEM", data.backtest);
   for (const u of data.universes)
@@ -1248,12 +1253,33 @@ function AnnualReturnsMatrix({ data }: { data: AnalysisResult }) {
               </tr>
             ))}
           </tbody>
+          <tfoot>
+            <tr>
+              <td className="left strong" title="Tüm dönem yıllık bileşik getiri">
+                CAGR
+              </td>
+              {cols.map((c, i) => (
+                <td
+                  key={i}
+                  className={`strong ${
+                    c.cagr == null ? "" : c.cagr >= 0 ? "pos-cell" : "neg"
+                  }`}
+                  style={{ fontVariantNumeric: "tabular-nums" }}
+                  title={`${c.label} — tüm dönem CAGR`}
+                >
+                  {c.cagr == null ? "—" : pct(c.cagr, 0)}
+                </td>
+              ))}
+            </tr>
+          </tfoot>
         </table>
       </div>
       <p className="table-note">
         Sütun başlığına gel → strateji adı. Renk yoğunluğu getiri büyüklüğünü
         yansıtır; yatay okuma = o yıl evrenler-arası dağılım, dikey okuma = bir
-        stratejinin yıllar arası tutarlılığı.
+        stratejinin yıllar arası tutarlılığı. Alt satır = stratejinin <b>tüm dönem
+        CAGR</b>&apos;ı (yıllık getirileri bağlamlandıran çıpa; dönemler farklı
+        başlayabilir).
       </p>
     </div>
   );
