@@ -110,6 +110,20 @@ function fmtTime(iso: string): string {
   }
 }
 
+// Veri tazeliği ipucu — "az önce" / "X dk önce" / "X sa önce" / "X gün önce".
+function relTime(iso: string): string {
+  try {
+    const diffMin = Math.round((Date.now() - new Date(iso).getTime()) / 60000);
+    if (diffMin < 1) return "az önce";
+    if (diffMin < 60) return `${diffMin} dk önce`;
+    const h = Math.round(diffMin / 60);
+    if (h < 24) return `${h} sa önce`;
+    return `${Math.round(h / 24)} gün önce`;
+  } catch {
+    return "";
+  }
+}
+
 function SignalBadge({ signal }: { signal?: "LONG" | "CASH" }) {
   if (!signal) return null;
   const isLong = signal === "LONG";
@@ -6974,7 +6988,8 @@ export default function Home() {
           </button>
           {data && (
             <span className="timestamp">
-              Güncellendi: {fmtTime(data.generatedAt)}
+              Güncellendi: {fmtTime(data.generatedAt)}{" "}
+              <span style={{ opacity: 0.7 }}>({relTime(data.generatedAt)})</span>
               {data.fromCache && (
                 <span className="cache-badge" title="Sonuç 10 dk'lık sunucu önbelleğinden geldi. Taze veri için Yenile.">
                    önbellek
