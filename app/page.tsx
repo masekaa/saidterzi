@@ -4842,6 +4842,83 @@ function VolTargetPanel({ bt, label = "Strateji" }: { bt: BacktestResult; label?
   );
 }
 
+function StartDateSensitivity({ bt, label = "Strateji" }: { bt: BacktestResult; label?: string }) {
+  // Giriş-tarihi duyarlılığı: lump-sum yatırımcının NİHAİ CAGR'ı, hangi yıl
+  // girdiğine göre nasıl değişir? Geniş aralık = sonuç "şanslı başlangıç"a
+  // bağımlı (sıra/timing riski). Her takvim yılının ilk ayından bugüne CAGR.
+  const curve = bt.equityCurves.find((c) => c.highlight) ?? bt.equityCurves[0];
+  const g = curve?.growth;
+  if (!g || g.length < 49 || bt.dates.length < g.length) return null;
+  const end = g.length - 1;
+
+  const rows: { year: string; cagr: number }[] = [];
+  let lastYear = "";
+  for (let i = 0; i < g.length; i++) {
+    const yr = bt.dates[i].slice(0, 4);
+    if (yr === lastYear) continue; // her yılın ilk ayı
+    lastYear = yr;
+    const months = end - i;
+    if (months < 24) break; // son ~2 yıl: CAGR yıllıklaştırması güvenilmez
+    if (g[i] <= 0) continue;
+    const cagr = Math.pow(g[end] / g[i], 12 / months) - 1;
+    if (isFinite(cagr)) rows.push({ year: yr, cagr });
+  }
+  if (rows.length < 3) return null;
+
+  const sorted = [...rows].sort((a, b) => a.cagr - b.cagr);
+  const worst = sorted[0];
+  const best = sorted[sorted.length - 1];
+  const median = sorted[Math.floor(sorted.length / 2)].cagr;
+  const spread = best.cagr - worst.cagr;
+  const wide = spread > 0.06; // >6 puan aralık = timing'e duyarlı
+
+  return (
+    <div className="chart-card">
+      <div className="chart-title">
+        {label} — Giriş Tarihi Duyarlılığı (timing riski)
+      </div>
+      <div className="chart-help">
+        Tek seferlik (lump-sum) yatırımcının bugüne kadarki <b>yıllık getirisi</b>,
+        hangi takvim yılında girdiğine göre. Geniş aralık = nihai sonuç büyük ölçüde{" "}
+        <b>başlangıç şansına</b> bağlı (sıra/timing riski); dar aralık = strateji
+        giriş zamanına görece dayanıklı. Son ~2 yıl, kısa pencerede CAGR güvenilmez
+        olduğu için hariç.
+      </div>
+      <div className="cap-grid">
+        <div className="cap-item">
+          <div className="cap-label">En iyi giriş yılı</div>
+          <div className="cap-val pos-cell">
+            {best.year} · {pct(best.cagr)}
+          </div>
+        </div>
+        <div className="cap-item">
+          <div className="cap-label">En kötü giriş yılı</div>
+          <div className={`cap-val ${worst.cagr < 0 ? "neg" : ""}`}>
+            {worst.year} · {pct(worst.cagr)}
+          </div>
+        </div>
+        <div className="cap-item">
+          <div className="cap-label">Medyan giriş CAGR</div>
+          <div className="cap-val">{pct(median)}</div>
+        </div>
+        <div className="cap-item">
+          <div className="cap-label">Aralık (en iyi−en kötü)</div>
+          <div className={`cap-val ${wide ? "neg" : "pos-cell"}`}>
+            {pct(spread)}
+          </div>
+        </div>
+      </div>
+      <div className={`rob-verdict ${wide ? "thin" : "ok"}`}>
+        {rows.length} farklı giriş yılı için nihai CAGR{" "}
+        <b>{pct(worst.cagr)} – {pct(best.cagr)}</b> aralığında.{" "}
+        {wide
+          ? "geniş aralık: sonuç giriş zamanına (timing/şans) önemli ölçüde duyarlı — tek bir geçmiş CAGR'a fazla güvenme."
+          : "dar aralık: strateji giriş zamanına görece dayanıklı, sonuç şanslı bir başlangıca bağlı değil."}
+      </div>
+    </div>
+  );
+}
+
 function SplitSampleConsistency({ bt, label = "Strateji" }: { bt: BacktestResult; label?: string }) {
   const curve = bt.equityCurves.find((c) => c.highlight) ?? bt.equityCurves[0];
   const g = curve?.growth;
@@ -6397,6 +6474,7 @@ function BacktestCharts({
       <CrisisPerformance bt={bt} label={label} />
       <BootstrapRisk bt={bt} label={label} />
       <SplitSampleConsistency bt={bt} label={label} />
+      <StartDateSensitivity bt={bt} label={label} />
       <ProbabilisticSharpe bt={bt} label={label} />
       <VolTargetPanel bt={bt} label={label} />
       <RiskReturnChart rows={bt.strategies} />
@@ -6900,6 +6978,7 @@ export default function Home() {
               <CrisisPerformance bt={data.composite} label="Bileşik" />
               <BootstrapRisk bt={data.composite} label="Bileşik" />
               <SplitSampleConsistency bt={data.composite} label="Bileşik" />
+              <StartDateSensitivity bt={data.composite} label="Bileşik" />
               <ProbabilisticSharpe bt={data.composite} label="Bileşik" />
               <VolTargetPanel bt={data.composite} label="Bileşik" />
               <DiversificationStat bt={data.composite} />
