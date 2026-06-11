@@ -6887,6 +6887,7 @@ export default function Home() {
               id="vtab-etf"
               role="tab"
               aria-selected={view === "etf"}
+              aria-controls="vpanel-etf"
               tabIndex={view === "etf" ? 0 : -1}
               className={`view-tab ${view === "etf" ? "active" : ""}`}
               onClick={() => selectView("etf")}
@@ -6905,6 +6906,7 @@ export default function Home() {
                 id={`vtab-${u.id}`}
                 role="tab"
                 aria-selected={view === u.id}
+                aria-controls={`vpanel-${u.id}`}
                 tabIndex={view === u.id ? 0 : -1}
                 className={`view-tab ${view === u.id ? "active" : ""}`}
                 onClick={() => selectView(u.id)}
@@ -6921,7 +6923,7 @@ export default function Home() {
           </div>
 
           {view === "etf" && (
-          <>
+          <div role="tabpanel" id="vpanel-etf" aria-labelledby="vtab-etf">
           {/* Varlık Sinyal Panosu */}
           {data.signals && <SignalBoard board={data.signals} />}
 
@@ -6945,13 +6947,22 @@ export default function Home() {
 
           {/* Tüm Yöntemler — kategoriye göre gruplu */}
           <MethodsSection methods={data.methods} />
-          </>
+          </div>
           )}
 
           {/* ETF dışı evrenler (hisse, kripto, ...) — seçili sekmeye göre */}
           {data.universes.map(
             (u) =>
-              view === u.id && <UniverseSection key={u.id} u={u} />
+              view === u.id && (
+                <div
+                  key={u.id}
+                  role="tabpanel"
+                  id={`vpanel-${u.id}`}
+                  aria-labelledby={`vtab-${u.id}`}
+                >
+                  <UniverseSection u={u} />
+                </div>
+              )
           )}
 
           {data.warnings.length > 0 && (
