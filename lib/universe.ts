@@ -158,6 +158,25 @@ export const BOND_UNIVERSE: Instrument[] = [
 ];
 export const BOND_TOP_N = 2;
 
+// --- Ülke rotasyonu evreni (tek-ülke hisse momentumu) ---
+// Ülke momentumu iyi belgelenmiş bir stratejidir (Asness-Moskowitz-Pedersen 2013,
+// "Value and Momentum Everywhere"). Bölgesel INTL evreninden DAHA GRANÜLER: tek-
+// ülke MSCI ETF'leri arası dual momentum. Likit, uzun-geçmişli (çoğu 1996-2000);
+// ortak geçmiş ~2000.
+export const COUNTRY_UNIVERSE: Instrument[] = [
+  { key: "ewg", name: "Almanya", ticker: "EWG", note: "MSCI Germany" },
+  { key: "ewu", name: "İngiltere", ticker: "EWU", note: "MSCI UK" },
+  { key: "ewq", name: "Fransa", ticker: "EWQ", note: "MSCI France" },
+  { key: "ewa", name: "Avustralya", ticker: "EWA", note: "MSCI Australia" },
+  { key: "ewc", name: "Kanada", ticker: "EWC", note: "MSCI Canada" },
+  { key: "ewz", name: "Brezilya", ticker: "EWZ", note: "MSCI Brazil" },
+  { key: "eww", name: "Meksika", ticker: "EWW", note: "MSCI Mexico" },
+  { key: "ewy", name: "Güney Kore", ticker: "EWY", note: "MSCI South Korea" },
+  { key: "ewt", name: "Tayvan", ticker: "EWT", note: "MSCI Taiwan" },
+  { key: "ewh", name: "Hong Kong", ticker: "EWH", note: "MSCI Hong Kong" },
+];
+export const COUNTRY_TOP_N = 3;
+
 // --- Varlık-sınıfı / çapraz-varlık evreni (saf GTAA / dual momentum çekirdeği) ---
 // Faber'in GTAA'sı ve Antonacci'nin dual momentum fikrinin en saf ifadesi: ana
 // VARLIK SINIFLARI arası rotasyon (hisse, tahvil, altın, emtia, gayrimenkul).
@@ -199,6 +218,7 @@ export function allTickers(): string[] {
     ...FACTOR_UNIVERSE,
     ...BOND_UNIVERSE,
     ...ASSET_CLASS_UNIVERSE,
+    ...COUNTRY_UNIVERSE,
     AGG,
   ].forEach((i) => set.add(i.ticker));
   return Array.from(set);

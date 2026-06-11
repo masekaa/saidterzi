@@ -23,6 +23,8 @@ import {
   BOND_TOP_N,
   ASSET_CLASS_UNIVERSE,
   ASSET_CLASS_TOP_N,
+  COUNTRY_UNIVERSE,
+  COUNTRY_TOP_N,
   DMSR_TOP_N,
   allTickers,
   LOOKBACK_MONTHS,
@@ -130,6 +132,7 @@ export async function GET(req: Request) {
     const factorRaw = mapBy(FACTOR_UNIVERSE);
     const bondRaw2 = mapBy(BOND_UNIVERSE);
     const assetClassRaw = mapBy(ASSET_CLASS_UNIVERSE);
+    const countryRaw = mapBy(COUNTRY_UNIVERSE);
 
     // İki yavaş dış çağrıyı (Ken French zip + FMP earnings) PARALEL başlat —
     // soğuk yükleme süresini kısaltır (sıralı await yerine örtüşürler).
@@ -270,6 +273,18 @@ export async function GET(req: Request) {
         raw: assetClassRaw,
         universe: ASSET_CLASS_UNIVERSE,
         topN: ASSET_CLASS_TOP_N,
+        withEarnings: false,
+      },
+      {
+        id: "country",
+        emoji: "🗺️",
+        label: "Ülke Rotasyonu",
+        sublabel: `${COUNTRY_UNIVERSE.length} tek-ülke ETF'i`,
+        positionLabel: "Ülke Momentum",
+        benchLabel: "Eşit Ağırlık (Tüm Ülkeler)",
+        raw: countryRaw,
+        universe: COUNTRY_UNIVERSE,
+        topN: COUNTRY_TOP_N,
         withEarnings: false,
       },
     ];

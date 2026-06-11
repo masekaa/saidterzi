@@ -16,6 +16,8 @@ import {
   BOND_UNIVERSE,
   ASSET_CLASS_UNIVERSE,
   ASSET_CLASS_TOP_N,
+  COUNTRY_UNIVERSE,
+  COUNTRY_TOP_N,
   type Instrument,
 } from "@/lib/universe";
 import { runBacktest, runStockBacktest } from "@/lib/backtest";
@@ -80,6 +82,12 @@ const CONFIGS: Record<string, Cfg> = {
     positionLabel: "Varlık-Sınıfı Momentum",
     benchLabel: "Eşit Ağırlık (Tüm Sınıflar)",
     defaultTopN: ASSET_CLASS_TOP_N,
+  },
+  country: {
+    universe: COUNTRY_UNIVERSE,
+    positionLabel: "Ülke Momentum",
+    benchLabel: "Eşit Ağırlık (Tüm Ülkeler)",
+    defaultTopN: COUNTRY_TOP_N,
   },
 };
 
