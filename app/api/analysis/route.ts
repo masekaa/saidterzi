@@ -344,6 +344,17 @@ export async function GET(req: Request) {
         );
     }
 
+    const composite = buildComposite(
+      [
+        { name: "GEM (ETF)", bt: backtest },
+        ...universes.map((u) => ({ name: u.positionLabel, bt: u.backtest })),
+      ],
+      tbillRaw
+    );
+    // Bileşik (headline meta-strateji) faktör alpha'sı: çeşitlendirilmiş strateji,
+    // piyasa/boyut/değer beta'sının ötesinde gerçek alpha üretiyor mu?
+    const compositeFactorAlpha = alphaFor(composite);
+
     const result: AnalysisResult = {
       generatedAt: new Date().toISOString(),
       lookbackMonths: LOOKBACK_MONTHS,
@@ -359,13 +370,8 @@ export async function GET(req: Request) {
       methods,
       backtest,
       universes,
-      composite: buildComposite(
-        [
-          { name: "GEM (ETF)", bt: backtest },
-          ...universes.map((u) => ({ name: u.positionLabel, bt: u.backtest })),
-        ],
-        tbillRaw
-      ),
+      composite,
+      compositeFactorAlpha,
       warnings,
     };
 

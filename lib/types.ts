@@ -217,6 +217,7 @@ export interface AnalysisResult {
   backtest: BacktestResult | null; // ETF GEM backtest
   universes: UniverseBundle[]; // ETF dışı evrenler (hisse, kripto, ...)
   composite: BacktestResult | null; // 4 evrenin eşit-ağırlık bileşik stratejisi
+  compositeFactorAlpha?: FactorAlpha | null; // bileşik meta-strateji Fama-French alpha
   warnings: string[];
   fromCache?: boolean; // sonuç sunucu önbelleğinden mi geldi
 }

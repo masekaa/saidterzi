@@ -6985,6 +6985,12 @@ export default function Home() {
               <CompositeAttribution bt={data.composite} />
               <RiskParityWeights bt={data.composite} />
               <CorrelationMatrix bt={data.composite} />
+              {data.compositeFactorAlpha && (
+                <FactorAlphaPanel
+                  fa={data.compositeFactorAlpha}
+                  subject="Bileşik meta-strateji"
+                />
+              )}
               <DiversificationRatio bt={data.composite} />
               <RollingCorrelation bt={data.composite} label="Bileşik" />
             </CollapsibleSection>
