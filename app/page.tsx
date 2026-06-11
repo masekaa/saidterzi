@@ -7348,6 +7348,14 @@ export default function Home() {
                 takip hatası tarihsel endeks getirisinden küçük sapmalara yol
                 açabilir.
               </p>
+              <p>
+                <b>Kıyas portföyleri:</b> Bileşik üç referansa karşı değerlendirilir
+                — kendi <b>pasif eşit-ağırlık al-tut</b> blendi (sleeve değeri),{" "}
+                <b>Fama-French 3 faktör</b> regresyonu (alpha), ve <b>60/40</b>{" "}
+                (%60 SPY + %40 AGG, aylık dengeli) evrensel &quot;tembel portföy&quot;.
+                Hepsi bileşiğin <b>ortak döneminde</b> ve aynı T-Bill ile excess Sharpe
+                bazında hesaplanır (elma-elmaya).
+              </p>
             </div>
           </CollapsibleSection>
 
