@@ -739,10 +739,43 @@ function TradeLog({ bt, label = "Strateji" }: { bt: BacktestResult; label?: stri
   const recent = [...trades].reverse().slice(0, 15);
   const ym = (d: string) => d.slice(0, 7);
 
+  const downloadCsv = () => {
+    const lines = [
+      `# ${label} islem gunlugu (pozisyon tutus donemleri) — tum ${trades.length} islem`,
+      "Pozisyon,Baslangic,Bitis,Ay,Getiri_Yuzde",
+    ];
+    for (const t of trades)
+      lines.push(
+        `"${posMeta(t.key).label}",${ym(t.start)},${ym(t.end)},${t.months},${(
+          t.ret * 100
+        ).toFixed(2)}`
+      );
+    const blob = new Blob([lines.join("\r\n")], {
+      type: "text/csv;charset=utf-8",
+    });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `islem-gunlugu-${label
+      .replace(/[^\w]+/g, "-")
+      .toLowerCase()}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
+
   return (
     <div className="chart-card">
-      <div className="chart-title">
-        {label} — İşlem Günlüğü (pozisyon tutuş dönemleri)
+      <div className="chart-title chart-title-row">
+        <span>{label} — İşlem Günlüğü (pozisyon tutuş dönemleri)</span>
+        <button
+          className="mini-btn"
+          onClick={downloadCsv}
+          title="Tüm işlemleri CSV indir"
+        >
+          ⭳ CSV
+        </button>
       </div>
       <div className="chart-help">
         Her satır, stratejinin tek bir varlıkta kesintisiz tutulduğu bir dönem
