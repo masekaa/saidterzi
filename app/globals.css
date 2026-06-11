@@ -11,7 +11,10 @@
   --border-soft: #19223a;
   --text: #e8edf7;
   --text-dim: #9aa6c0;
-  --text-faint: #66718e;
+  /* WCAG AA: eski #66718e koyu yüzeylerde ~3.5:1 (4.5:1 altı). #828fae tüm
+     arka planlarda (bg/panel/card) ≥4.5:1 sağlar — küçük bilgi metinleri
+     (eksen etiketi, yardım, zaman damgası) okunabilir kalır. */
+  --text-faint: #828fae;
   --long: #25c785;
   --long-bg: rgba(37, 199, 133, 0.12);
   --cash: #f0b94a;
@@ -593,7 +596,7 @@ table.metrics tr.comp-row .left {
 }
 .equity-svg .axis-label {
   fill: var(--text-faint);
-  font-size: 10px;
+  font-size: 11px;
   font-variant-numeric: tabular-nums;
 }
 .equity-line {

@@ -514,7 +514,7 @@ function MethodCard({
           <span className="method-title">{m.title}</span>
           <span className="method-cat">{m.category}</span>
         </div>
-        <span className={`chevron ${open ? "up" : ""}`}>▾</span>
+        <span className={`chevron ${open ? "up" : ""}`} aria-hidden="true">▾</span>
       </button>
       {open && (
         <div className="method-body">
@@ -2123,7 +2123,7 @@ function MethodologyPanel() {
         <span className="howto-title">
           📘 Nasıl çalışır? — GEM / Dual Momentum metodolojisi
         </span>
-        <span className={`chevron ${open ? "up" : ""}`}>▾</span>
+        <span className={`chevron ${open ? "up" : ""}`} aria-hidden="true">▾</span>
       </button>
       {open && (
         <div className="howto-body">
@@ -2244,7 +2244,7 @@ function CollapsibleSection({
         aria-expanded={open}
       >
         <span>{title}</span>
-        <span className={`chevron ${open ? "up" : ""}`}>▾</span>
+        <span className={`chevron ${open ? "up" : ""}`} aria-hidden="true">▾</span>
       </button>
       {open && <div className="csec-body">{children}</div>}
     </div>
@@ -6675,6 +6675,8 @@ export default function Home() {
         </div>
       </div>
 
+      <main id="ana-icerik" tabIndex={-1}>
+
       {loading && !data && <LoadingSkeleton />}
 
       {error && (
@@ -6690,7 +6692,7 @@ export default function Home() {
       {data && gem && (
         <>
           {/* GEM Önerisi */}
-          <div className="hero" id="ana-icerik" tabIndex={-1}>
+          <div className="hero">
             <p className="hero-label">GEM Önerisi — Bu Ay Tutulacak Pozisyon</p>
             <div className="hero-position">
               <span className="hero-asset">{gem.positionName}</span>
@@ -7030,6 +7032,8 @@ export default function Home() {
           </p>
         </>
       )}
+
+      </main>
 
       <div className="footer">
         Kaynak metodoloji: Gary Antonacci, <i>Dual Momentum Investing</i>{" "}
