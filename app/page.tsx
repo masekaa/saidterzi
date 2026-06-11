@@ -4115,46 +4115,31 @@ function ProbabilisticSharpe({ bt, label = "Strateji" }: { bt: BacktestResult; l
   // Probabilistic Sharpe Ratio — Bailey & López de Prado (2012).
   // Gözlenen Sharpe'ın gerçek (true) Sharpe > 0 olma olasılığını, örneklem
   // uzunluğu + çarpıklık + fazla-basıklık (fat tails) düzelterek verir.
-  const curve = bt.equityCurves.find((c) => c.highlight) ?? bt.equityCurves[0];
-  const g = curve?.growth;
-  if (!g || g.length < 37) return null; // ≥36 aylık getiri
-  const r = growthToRets(g);
-  const n = r.length;
-  if (n < 36) return null;
+  // Sharpe + momentler StrategyMetrics'ten alınır: FAZLA (excess, rf üstü)
+  // getiri tabanlı ve yıllık — leaderboard PSR sütunuyla TUTARLI. (Eğriden ham
+  // getiriyle yeniden hesaplamak rf kadar sapma yaratır ve iki PSR'ı uyumsuz
+  // gösterirdi.)
+  const sm = bt.strategies[0]; // vurgulu eğriye karşılık gelen strateji
+  const months = bt.months;
+  if (!sm || sm.sharpe == null || sm.skewness == null || sm.kurtosis == null)
+    return null;
+  if (!isFinite(months) || months < 36) return null;
+  const n = months;
 
-  const m = r.reduce((s, v) => s + v, 0) / n;
-  const sd = Math.sqrt(r.reduce((s, v) => s + (v - m) ** 2, 0) / (n - 1));
-  if (sd <= 0) return null;
-  // Standartlaştırılmış 3. ve 4. momentler (normal: g3=0, g4=3)
-  const zs = r.map((v) => (v - m) / sd);
-  const g3 = zs.reduce((s, v) => s + v ** 3, 0) / n;
-  const g4 = zs.reduce((s, v) => s + v ** 4, 0) / n;
-
-  const srHat = m / sd; // aylık (yıllıklaştırılmamış) Sharpe
+  const srHat = sm.sharpe / Math.sqrt(12); // aylık fazla-getiri Sharpe
   if (srHat <= 0) return null; // PSR yalnız pozitif Sharpe için anlamlı
-
-  // Standart normal CDF (Abramowitz–Stegun 7.1.26)
-  const Phi = (x: number) => {
-    const t = 1 / (1 + 0.2316419 * Math.abs(x));
-    const d = 0.3989422804014327 * Math.exp((-x * x) / 2);
-    let p =
-      d *
-      t *
-      (0.31938153 +
-        t * (-0.356563782 + t * (1.781477937 + t * (-1.821255978 + t * 1.330274429))));
-    p = x >= 0 ? 1 - p : p;
-    return p;
-  };
+  const g3 = sm.skewness;
+  const g4 = sm.kurtosis + 3; // fazla → ham basıklık (normal=3)
 
   const varTerm = 1 - g3 * srHat + ((g4 - 1) / 4) * srHat * srHat; // = denom²
   if (!isFinite(varTerm) || varTerm <= 0) return null;
-  const psr = Phi((srHat * Math.sqrt(n - 1)) / Math.sqrt(varTerm));
+  const psr = normCdf((srHat * Math.sqrt(n - 1)) / Math.sqrt(varTerm));
 
   // MinTRL: %95 güven için gereken minimum gözlem (ay)
   const Z95 = 1.644853626951;
   const minTRL = 1 + varTerm * (Z95 / srHat) ** 2;
 
-  const srAnn = srHat * Math.sqrt(12); // yıllık Sharpe (gösterim)
+  const srAnn = sm.sharpe; // yıllık Sharpe (gösterim)
   const enough = psr >= 0.95;
   const weak = psr < 0.9;
 
