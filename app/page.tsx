@@ -1974,6 +1974,65 @@ function KeyInsights({ data }: { data: AnalysisResult }) {
     }
   }
 
+  // 7) İstatistiksel güven — en yüksek Sharpe'lı stratejinin PSR'ı
+  {
+    const cand: {
+      name: string;
+      emoji: string;
+      m: StrategyMetrics;
+      months: number;
+    }[] = [];
+    if (data.backtest?.strategies[0] && data.backtest.months)
+      cand.push({
+        name: "GEM",
+        emoji: "📊",
+        m: data.backtest.strategies[0],
+        months: data.backtest.months,
+      });
+    for (const u of data.universes)
+      if (u.backtest?.strategies[0] && u.backtest.months)
+        cand.push({
+          name: u.positionLabel,
+          emoji: u.emoji,
+          m: u.backtest.strategies[0],
+          months: u.backtest.months,
+        });
+    if (data.composite?.strategies[0] && data.composite.months)
+      cand.push({
+        name: "Bileşik",
+        emoji: "🧩",
+        m: data.composite.strategies[0],
+        months: data.composite.months,
+      });
+    const withSharpe = cand.filter((c) => c.m.sharpe != null);
+    if (withSharpe.length) {
+      const top = withSharpe.reduce((a, b) =>
+        (b.m.sharpe as number) > (a.m.sharpe as number) ? b : a
+      );
+      const psr = psrFromMetrics(top.m, top.months);
+      if (psr != null) {
+        insights.push({
+          icon: psr >= 0.95 ? "🔬" : "❓",
+          text: (
+            <>
+              İstatistiksel güven:{" "}
+              <b>
+                {top.emoji} {top.name}
+              </b>{" "}
+              stratejisinin Sharpe&apos;ı <b>%{(psr * 100).toFixed(0)}</b> olasılıkla
+              gerçekte &gt; 0 (PSR — örneklem + çarpıklık + kuyruk düzeltmeli).{" "}
+              {psr >= 0.95
+                ? "yüksek güven: kenar şans eseri değil."
+                : psr >= 0.9
+                ? "makul ama kesin değil — daha uzun geçmiş güçlendirir."
+                : "düşük güven: bu Sharpe kısa/çarpık örneklemden gelebilir."}
+            </>
+          ),
+        });
+      }
+    }
+  }
+
   if (!insights.length) return null;
   return (
     <div className="insights">
