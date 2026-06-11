@@ -52,6 +52,7 @@ const POS_META: Record<string, { label: string; color: string }> = {
   commodity: { label: "Emtia Sepeti (Top-N)", color: "#eab308" },
   factor: { label: "Faktör Sepeti (Top-N)", color: "#2dd4bf" },
   bond: { label: "Tahvil Sepeti (Top-N)", color: "#818cf8" },
+  assetclass: { label: "Sınıf Sepeti (Top-N)", color: "#34d399" },
 };
 function posMeta(key: string): { label: string; color: string } {
   return POS_META[key] ?? { label: key.toUpperCase(), color: "#94a3b8" };
@@ -4718,6 +4719,7 @@ const STUDIO_UNIVERSES = [
   { id: "commodity", label: "Emtia" },
   { id: "factor", label: "Faktör" },
   { id: "bond", label: "Tahvil" },
+  { id: "assetclass", label: "Varlık Sınıfı" },
 ];
 
 interface StudioResult {

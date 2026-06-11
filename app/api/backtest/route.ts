@@ -14,6 +14,8 @@ import {
   COMMODITIES_UNIVERSE,
   FACTOR_UNIVERSE,
   BOND_UNIVERSE,
+  ASSET_CLASS_UNIVERSE,
+  ASSET_CLASS_TOP_N,
   type Instrument,
 } from "@/lib/universe";
 import { runBacktest, runStockBacktest } from "@/lib/backtest";
@@ -72,6 +74,12 @@ const CONFIGS: Record<string, Cfg> = {
     positionLabel: "Tahvil Momentum",
     benchLabel: "Eşit Ağırlık (Tüm Tahviller)",
     defaultTopN: 2,
+  },
+  assetclass: {
+    universe: ASSET_CLASS_UNIVERSE,
+    positionLabel: "Varlık-Sınıfı Momentum",
+    benchLabel: "Eşit Ağırlık (Tüm Sınıflar)",
+    defaultTopN: ASSET_CLASS_TOP_N,
   },
 };
 

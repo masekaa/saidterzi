@@ -23,6 +23,8 @@ import {
   FACTOR_TOP_N,
   BOND_UNIVERSE,
   BOND_TOP_N,
+  ASSET_CLASS_UNIVERSE,
+  ASSET_CLASS_TOP_N,
   type Instrument,
 } from "@/lib/universe";
 import { runBacktest, runStockBacktest, runLookbackEnsemble } from "@/lib/backtest";
@@ -48,6 +50,7 @@ const CONFIGS: Record<string, Cfg> = {
   commodity: { universe: COMMODITIES_UNIVERSE, topN: COMMODITIES_TOP_N, positionLabel: "Emtia Momentum", benchLabel: "Eşit Ağırlık (Tüm Emtialar)" },
   factor: { universe: FACTOR_UNIVERSE, topN: FACTOR_TOP_N, positionLabel: "Faktör Momentum", benchLabel: "Eşit Ağırlık (Tüm Faktörler)" },
   bond: { universe: BOND_UNIVERSE, topN: BOND_TOP_N, positionLabel: "Tahvil Momentum", benchLabel: "Eşit Ağırlık (Tüm Tahviller)" },
+  assetclass: { universe: ASSET_CLASS_UNIVERSE, topN: ASSET_CLASS_TOP_N, positionLabel: "Varlık-Sınıfı Momentum", benchLabel: "Eşit Ağırlık (Tüm Sınıflar)" },
 };
 
 const CACHE = new Map<string, { at: number; data: unknown }>();

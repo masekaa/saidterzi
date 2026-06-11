@@ -21,6 +21,8 @@ import {
   FACTOR_TOP_N,
   BOND_UNIVERSE,
   BOND_TOP_N,
+  ASSET_CLASS_UNIVERSE,
+  ASSET_CLASS_TOP_N,
   DMSR_TOP_N,
   allTickers,
   LOOKBACK_MONTHS,
@@ -127,6 +129,7 @@ export async function GET(req: Request) {
     const commodityRaw = mapBy(COMMODITIES_UNIVERSE);
     const factorRaw = mapBy(FACTOR_UNIVERSE);
     const bondRaw2 = mapBy(BOND_UNIVERSE);
+    const assetClassRaw = mapBy(ASSET_CLASS_UNIVERSE);
 
     // İki yavaş dış çağrıyı (Ken French zip + FMP earnings) PARALEL başlat —
     // soğuk yükleme süresini kısaltır (sıralı await yerine örtüşürler).
@@ -255,6 +258,18 @@ export async function GET(req: Request) {
         raw: bondRaw2,
         universe: BOND_UNIVERSE,
         topN: BOND_TOP_N,
+        withEarnings: false,
+      },
+      {
+        id: "assetclass",
+        emoji: "🌐",
+        label: "Varlık Sınıfı",
+        sublabel: `${ASSET_CLASS_UNIVERSE.length} varlık-sınıfı ETF'i (GTAA)`,
+        positionLabel: "Varlık-Sınıfı Momentum",
+        benchLabel: "Eşit Ağırlık (Tüm Sınıflar)",
+        raw: assetClassRaw,
+        universe: ASSET_CLASS_UNIVERSE,
+        topN: ASSET_CLASS_TOP_N,
         withEarnings: false,
       },
     ];

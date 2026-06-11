@@ -158,6 +158,24 @@ export const BOND_UNIVERSE: Instrument[] = [
 ];
 export const BOND_TOP_N = 2;
 
+// --- Varlık-sınıfı / çapraz-varlık evreni (saf GTAA / dual momentum çekirdeği) ---
+// Faber'in GTAA'sı ve Antonacci'nin dual momentum fikrinin en saf ifadesi: ana
+// VARLIK SINIFLARI arası rotasyon (hisse, tahvil, altın, emtia, gayrimenkul).
+// Her sleeve farklı bir makro rejimde lider olur (büyüme→hisse, deflasyon→uzun
+// Hazine, enflasyon→altın/emtia) → momentum lideri takip eder. Likit, uzun-
+// geçmişli ETF'ler; ortak geçmiş ~2006 (DBC) ile başlar.
+export const ASSET_CLASS_UNIVERSE: Instrument[] = [
+  { key: "acus", name: "ABD Hisse", ticker: "SPY", note: "S&P 500" },
+  { key: "acintl", name: "Uluslararası Hisse", ticker: "EFA", note: "EAFE gelişmiş" },
+  { key: "acem", name: "Gelişmekte Olan Hisse", ticker: "EEM", note: "Emerging" },
+  { key: "acbond", name: "Tahvil", ticker: "AGG", note: "ABD geniş tahvil" },
+  { key: "actlt", name: "Uzun Hazine", ticker: "TLT", note: "20+ yıl (deflasyon korunağı)" },
+  { key: "acgld", name: "Altın", ticker: "GLD", note: "Spot altın" },
+  { key: "accmd", name: "Emtia", ticker: "DBC", note: "Geniş sepet (enflasyon korunağı)" },
+  { key: "acreit", name: "Gayrimenkul", ticker: "VNQ", note: "ABD REIT" },
+];
+export const ASSET_CLASS_TOP_N = 3;
+
 // DMSR güvenli liman + trend referansı
 export const AGG: Instrument = {
   key: "agg",
@@ -180,6 +198,7 @@ export function allTickers(): string[] {
     ...COMMODITIES_UNIVERSE,
     ...FACTOR_UNIVERSE,
     ...BOND_UNIVERSE,
+    ...ASSET_CLASS_UNIVERSE,
     AGG,
   ].forEach((i) => set.add(i.ticker));
   return Array.from(set);
