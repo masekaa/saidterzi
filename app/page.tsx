@@ -5609,32 +5609,6 @@ function RiskParityWeights({ bt }: { bt: BacktestResult }) {
   );
 }
 
-function DiversificationStat({ bt }: { bt: BacktestResult }) {
-  const comp = bt.strategies.find((s) => s.name.includes("eşit ağırlık"));
-  const sleeves = bt.strategies.filter(
-    (s) => !s.name.includes("Bileşik") && !s.name.includes("Pasif")
-  );
-  if (!comp?.annualVol || sleeves.length < 2) return null;
-  const sleeveVols = sleeves
-    .map((s) => s.annualVol)
-    .filter((v): v is number => v != null);
-  if (!sleeveVols.length) return null;
-  const avgVol = sleeveVols.reduce((s, v) => s + v, 0) / sleeveVols.length;
-  if (avgVol <= 0) return null;
-  const reduction = 1 - comp.annualVol / avgVol;
-  return (
-    <div className="divstat">
-      <div className="divstat-big">{pct(reduction, 0)}</div>
-      <div className="divstat-text">
-        <b>Çeşitlendirme faydası</b> — eşit-ağırlık bileşiğin yıllık oynaklığı (
-        {pct(comp.annualVol)}) sleeve&apos;lerin ortalama oynaklığından (
-        {pct(avgVol)}) <b>{pct(reduction, 0)}</b> daha düşük. İmperfect
-        korelasyonlu stratejileri birleştirmenin somut riski-azaltma getirisi.
-      </div>
-    </div>
-  );
-}
-
 function Benchmark6040({ data }: { data: AnalysisResult }) {
   const b = data.benchmark6040;
   const comp = data.composite?.strategies[0];
@@ -7166,7 +7140,6 @@ export default function Home() {
                 <ProbabilisticSharpe bt={data.composite} label="Bileşik" />
                 <VolTargetPanel bt={data.composite} label="Bileşik" />
               </CollapsibleSection>
-              <DiversificationStat bt={data.composite} />
               <CompositeAttribution bt={data.composite} />
               <RiskParityWeights bt={data.composite} />
               <CorrelationMatrix bt={data.composite} />
