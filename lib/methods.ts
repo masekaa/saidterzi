@@ -420,6 +420,77 @@ export function methodAccelerating(
 }
 
 // ===========================================================================
+// 7b) FROG-IN-THE-PAN — Bilgi Sürekliliği (Information Discreteness)
+//     Da–Gurun–Warachka 2014. Getiriye giden yol çok sayıda küçük adımdan
+//     (kademeli/sürekli bilgi) oluştuğunda momentum daha kalıcı devam eder;
+//     az sayıda büyük sıçramadan oluştuğunda (discrete) daha kırılgandır.
+//     ID = sgn(PRET)·(%neg − %pos). Düşük ID = kademeli = güçlü süreklilik.
+// ===========================================================================
+export function methodFrogInThePan(
+  core: RawMap,
+  universe: Instrument[] = CORE_ASSETS
+): MethodResult {
+  const assets: AssetMethodResult[] = universe.map((a) => {
+    const raw = core[a.key];
+    let id: number | null = null;
+    const steps: CalcStep[] = [];
+    if (raw && raw.series.length >= LOOKBACK_MONTHS + 1) {
+      const w = raw.series.slice(raw.series.length - (LOOKBACK_MONTHS + 1));
+      let pos = 0;
+      let neg = 0;
+      let tot = 0;
+      for (let i = 1; i < w.length; i++) {
+        const r = w[i].close / w[i - 1].close - 1;
+        if (!isFinite(r)) continue;
+        tot++;
+        if (r > 0) pos++;
+        else if (r < 0) neg++;
+      }
+      const pret = w[w.length - 1].close / w[0].close - 1;
+      if (tot > 0) {
+        const fpos = pos / tot;
+        const fneg = neg / tot;
+        const sgn = pret > 0 ? 1 : pret < 0 ? -1 : 0;
+        id = sgn * (fneg - fpos);
+        steps.push(
+          { label: "PRET (12-ay)", value: `${(pret * 100).toFixed(1)}%` },
+          { label: "% pozitif ay", value: `${(fpos * 100).toFixed(0)}%` },
+          { label: "ID = sgn(PRET)·(%neg−%pos)", value: id.toFixed(2) }
+        );
+      }
+    }
+    return {
+      assetKey: a.key,
+      assetName: a.name,
+      ticker: a.ticker,
+      steps,
+      result:
+        id == null
+          ? "—"
+          : id < -0.1
+          ? "Kademeli (güçlü) ▲"
+          : id > 0.1
+          ? "Sıçramalı (kırılgan) ▼"
+          : "Nötr",
+      resultRaw: id,
+      note: "Düşük ID = kademeli/sürekli bilgi → momentum daha kalıcı (Da–Gurun–Warachka 2014).",
+    };
+  });
+  return {
+    id: "fip",
+    title: "Frog-in-the-Pan (Bilgi Sürekliliği)",
+    category: "Momentum Geliştirme",
+    bookRef: "Da–Gurun–Warachka 2014 (information discreteness)",
+    formula:
+      "ID = sgn(PRET) · (%neg − %pos) ;  düşük (negatif) ID ⇒ kademeli yol ⇒ güçlü süreklilik",
+    description:
+      "Momentum, getiriye giden yol çok sayıda küçük adımdan (kademeli/sürekli bilgi) oluştuğunda, az sayıda büyük sıçramadan (discrete) oluştuğuna göre daha güvenilir devam eder. Düşük ID'li kazananlar 'yavaş kaynayan kurbağa' gibidir — yatırımcılar tepkiyi geciktirir, momentum daha kalıcı olur.",
+    assets,
+    summary: "Pozitif momentum + DÜŞÜK ID (kademeli yol) en kalıcı kombinasyondur.",
+  };
+}
+
+// ===========================================================================
 // 8) TAZE / BAYAT MOMENTUM (Fresh vs Stale)
 //    Kapsam: 06 §2.4 (Chen-Kadan-Kose 2009).
 //    Son 12 ay güçlü AMA önceki 12 ay zayıf = "taze kazanan".
@@ -777,6 +848,7 @@ export function buildAllMethods(
     methodTrendT(core),
     methodFiftyTwoWeekHigh(core),
     methodAccelerating(core),
+    methodFrogInThePan(core),
     methodFreshStale(core),
     methodTrendSalience(core),
     methodRiskParity(core, tbill),
@@ -955,6 +1027,7 @@ export function buildStockMethods(
     methodTrendT(stockRaw, u),
     methodFiftyTwoWeekHigh(stockRaw, u),
     methodAccelerating(stockRaw, u),
+    methodFrogInThePan(stockRaw, u),
     methodFreshStale(stockRaw, u),
     methodTrendSalience(stockRaw, u),
     methodRiskParity(stockRaw, tbill, u),
