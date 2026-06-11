@@ -1206,10 +1206,54 @@ function AnnualReturnsMatrix({ data }: { data: AnalysisResult }) {
   const years = Array.from(yearSet).sort((a, b) => b.localeCompare(a)); // yeni → eski
   if (years.length < 2) return null;
 
+  const downloadCsv = () => {
+    const lines = [
+      "# Yillik getiri matrisi (%) — stratejiler x takvim yillari",
+      ["Yil", ...cols.map((c) => `"${c.label}"`)].join(","),
+    ];
+    for (const yr of years)
+      lines.push(
+        [
+          yr,
+          ...cols.map((c) => {
+            const v = c.byYear.get(yr);
+            return v == null ? "" : (v * 100).toFixed(1);
+          }),
+        ].join(",")
+      );
+    lines.push(
+      [
+        "CAGR",
+        ...cols.map((c) => (c.cagr == null ? "" : (c.cagr * 100).toFixed(1))),
+      ].join(",")
+    );
+    const blob = new Blob([lines.join("\r\n")], {
+      type: "text/csv;charset=utf-8",
+    });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "yillik-getiri-matrisi.csv";
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
+
   return (
     <div className="chart-card">
-      <div className="chart-title">
-        📅 Yıllık Getiri Matrisi — stratejiler × takvim yılları (liderlik rotasyonu)
+      <div className="chart-title chart-title-row">
+        <span>
+          📅 Yıllık Getiri Matrisi — stratejiler × takvim yılları (liderlik
+          rotasyonu)
+        </span>
+        <button
+          className="mini-btn"
+          onClick={downloadCsv}
+          title="Yıllık getiri matrisini CSV indir"
+        >
+          ⭳ CSV
+        </button>
       </div>
       <div className="chart-help">
         Her hücre, o stratejinin o takvim yılındaki <b>bileşik getirisidir</b> (yeşil
