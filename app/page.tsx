@@ -1164,6 +1164,101 @@ function heatColor(r: number): string {
   return `rgba(239, 68, 68, ${(0.12 + 0.55 * -t).toFixed(3)})`;
 }
 
+function AnnualReturnsMatrix({ data }: { data: AnalysisResult }) {
+  // "Getirilerin periyodik tablosu": yıllar × tüm stratejiler. Her hücre o
+  // stratejinin o takvim yılı (bileşik) getirisi; renk = yeşil/kırmızı yoğunluk.
+  // Yıldan yıla liderlik rotasyonunu tek bakışta gösterir.
+  type Col = { emoji: string; label: string; byYear: Map<string, number> };
+  const cols: Col[] = [];
+  const addCol = (emoji: string, label: string, bt: BacktestResult | null) => {
+    if (!bt) return;
+    const c = bt.equityCurves.find((x) => x.highlight) ?? bt.equityCurves[0];
+    if (!c?.growth?.length) return;
+    const prod = new Map<string, number>();
+    for (let j = 1; j < c.growth.length && j < bt.dates.length; j++) {
+      const yr = bt.dates[j].slice(0, 4);
+      const r = c.growth[j] / c.growth[j - 1] - 1;
+      if (!isFinite(r)) continue;
+      prod.set(yr, (prod.get(yr) ?? 1) * (1 + r));
+    }
+    if (prod.size < 1) return;
+    const byYear = new Map<string, number>();
+    prod.forEach((v, yr) => byYear.set(yr, v - 1));
+    cols.push({ emoji, label, byYear });
+  };
+  addCol("📊", "GEM", data.backtest);
+  for (const u of data.universes)
+    addCol(
+      u.emoji,
+      u.label.replace(/\s*\(.*\)/, ""),
+      u.backtest
+    );
+  addCol("🧩", "Bileşik", data.composite);
+  if (cols.length < 2) return null;
+
+  const yearSet = new Set<string>();
+  cols.forEach((c) => c.byYear.forEach((_, yr) => yearSet.add(yr)));
+  const years = Array.from(yearSet).sort((a, b) => b.localeCompare(a)); // yeni → eski
+  if (years.length < 2) return null;
+
+  return (
+    <div className="chart-card">
+      <div className="chart-title">
+        📅 Yıllık Getiri Matrisi — stratejiler × takvim yılları (liderlik rotasyonu)
+      </div>
+      <div className="chart-help">
+        Her hücre, o stratejinin o takvim yılındaki <b>bileşik getirisidir</b> (yeşil
+        = pozitif, kırmızı = negatif, yoğunluk ±%10&apos;da doyar). Hiçbir
+        sleeve&apos;in her yıl lider olmadığını ve momentum rotasyonunun neden işe
+        yaradığını gösterir. Boş (—) = strateji o yıl henüz veri sağlamıyor; başlangıç/
+        bitiş yılları kısmi olabilir.
+      </div>
+      <div className="table-scroll">
+        <table className="metrics">
+          <thead>
+            <tr>
+              <th className="left">Yıl</th>
+              {cols.map((c, i) => (
+                <th key={i} title={c.label}>
+                  {c.emoji}
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {years.map((yr) => (
+              <tr key={yr}>
+                <td className="left strong">{yr}</td>
+                {cols.map((c, i) => {
+                  const v = c.byYear.get(yr);
+                  return (
+                    <td
+                      key={i}
+                      style={
+                        v == null
+                          ? undefined
+                          : { background: heatColor(v), fontVariantNumeric: "tabular-nums" }
+                      }
+                      title={`${c.label} ${yr}`}
+                    >
+                      {v == null ? "—" : pct(v, 0)}
+                    </td>
+                  );
+                })}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      <p className="table-note">
+        Sütun başlığına gel → strateji adı. Renk yoğunluğu getiri büyüklüğünü
+        yansıtır; yatay okuma = o yıl evrenler-arası dağılım, dikey okuma = bir
+        stratejinin yıllar arası tutarlılığı.
+      </p>
+    </div>
+  );
+}
+
 function MonthlyHeatmap({ bt, label = "GEM" }: { bt: BacktestResult; label?: string }) {
   const gem = bt.equityCurves.find((c) => c.highlight) ?? bt.equityCurves[0];
   const g = gem?.growth;
@@ -6430,6 +6525,9 @@ export default function Home() {
           </ErrorBoundary>
           <ErrorBoundary label="Evrenler-arası risk-getiri">
             <CrossUniverseRiskReturn data={data} />
+          </ErrorBoundary>
+          <ErrorBoundary label="Yıllık getiri matrisi">
+            <AnnualReturnsMatrix data={data} />
           </ErrorBoundary>
           <ErrorBoundary label="Özel bileşik oluşturucu">
             <CustomComposite data={data} />
