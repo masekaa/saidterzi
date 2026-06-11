@@ -682,6 +682,141 @@ function EquityChart({ bt }: { bt: BacktestResult }) {
   );
 }
 
+function TradeLog({ bt, label = "Strateji" }: { bt: BacktestResult; label?: string }) {
+  const tl = bt.timeline;
+  const curve = bt.equityCurves.find((c) => c.highlight) ?? bt.equityCurves[0];
+  if (!tl?.length || !curve?.growth?.length) return null;
+
+  // Aylık getiri haritası (vurgulu eğriden; YYYY-MM → getiri)
+  const retByYm = new Map<string, number>();
+  for (let j = 1; j < curve.growth.length && j < bt.dates.length; j++) {
+    const r = curve.growth[j] / curve.growth[j - 1] - 1;
+    if (isFinite(r)) retByYm.set(bt.dates[j].slice(0, 7), r);
+  }
+
+  // Ardışık aynı-pozisyon aylarını "işlem"lere grupla (rotasyon = yeni işlem)
+  type Trade = {
+    key: string;
+    start: string;
+    end: string;
+    months: number;
+    ret: number;
+  };
+  const trades: Trade[] = [];
+  for (let i = 0; i < tl.length; ) {
+    const key = tl[i].key;
+    let j = i;
+    let comp = 1;
+    while (j < tl.length && tl[j].key === key) {
+      const r = retByYm.get(tl[j].date.slice(0, 7));
+      if (r != null) comp *= 1 + r;
+      j++;
+    }
+    trades.push({
+      key,
+      start: tl[i].date,
+      end: tl[j - 1].date,
+      months: j - i,
+      ret: comp - 1,
+    });
+    i = j;
+  }
+  if (trades.length < 2) return null;
+
+  const wins = trades.filter((t) => t.ret > 0);
+  const losses = trades.filter((t) => t.ret <= 0);
+  const winRate = wins.length / trades.length;
+  const avgWin = wins.length
+    ? wins.reduce((s, t) => s + t.ret, 0) / wins.length
+    : 0;
+  const avgLoss = losses.length
+    ? losses.reduce((s, t) => s + t.ret, 0) / losses.length
+    : 0;
+  const best = trades.reduce((a, b) => (b.ret > a.ret ? b : a));
+  const worst = trades.reduce((a, b) => (b.ret < a.ret ? b : a));
+  const avgMonths = trades.reduce((s, t) => s + t.months, 0) / trades.length;
+  const payoff = avgLoss < 0 ? avgWin / Math.abs(avgLoss) : null;
+  const recent = [...trades].reverse().slice(0, 15);
+  const ym = (d: string) => d.slice(0, 7);
+
+  return (
+    <div className="chart-card">
+      <div className="chart-title">
+        {label} — İşlem Günlüğü (pozisyon tutuş dönemleri)
+      </div>
+      <div className="chart-help">
+        Her satır, stratejinin tek bir varlıkta kesintisiz tutulduğu bir dönem
+        (rotasyon = yeni işlem). Getiri o dönemin bileşik strateji getirisidir;
+        nakit dönemleri de birer &quot;işlem&quot;dir (savunma). Kazanma oranı{" "}
+        <b>işlem-bazlıdır</b> (aylık % kârlı aydan farklı). En yeni {recent.length}{" "}
+        işlem gösterilir.
+      </div>
+      <div className="cap-grid">
+        <div className="cap-item">
+          <div className="cap-label">İşlem · Kazanma</div>
+          <div className="cap-val">
+            {trades.length} · %{(winRate * 100).toFixed(0)}
+          </div>
+        </div>
+        <div className="cap-item">
+          <div className="cap-label">Ort. Tutuş</div>
+          <div className="cap-val">{avgMonths.toFixed(1)} ay</div>
+        </div>
+        <div className="cap-item">
+          <div className="cap-label">Ort. Kazanç / Kayıp</div>
+          <div className="cap-val">
+            <span className="pos-cell">{pct(avgWin)}</span> /{" "}
+            <span className="neg">{pct(avgLoss)}</span>
+          </div>
+        </div>
+        <div className="cap-item">
+          <div className="cap-label">Payoff (kazanç/kayıp)</div>
+          <div className="cap-val">{payoff != null ? num(payoff) : "—"}</div>
+        </div>
+      </div>
+      <div className="table-scroll">
+        <table className="metrics">
+          <thead>
+            <tr>
+              <th className="left">Pozisyon</th>
+              <th className="left">Başlangıç</th>
+              <th className="left">Bitiş</th>
+              <th>Ay</th>
+              <th>Getiri</th>
+            </tr>
+          </thead>
+          <tbody>
+            {recent.map((t, i) => {
+              const m = posMeta(t.key);
+              return (
+                <tr key={i}>
+                  <td className="left">
+                    <span
+                      className="legend-swatch"
+                      style={{ background: m.color }}
+                    />
+                    {m.label}
+                  </td>
+                  <td className="left">{ym(t.start)}</td>
+                  <td className="left">{ym(t.end)}</td>
+                  <td>{t.months}</td>
+                  <td className={t.ret >= 0 ? "pos-cell" : "neg"}>{pct(t.ret)}</td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+      <p className="table-note">
+        🏆 En iyi işlem: <b>{posMeta(best.key).label}</b> {ym(best.start)}→
+        {ym(best.end)} (<span className="pos-cell">{pct(best.ret)}</span>) · 🔻 En
+        kötü: <b>{posMeta(worst.key).label}</b> {ym(worst.start)}→{ym(worst.end)} (
+        <span className="neg">{pct(worst.ret)}</span>).
+      </p>
+    </div>
+  );
+}
+
 function PositionTimeline({ bt, label = "GEM" }: { bt: BacktestResult; label?: string }) {
   const tl = bt.timeline;
   if (!tl?.length) return null;
@@ -5336,6 +5471,7 @@ function BacktestCharts({
     <>
       <EquityChart bt={bt} />
       <PositionTimeline bt={bt} label={label} />
+      <TradeLog bt={bt} label={label} />
       <UnderwaterChart bt={bt} label={label} />
       <DrawdownEpisodes bt={bt} label={label} />
       <MonthlyHeatmap bt={bt} label={label} />
