@@ -933,6 +933,127 @@ function PositionTimeline({ bt, label = "GEM" }: { bt: BacktestResult; label?: s
   );
 }
 
+function UnderwaterCompare({
+  bt,
+  label = "Strateji",
+}: {
+  bt: BacktestResult;
+  label?: string;
+}) {
+  const strat = bt.equityCurves.find((c) => c.highlight) ?? bt.equityCurves[0];
+  const bench =
+    bt.equityCurves.find((c) => !c.highlight && /Eşit Ağırlık/i.test(c.name)) ??
+    bt.equityCurves.find(
+      (c) => !c.highlight && /Pasif|Al-Tut|Buy.?Hold|SPY|ACWI/i.test(c.name)
+    ) ??
+    bt.equityCurves.find((c) => !c.highlight);
+  if (!strat?.growth?.length || !bench?.growth?.length) return null;
+  const n = Math.min(strat.growth.length, bench.growth.length, bt.dates.length);
+  if (n < 13) return null;
+
+  const toDD = (g: number[]) => {
+    const dd: number[] = [];
+    let peak = -Infinity;
+    for (let i = 0; i < n; i++) {
+      if (g[i] > peak) peak = g[i];
+      dd.push(g[i] / peak - 1);
+    }
+    return dd;
+  };
+  const sDD = toDD(strat.growth);
+  const bDD = toDD(bench.growth);
+  const sMin = Math.min(...sDD);
+  const bMin = Math.min(...bDD);
+  const minDD = Math.min(sMin, bMin);
+  if (!isFinite(minDD) || minDD === 0) return null;
+
+  const W = 820;
+  const H = 190;
+  const padL = 52;
+  const padR = 16;
+  const padT = 12;
+  const padB = 26;
+  const innerW = W - padL - padR;
+  const innerH = H - padT - padB;
+  const x = (i: number) => padL + (innerW * i) / Math.max(1, n - 1);
+  const y = (v: number) => padT + innerH * (v / minDD);
+  const sArea =
+    `M${x(0).toFixed(1)},${y(0).toFixed(1)} ` +
+    sDD.map((v, i) => `L${x(i).toFixed(1)},${y(v).toFixed(1)}`).join(" ") +
+    ` L${x(n - 1).toFixed(1)},${y(0).toFixed(1)} Z`;
+  const bLine = bDD
+    .map((v, i) => `${i === 0 ? "M" : "L"}${x(i).toFixed(1)},${y(v).toFixed(1)}`)
+    .join(" ");
+
+  const yTicks: number[] = [];
+  for (let p = 0; p >= minDD; p -= 0.1) yTicks.push(p);
+  const xTicks: { i: number; label: string }[] = [];
+  let ly = "";
+  for (let i = 0; i < n; i++) {
+    const yr = bt.dates[i].slice(0, 4);
+    if (yr !== ly) {
+      xTicks.push({ i, label: yr });
+      ly = yr;
+    }
+  }
+  const step = Math.ceil(xTicks.length / 10);
+  const shown = xTicks.filter((_, idx) => idx % step === 0);
+  const shallower = sMin > bMin; // strateji çukuru daha sığ (daha az negatif)
+  const benchName = bench.name.replace(/\s*\(.*\)/, "");
+
+  return (
+    <div className="chart-card">
+      <div className="chart-title">
+        {label} vs Benchmark — Karşılaştırmalı Underwater (drawdown)
+      </div>
+      <div className="chart-help">
+        Dolu alan = <b>{label}</b> drawdown&apos;ı; kesik çizgi ={" "}
+        <b>{benchName}</b>. 0 = yeni zirve; aşağısı = zirveden kayıp. Dual
+        momentum tezi: stratejinin çukurları benchmark&apos;tan <b>sığ</b> olmalı
+        (trend filtresi düşüşleri keser). Sürekli kıyas — kriz stres testinin
+        kesikli olaylarını tamamlar.
+      </div>
+      <svg
+        className="equity-svg"
+        viewBox={`0 0 ${W} ${H}`}
+        preserveAspectRatio="xMidYMid meet"
+        role="img"
+        aria-label="Finansal analiz grafiği; açıklama hemen üstteki başlık ve metinde"
+      >
+        {yTicks.map((v, idx) => (
+          <g key={idx}>
+            <line x1={padL} x2={W - padR} y1={y(v)} y2={y(v)} className="grid-line" />
+            <text x={padL - 8} y={y(v) + 3} className="axis-label" textAnchor="end">
+              {(v * 100).toFixed(0)}%
+            </text>
+          </g>
+        ))}
+        <path d={sArea} className="underwater-area" />
+        <path
+          d={bLine}
+          fill="none"
+          stroke="#f87171"
+          strokeDasharray="4 3"
+          style={{ strokeWidth: 1.6 }}
+        />
+        {shown.map((t, idx) => (
+          <text key={idx} x={x(t.i)} y={H - 8} className="axis-label" textAnchor="middle">
+            {t.label}
+          </text>
+        ))}
+      </svg>
+      <div className={`rob-verdict ${shallower ? "ok" : "thin"}`}>
+        En kötü drawdown — <b>{label}</b>: <span className="neg">{pct(sMin, 1)}</span>{" "}
+        · <b>{benchName}</b>: <span className="neg">{pct(bMin, 1)}</span>
+        {" — "}
+        {shallower
+          ? "stratejinin çukuru daha sığ: trend filtresi düşüşü kesmiş (tez doğrulanıyor)."
+          : "bu seride stratejinin çukuru benchmark kadar/daha derin — momentum bu dönemde korumadı."}
+      </div>
+    </div>
+  );
+}
+
 function UnderwaterChart({ bt, label = "GEM" }: { bt: BacktestResult; label?: string }) {
   const gem = bt.equityCurves.find((c) => c.highlight) ?? bt.equityCurves[0];
   if (!gem?.growth?.length) return null;
@@ -5639,6 +5760,7 @@ function BacktestCharts({
       <PositionTimeline bt={bt} label={label} />
       <TradeLog bt={bt} label={label} />
       <UnderwaterChart bt={bt} label={label} />
+      <UnderwaterCompare bt={bt} label={label} />
       <DrawdownEpisodes bt={bt} label={label} />
       <MonthlyHeatmap bt={bt} label={label} />
       <YearlyReturns bt={bt} label={label} />
@@ -6079,6 +6201,7 @@ export default function Home() {
               <CompositeHoldings data={data} />
               <EquityChart bt={data.composite} />
               <UnderwaterChart bt={data.composite} label="Bileşik" />
+              <UnderwaterCompare bt={data.composite} label="Bileşik" />
               <DrawdownEpisodes bt={data.composite} label="Bileşik" />
               <MonthlyHeatmap bt={data.composite} label="Bileşik" />
               <MetricsTable rows={data.composite.strategies} />
