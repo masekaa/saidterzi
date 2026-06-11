@@ -3099,6 +3099,160 @@ function MomentumValueAdd({ data }: { data: AnalysisResult }) {
   );
 }
 
+function MarginalContribution({ data }: { data: AnalysisResult }) {
+  // Her sleeve'in bileşiğe MARJİNAL katkısı: leave-one-out. Tüm sleeve'lerin
+  // SABİT ortak döneminde (adil kıyas) önce hepsiyle, sonra her birini çıkararak
+  // bileşik hesaplanır; fark = o sleeve'in katkısı. Pozitif = sleeve değer katıyor.
+  const sleeves: {
+    id: string;
+    label: string;
+    emoji: string;
+    map: Map<string, number>;
+  }[] = [];
+  const add = (
+    id: string,
+    label: string,
+    emoji: string,
+    bt: BacktestResult | null
+  ) => {
+    if (!bt) return;
+    const c = bt.equityCurves.find((x) => x.highlight) ?? bt.equityCurves[0];
+    if (!c) return;
+    const m = new Map<string, number>();
+    for (let i = 1; i < c.growth.length && i < bt.dates.length; i++)
+      m.set(bt.dates[i].slice(0, 7), c.growth[i] / c.growth[i - 1] - 1);
+    if (m.size > 12) sleeves.push({ id, label, emoji, map: m });
+  };
+  add("etf", "GEM", "📊", data.backtest);
+  for (const u of data.universes)
+    add(
+      u.id,
+      u.positionLabel.replace(" Momentum", "").replace(" (DMSR)", ""),
+      u.emoji,
+      u.backtest
+    );
+  if (sleeves.length < 3) return null;
+
+  // Tüm sleeve'lerin ORTAK dönemi (sabit pencere → adil marjinal atıf)
+  const common = Array.from(sleeves[0].map.keys())
+    .filter((ym) => sleeves.every((s) => s.map.has(ym)))
+    .sort();
+  if (common.length < 18) return null;
+
+  const metrics = (ids: string[]) => {
+    const chosen = sleeves.filter((s) => ids.includes(s.id));
+    if (!chosen.length) return null;
+    const r = common.map(
+      (ym) =>
+        chosen.reduce((acc, s) => acc + (s.map.get(ym) as number), 0) /
+        chosen.length
+    );
+    const n = r.length;
+    let eq = 1;
+    let peak = 1;
+    let maxdd = 0;
+    for (const x of r) {
+      eq *= 1 + x;
+      if (eq > peak) peak = eq;
+      const dd = eq / peak - 1;
+      if (dd < maxdd) maxdd = dd;
+    }
+    const cagr = Math.pow(eq, 12 / n) - 1;
+    const mean = r.reduce((a, b) => a + b, 0) / n;
+    const vol = Math.sqrt(r.reduce((a, b) => a + (b - mean) ** 2, 0) / (n - 1)) *
+      Math.sqrt(12);
+    const calmar = maxdd < 0 ? cagr / Math.abs(maxdd) : null;
+    const rv = vol > 0 ? cagr / vol : null; // getiri/oynaklık (rf-siz Sharpe vekili)
+    return { cagr, vol, maxdd, calmar, rv };
+  };
+
+  const allIds = sleeves.map((s) => s.id);
+  const full = metrics(allIds);
+  if (!full) return null;
+
+  const rows = sleeves
+    .map((s) => {
+      const without = metrics(allIds.filter((id) => id !== s.id));
+      return {
+        emoji: s.emoji,
+        label: s.label,
+        dRV:
+          without && full.rv != null && without.rv != null
+            ? full.rv - without.rv
+            : null,
+        dCalmar:
+          without && full.calmar != null && without.calmar != null
+            ? full.calmar - without.calmar
+            : null,
+        dMaxdd: without ? full.maxdd - without.maxdd : null, // + => çıkarınca DD derinleşti (sleeve koruyucu)
+      };
+    })
+    .sort((a, b) => (b.dRV ?? -Infinity) - (a.dRV ?? -Infinity));
+
+  const best = rows[0];
+  const drag = rows.filter((r) => (r.dRV ?? 0) < 0);
+  const sg = (v: number | null, d = 2) =>
+    v == null ? "—" : `${v >= 0 ? "+" : ""}${v.toFixed(d)}`;
+
+  return (
+    <div className="chart-card">
+      <div className="chart-title">
+        🧮 Marjinal Sleeve Katkısı — her evren bileşiğe değer katıyor mu? (leave-one-out)
+      </div>
+      <div className="chart-help">
+        Tüm sleeve&apos;lerin <b>sabit ortak döneminde</b> ({common.length} ay,{" "}
+        {common[0]}→{common[common.length - 1]}), önce tüm sleeve&apos;lerle, sonra
+        her birini <b>tek tek çıkararak</b> eşit-ağırlık bileşik yeniden hesaplanır.
+        Değerler = tam bileşik − o sleeve&apos;siz bileşik. <b>Pozitif Δ Getiri/Vol</b>{" "}
+        = sleeve risk-ayarlı getiriyi artırıyor; <b>pozitif Δ MaxDD</b> = çıkarınca
+        düşüş derinleşiyor (sleeve koruyucu). Negatif = sleeve bileşiği zayıflatıyor.
+      </div>
+      <div className="table-scroll">
+        <table className="metrics">
+          <thead>
+            <tr>
+              <th className="left">Sleeve</th>
+              <th>Δ Getiri/Vol</th>
+              <th>Δ Calmar</th>
+              <th>Δ MaxDD</th>
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map((r, i) => (
+              <tr key={i}>
+                <td className="left">
+                  {r.emoji} {r.label}
+                </td>
+                <td className={(r.dRV ?? 0) >= 0 ? "pos-cell" : "neg"}>
+                  {sg(r.dRV)}
+                </td>
+                <td className={(r.dCalmar ?? 0) >= 0 ? "pos-cell" : "neg"}>
+                  {sg(r.dCalmar)}
+                </td>
+                <td className={(r.dMaxdd ?? 0) >= 0 ? "pos-cell" : "neg"}>
+                  {r.dMaxdd == null ? "—" : `${r.dMaxdd >= 0 ? "+" : ""}${pct(r.dMaxdd, 1)}`}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      <div className={`rob-verdict ${drag.length ? "thin" : "ok"}`}>
+        En değerli katkı:{" "}
+        <b>
+          {best.emoji} {best.label}
+        </b>{" "}
+        (Δ getiri/vol {sg(best.dRV)}).{" "}
+        {drag.length
+          ? `Risk-ayarlı getiriyi düşüren sleeve(ler): ${drag
+              .map((r) => `${r.emoji} ${r.label}`)
+              .join(", ")} — çıkarmak bileşiği iyileştirebilir (ama çeşitlendirme/koruma açısından Δ MaxDD'ye de bak).`
+          : "tüm sleeve'ler risk-ayarlı getiriye pozitif katkı veriyor."}
+      </div>
+    </div>
+  );
+}
+
 function CustomComposite({ data }: { data: AnalysisResult }) {
   const sleeves = useMemo(() => {
     const list: {
@@ -6279,6 +6433,9 @@ export default function Home() {
           </ErrorBoundary>
           <ErrorBoundary label="Özel bileşik oluşturucu">
             <CustomComposite data={data} />
+          </ErrorBoundary>
+          <ErrorBoundary label="Marjinal sleeve katkısı">
+            <MarginalContribution data={data} />
           </ErrorBoundary>
 
           {/* Dual Momentum Bileşik — tüm evrenlerin eşit-ağırlık meta-stratejisi */}
