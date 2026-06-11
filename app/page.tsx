@@ -6233,6 +6233,58 @@ export default function Home() {
             </div>
           )}
 
+          <CollapsibleSection
+            title="📐 Metodoloji & Bilinen Kısıtlar (nasıl hesaplanıyor?)"
+            defaultOpen={false}
+          >
+            <div className="chart-help" style={{ lineHeight: 1.7 }}>
+              <p>
+                <b>Veri:</b> Yahoo Finance düzeltilmiş kapanış = toplam getiri
+                (temettü/faiz dahil), aya normalize edilir. Her evrende seriler{" "}
+                <b>ortak dönemde</b> hizalanır (en geç başlayan varlık başlangıcı
+                belirler).
+              </p>
+              <p>
+                <b>Sinyal & uygulama:</b> Tüm momentum ölçümleri <b>ay sonunda</b>{" "}
+                (<code>t</code>) hesaplanır; pozisyon bir <b>sonraki ay</b>{" "}
+                (<code>t+1</code>) getirisini realize eder — yani sinyal anında
+                bilinmeyen veri kullanılmaz (<b>lookahead-bias yok</b>). Yeniden
+                dengeleme aylıktır.
+              </p>
+              <p>
+                <b>Mutlak momentum eşiği:</b> Bir varlık ancak son 12-ay getirisi{" "}
+                <b>T-Bill</b>&apos;i (BIL) geçerse tutulur; geçmezse pozisyon nakde
+                döner (trend filtresi).
+              </p>
+              <p>
+                <b>İşlem maliyeti:</b> Çekirdek backtest&apos;ler maliyetsizdir;
+                Backtest Stüdyosu&apos;nda devir-bazlı bps maliyeti
+                (τ=½·Σ|Δw|) test edilebilir. Vergi, kayma (slippage) ve likidite
+                etkileri modellenmez.
+              </p>
+              <p>
+                <b>⚠️ Seçim / hayatta-kalma yanlılığı:</b> Evrenlerin içeriği{" "}
+                <b>bugünün bilgisiyle</b> seçildi (örn. bugün likit/başarılı olan
+                hisse, ETF ve coinler). Geçmişte bu tam listeyi seçemezdiniz;
+                bu, tarihsel sonuçları <b>yukarı yönlü</b> şişirebilir. Sonuçları
+                mutlak gerçek değil, <b>göreli/yöntemsel</b> kıyas olarak okuyun.
+              </p>
+              <p>
+                <b>İstatistiksel testler:</b> PSR örneklem-içidir (gözlenen
+                Sharpe&apos;ın gerçekte &gt; 0 olma olasılığı). DSR çoklu-deneme
+                düzeltmesi, farklı evrenleri <b>bağımsız deneme vekili</b> sayar
+                (saf Bailey–López de Prado aynı backtest&apos;in parametre
+                taramasını varsayar) — yaklaşık yorumlanmalıdır.
+              </p>
+              <p>
+                <b>ETF vekilleri:</b> Bazı varlık sınıfları/faktörler için ilgili
+                ETF, temel endeksin <b>vekilidir</b>; ETF&apos;in masraf oranı ve
+                takip hatası tarihsel endeks getirisinden küçük sapmalara yol
+                açabilir.
+              </p>
+            </div>
+          </CollapsibleSection>
+
           <p className="disclaimer">
             ⚠️ <b>Yalnızca eğitim/bilgilendirme amaçlıdır; yatırım tavsiyesi
             değildir.</b> Tüm strateji sonuçları (GEM, evren momentumları,
