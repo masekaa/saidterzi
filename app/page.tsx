@@ -3880,6 +3880,15 @@ function CrossUniverseRiskReturn({ data }: { data: AnalysisResult }) {
     );
   add("Bileşik", "🧩", data.composite, { hl: true });
   add("Pasif", "⚪", data.composite, { curveName: "Pasif", bench: true });
+  // 60/40 evrensel referans noktası (SPY/AGG) — risk-getiri uzayında nerede?
+  if (data.benchmark6040 && data.composite) {
+    const m = new Map<string, number>();
+    const dts = data.composite.dates;
+    const gr = data.benchmark6040.growth;
+    for (let i = 0; i < dts.length && i < gr.length; i++)
+      m.set(dts[i].slice(0, 7), gr[i]);
+    sers.push({ label: "60/40", emoji: "⚖️", growthMap: m, hl: false, bench: true });
+  }
   if (sers.length < 3) return null;
 
   // Ortak ay aralığında hesapla → CAGR/vol adil (apples-to-apples) karşılaştırılır.
