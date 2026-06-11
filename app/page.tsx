@@ -4042,6 +4042,19 @@ function CrossUniverseComparison({ data }: { data: AnalysisResult }) {
   add("GEM (Dual Momentum)", "📊", data.backtest);
   for (const u of data.universes) add(u.positionLabel, u.emoji, u.backtest);
   add("Bileşik (eşit ağırlık)", "🧩", data.composite);
+  // 60/40 evrensel referans eğrisi (SPY/AGG) — ortak dönem overlay'inde
+  if (data.benchmark6040 && data.composite) {
+    const map = new Map<string, number>();
+    const dts: string[] = [];
+    const cd = data.composite.dates;
+    const gr = data.benchmark6040.growth;
+    for (let i = 0; i < cd.length && i < gr.length; i++) {
+      const ym = cd[i].slice(0, 7);
+      map.set(ym, gr[i]);
+      dts.push(ym);
+    }
+    series.push({ label: "60/40 (SPY/AGG)", emoji: "⚖️", map, dates: dts });
+  }
   if (series.length < 2) return null;
 
   // Ortak ay aralığı (tüm serilerin kesişimi)
