@@ -2564,6 +2564,27 @@ function KeyInsights({ data }: { data: AnalysisResult }) {
     }
   }
 
+  // 8) 60/40 evrensel kıyas — bu karmaşık strateji sıkıcı standardı yeniyor mu?
+  {
+    const b = data.benchmark6040;
+    const comp = data.composite?.strategies[0];
+    if (b && comp && comp.sharpe != null && b.sharpe != null) {
+      const beats = comp.sharpe > b.sharpe;
+      insights.push({
+        icon: beats ? "🏅" : "⚖️",
+        text: (
+          <>
+            Bileşik vs <b>60/40</b> (evrensel standart, {b.months} ay): Sharpe{" "}
+            <b>{num(comp.sharpe)}</b> vs <b>{num(b.sharpe)}</b> —{" "}
+            {beats
+              ? "dual momentum bileşiği sıkıcı 60/40'ı risk-ayarlı yeniyor."
+              : "bu dönemde 60/40 risk-ayarlı bazda önde; ek karmaşıklık kendini kanıtlamalı."}
+          </>
+        ),
+      });
+    }
+  }
+
   if (!insights.length) return null;
   return (
     <div className="insights">
