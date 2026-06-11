@@ -218,6 +218,14 @@ export interface AnalysisResult {
   universes: UniverseBundle[]; // ETF dışı evrenler (hisse, kripto, ...)
   composite: BacktestResult | null; // 4 evrenin eşit-ağırlık bileşik stratejisi
   compositeFactorAlpha?: FactorAlpha | null; // bileşik meta-strateji Fama-French alpha
+  benchmark6040?: {
+    // 60/40 (SPY/AGG) referans portföyü — bileşik ortak döneminde
+    cagr: number;
+    vol: number;
+    sharpe: number | null;
+    maxDrawdown: number;
+    months: number;
+  } | null;
   warnings: string[];
   fromCache?: boolean; // sonuç sunucu önbelleğinden mi geldi
 }

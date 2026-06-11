@@ -5614,6 +5614,74 @@ function DiversificationStat({ bt }: { bt: BacktestResult }) {
   );
 }
 
+function Benchmark6040({ data }: { data: AnalysisResult }) {
+  const b = data.benchmark6040;
+  const comp = data.composite?.strategies[0];
+  if (!b || !comp) return null;
+  const dCagr = (comp.cagr ?? 0) - b.cagr;
+  const dSharpe = (comp.sharpe ?? 0) - (b.sharpe ?? 0);
+  const beats = (comp.sharpe ?? 0) > (b.sharpe ?? 0);
+  return (
+    <div className="chart-card">
+      <div className="chart-title">
+        ⚖️ Bileşik vs 60/40 — sıkıcı standart portföyü yeniyor mu?
+      </div>
+      <div className="chart-help">
+        60/40 = %60 S&amp;P 500 (SPY) + %40 ABD geniş tahvil (AGG), aylık dengeli —
+        her yatırımcının kıyas aldığı &quot;tembel portföy&quot;. Bileşiğin ortak
+        döneminde ({b.months} ay) hesaplanır. Dual momentum bileşiği bu evrensel
+        standardı <b>risk-ayarlı</b> bazda aşıyorsa, ek karmaşıklık değer katıyor
+        demektir.
+      </div>
+      <div className="table-scroll">
+        <table className="metrics">
+          <thead>
+            <tr>
+              <th className="left">Strateji</th>
+              <th>CAGR</th>
+              <th>Sharpe</th>
+              <th>Max DD</th>
+              <th>Vol</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr className="row-hl">
+              <td className="left">🧩 Dual Momentum Bileşik</td>
+              <td>{pct(comp.cagr)}</td>
+              <td className="strong">{num(comp.sharpe)}</td>
+              <td className="neg">{pct(comp.maxDrawdown)}</td>
+              <td>{pct(comp.annualVol)}</td>
+            </tr>
+            <tr>
+              <td className="left">⚖️ 60/40 (SPY/AGG)</td>
+              <td>{pct(b.cagr)}</td>
+              <td className="strong">{num(b.sharpe)}</td>
+              <td className="neg">{pct(b.maxDrawdown)}</td>
+              <td>{pct(b.vol)}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <div className={`rob-verdict ${beats ? "ok" : "thin"}`}>
+        Bileşik 60/40&apos;a karşı: Sharpe{" "}
+        <b className={dSharpe >= 0 ? "pos-cell" : "neg"}>
+          {dSharpe >= 0 ? "+" : ""}
+          {num(dSharpe)}
+        </b>
+        , CAGR{" "}
+        <b className={dCagr >= 0 ? "pos-cell" : "neg"}>
+          {dCagr >= 0 ? "+" : ""}
+          {pct(dCagr)}
+        </b>{" "}
+        —{" "}
+        {beats
+          ? "evrensel 60/40 standardını risk-ayarlı bazda yeniyor (karmaşıklık değer katıyor)."
+          : "60/40'ı risk-ayarlı bazda yenemiyor — bu dönemde basit standart yeterliydi."}
+      </div>
+    </div>
+  );
+}
+
 function DiversificationRatio({ bt }: { bt: BacktestResult }) {
   // Çeşitlendirme Oranı (Choueifaty–Coignard 2008): DR = (Σ wᵢσᵢ) / σ_portföy.
   // Eşit ağırlıkta = ortalama sleeve oynaklığı / bileşik oynaklığı. DR yüksek =
@@ -6995,6 +7063,7 @@ export default function Home() {
                 />
               )}
               <DiversificationRatio bt={data.composite} />
+              <Benchmark6040 data={data} />
               <RollingCorrelation bt={data.composite} label="Bileşik" />
             </CollapsibleSection>
             </ErrorBoundary>

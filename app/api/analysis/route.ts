@@ -355,6 +355,58 @@ export async function GET(req: Request) {
     // piyasa/boyut/değer beta'sının ötesinde gerçek alpha üretiyor mu?
     const compositeFactorAlpha = alphaFor(composite);
 
+    // 60/40 referans portföyü (SPY %60 + AGG %40, aylık dengeli) — bileşiğin
+    // ortak döneminde. "Bu 10-sleeve strateji, sıkıcı 60/40'tan gerçekten iyi mi?"
+    const retMap = (rs: RawSeries | undefined) => {
+      const m = new Map<string, number>();
+      if (!rs) return m;
+      const s = rs.series;
+      for (let i = 1; i < s.length; i++) {
+        const r = s[i].close / s[i - 1].close - 1;
+        if (isFinite(r)) m.set(s[i].date.slice(0, 7), r);
+      }
+      return m;
+    };
+    const benchmark6040 = (() => {
+      const spyM = retMap(byTicker["SPY"]);
+      const aggM = retMap(byTicker["AGG"]);
+      const rfM = retMap(tbillRaw);
+      const dates = composite?.dates ?? [];
+      const rets: number[] = [];
+      const exc: number[] = [];
+      for (const d of dates) {
+        const ym = d.slice(0, 7);
+        const sp = spyM.get(ym);
+        const ag = aggM.get(ym);
+        if (sp == null || ag == null) continue;
+        const r = 0.6 * sp + 0.4 * ag;
+        rets.push(r);
+        exc.push(r - (rfM.get(ym) ?? 0));
+      }
+      if (rets.length < 24) return null;
+      const n = rets.length;
+      let eq = 1;
+      let peak = 1;
+      let maxdd = 0;
+      for (const r of rets) {
+        eq *= 1 + r;
+        if (eq > peak) peak = eq;
+        const dd = eq / peak - 1;
+        if (dd < maxdd) maxdd = dd;
+      }
+      const cagr = Math.pow(eq, 12 / n) - 1;
+      const mean = rets.reduce((a, b) => a + b, 0) / n;
+      const vol =
+        Math.sqrt(rets.reduce((a, b) => a + (b - mean) ** 2, 0) / (n - 1)) *
+        Math.sqrt(12);
+      const me = exc.reduce((a, b) => a + b, 0) / exc.length;
+      const se = Math.sqrt(
+        exc.reduce((a, b) => a + (b - me) ** 2, 0) / (exc.length - 1)
+      );
+      const sharpe = se > 0 ? (me / se) * Math.sqrt(12) : null;
+      return { cagr, vol, sharpe, maxDrawdown: maxdd, months: n };
+    })();
+
     const result: AnalysisResult = {
       generatedAt: new Date().toISOString(),
       lookbackMonths: LOOKBACK_MONTHS,
@@ -372,6 +424,7 @@ export async function GET(req: Request) {
       universes,
       composite,
       compositeFactorAlpha,
+      benchmark6040,
       warnings,
     };
 
