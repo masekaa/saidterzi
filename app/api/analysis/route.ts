@@ -377,16 +377,21 @@ export async function GET(req: Request) {
       const exc: number[] = [];
       // Büyüme eğrisi composite.dates ile 1:1 hizalı (anchor growth[0]=1).
       const growth: number[] = [1];
+      let missing = 0; // SPY/AGG verisi olmayan ay sayısı (kapsama denetimi)
       for (let i = 1; i < dates.length; i++) {
         const ym = dates[i].slice(0, 7);
         const sp = spyM.get(ym);
         const ag = aggM.get(ym);
+        if (sp == null || ag == null) missing++;
         const r = sp != null && ag != null ? 0.6 * sp + 0.4 * ag : 0;
         rets.push(r);
         exc.push(r - (rfM.get(ym) ?? 0));
         growth.push(growth[growth.length - 1] * (1 + r));
       }
       if (rets.length < 24) return null;
+      // Kapsama yetersizse (SPY/AGG ortak dönemi tam örtmüyorsa) carry-forward
+      // 60/40 eğrisini bileşikten sessizce kaydırır → yanıltıcı kıyas; gösterme.
+      if (missing / rets.length > 0.05) return null;
       const n = rets.length;
       let eq = 1;
       let peak = 1;
