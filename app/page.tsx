@@ -4078,6 +4078,8 @@ function CrossUniverseComparison({ data }: { data: AnalysisResult }) {
       cagr,
       color: s.label.includes("Bileşik")
         ? "#22d3a6"
+        : s.label.includes("60/40")
+        ? "#94a3b8"
         : CURVE_COLORS[idx % CURVE_COLORS.length],
     };
   });
@@ -4181,6 +4183,7 @@ function CrossUniverseComparison({ data }: { data: AnalysisResult }) {
                 .join(" ")}
               className="equity-line"
               stroke={l.label.includes("Bileşik") ? "#22d3a6" : l.color}
+              strokeDasharray={l.label.includes("60/40") ? "5 4" : undefined}
               style={{ strokeWidth: l.label.includes("Bileşik") ? 3.5 : 2 }}
             />
           ))}
