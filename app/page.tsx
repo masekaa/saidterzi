@@ -131,7 +131,7 @@ function SignalBoard({
   if (!board?.assets?.length) return null;
   return (
     <>
-      <div className="section-label">{title}</div>
+      <div className="section-label" role="heading" aria-level={2}>{title}</div>
       <div className="table-scroll">
         <table className="metrics signalboard">
           <thead>
@@ -197,7 +197,7 @@ function LookbackHeatmap({ data }: { data: LookbackData }) {
   if (!data?.assets?.length) return null;
   return (
     <>
-      <div className="section-label">
+      <div className="section-label" role="heading" aria-level={2}>
         Look-back Duyarlılık — farklı geri-bakış pencerelerinde 12→1 ay getiri
       </div>
       <div className="chart-card">
@@ -264,7 +264,7 @@ function StockMomentumBoard({ data }: { data: StockMomentumData }) {
   const sh = (k: "rank" | "excess" | "prox") => (sortK === k ? " ▾" : "");
   return (
     <>
-      <div className="section-label">
+      <div className="section-label" role="heading" aria-level={2}>
         Hisse Momentum Panosu — {data.stocks.length} büyük-cap hisse, göreceli
         sıralama (en güçlü top-{data.topN} seçilir)
       </div>
@@ -403,7 +403,7 @@ function EarningsMomentumPanel({ data }: { data: EarningsData }) {
   if (!data.enabled) {
     return (
       <>
-        <div className="section-label">
+        <div className="section-label" role="heading" aria-level={2}>
           Earnings / Revenue Momentum (Chen 2014) — temel veri momentumu
         </div>
         <div className="chart-card earnings-off">
@@ -423,7 +423,7 @@ function EarningsMomentumPanel({ data }: { data: EarningsData }) {
   const selectedCount = data.stocks.filter((s) => s.selected).length;
   return (
     <>
-      <div className="section-label">
+      <div className="section-label" role="heading" aria-level={2}>
         Earnings / Revenue Momentum — yıllık gelir &amp; net kâr YoY büyümesi
         sıralaması
       </div>
@@ -1511,7 +1511,7 @@ function RiskReturnChart({ rows }: { rows: StrategyMetrics[] }) {
 function AdvancedMetricsTable({ rows }: { rows: StrategyMetrics[] }) {
   return (
     <>
-      <div className="section-label">
+      <div className="section-label" role="heading" aria-level={2}>
         Gelişmiş Risk Metrikleri (Sortino · Calmar · Ulcer · Martin · çarpıklık ·
         basıklık · CVaR · drawdown süreleri)
       </div>
@@ -2030,7 +2030,7 @@ function FactorAlphaPanel({ fa, subject = "GEM" }: { fa: FactorAlpha; subject?: 
   const sig = Math.abs(fa.alphaTStat) >= 2;
   return (
     <>
-      <div className="section-label">
+      <div className="section-label" role="heading" aria-level={2}>
         Faktör-Model Alpha (Fama-French 3) — risk-ayarlı fazla getiri
       </div>
       <div className="chart-card">
@@ -2192,7 +2192,7 @@ function MethodsSection({ methods }: { methods: MethodResult[] }) {
   return (
     <>
       <div className="section-head">
-        <div className="section-label">
+        <div className="section-label" role="heading" aria-level={2}>
           Yöntem Hesaplamaları (formül + adımlar şeffaf) · {methods.length} yöntem
         </div>
         <div className="section-actions">
@@ -2603,7 +2603,7 @@ function ConsolidatedSignals({ data }: { data: AnalysisResult }) {
 
   return (
     <>
-      <div className="section-label">
+      <div className="section-label" role="heading" aria-level={2}>
         Bu Ayın Sinyalleri — tüm evrenlerde güncel pozisyonlar
       </div>
       <div className="signals-grid">
@@ -2880,7 +2880,7 @@ function StrategyLeaderboard({ data }: { data: AnalysisResult }) {
 
   return (
     <>
-      <div className="section-label">
+      <div className="section-label" role="heading" aria-level={2}>
         Strateji Karşılaştırma — tüm evrenlerin momentum stratejileri (sütun
         başlığına tıkla → sırala)
       </div>
@@ -3190,7 +3190,7 @@ function MomentumValueAdd({ data }: { data: AnalysisResult }) {
 
   return (
     <>
-      <div className="section-label">
+      <div className="section-label" role="heading" aria-level={2}>
         Momentum Al-Tut&apos;u Yeniyor mu? — her evrende momentum vs eşit-ağırlık
         al-tut
       </div>
@@ -3600,7 +3600,7 @@ function CustomComposite({ data }: { data: AnalysisResult }) {
 
   return (
     <>
-      <div className="section-label">
+      <div className="section-label" role="heading" aria-level={2}>
         🧪 Özel Bileşik Oluşturucu — hangi evrenler dahil olsun?
       </div>
       <div className="chart-card">
@@ -4028,7 +4028,7 @@ function CrossUniverseComparison({ data }: { data: AnalysisResult }) {
 
   return (
     <>
-      <div className="section-label">
+      <div className="section-label" role="heading" aria-level={2}>
         Ortak-Dönem Karşılaştırması — tüm stratejiler aynı zaman ekseninde (1$
         → büyüme, log ölçek)
       </div>
@@ -4567,7 +4567,7 @@ function CrisisPerformance({ bt, label = "Strateji" }: { bt: BacktestResult; lab
 
   return (
     <>
-      <div className="section-label">
+      <div className="section-label" role="heading" aria-level={2}>
         {label} — Kriz Stres Testi (tarihsel düşüş dönemlerinde getiri)
       </div>
       <div className="chart-help">
@@ -5112,7 +5112,7 @@ function DrawdownEpisodes({ bt, label }: { bt: BacktestResult; label: string }) 
 
   return (
     <>
-      <div className="section-label">
+      <div className="section-label" role="heading" aria-level={2}>
         {label} — En Kötü 5 Drawdown Epizodu (derinlik · süre · toparlanma)
       </div>
       <div className="table-scroll">
@@ -5327,7 +5327,7 @@ function CompositeAttribution({ bt }: { bt: BacktestResult }) {
 
   return (
     <>
-      <div className="section-label">
+      <div className="section-label" role="heading" aria-level={2}>
         Bileşik Getiri Atfı — toplam getiriye hangi evren ne kadar katkı yaptı
       </div>
       <div className="chart-card">
@@ -5397,7 +5397,7 @@ function RiskParityWeights({ bt }: { bt: BacktestResult }) {
 
   return (
     <>
-      <div className="section-label">
+      <div className="section-label" role="heading" aria-level={2}>
         Risk-Parity Ağırlıkları — bileşikte her sleeve&apos;in ters-volatilite payı
       </div>
       <div className="chart-card">
@@ -5720,7 +5720,7 @@ function CorrelationMatrix({ bt }: { bt: BacktestResult }) {
 
   return (
     <>
-      <div className="section-label">
+      <div className="section-label" role="heading" aria-level={2}>
         Sleeve Korelasyon Matrisi — bileşiğin çeşitlendirme temeli (düşük =
         daha iyi)
       </div>
@@ -6213,7 +6213,7 @@ function BacktestStudio() {
       {err && !busy && <div className="error-box">{err}</div>}
       {!err && bt && (
         <div className={busy ? "studio-dim" : ""}>
-          <div className="section-label">
+          <div className="section-label" role="heading" aria-level={2}>
             {res?.label} — look-back {res?.lookback} ay
             {!isEtf ? `, top-${res?.topN}` : ""}
             {res && res.cost > 0 ? `, maliyet ${res.cost}bps` : ""} (
