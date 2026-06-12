@@ -2524,6 +2524,28 @@ function signalStability(
   return { holdMonths, switches, n: t.length };
 }
 
+// Oynaklık rejimi: son `recentWin` ayın getiri standart sapması, tüm-dönem
+// standart sapmasına oranlanır. >1 çalkantılı, <1 sakin. Risk-hedefleme ve
+// pozisyon büyüklüğü için bağlam verir.
+function volRegime(
+  g: number[],
+  recentWin = 6
+): { ratio: number; recentAnnual: number; fullAnnual: number } | null {
+  const r = growthToRets(g);
+  if (r.length < recentWin + 12) return null;
+  const sd = (arr: number[]) => {
+    if (arr.length < 2) return 0;
+    const m = arr.reduce((s, x) => s + x, 0) / arr.length;
+    const v = arr.reduce((s, x) => s + (x - m) ** 2, 0) / (arr.length - 1);
+    return Math.sqrt(v);
+  };
+  const full = sd(r);
+  const recent = sd(r.slice(-recentWin));
+  if (!(full > 0)) return null;
+  const A = Math.sqrt(12);
+  return { ratio: recent / full, recentAnnual: recent * A, fullAnnual: full * A };
+}
+
 // Geçmiş tutma-ufku istatistiği: büyüme eğrisindeki tüm kayan `win`-aylık
 // pencereler — kaçı pozitif (isabet), medyan/en kötü/en iyi getiri. "Bu yöntemi
 // 1 yıl tutsaydım tarihsel olarak ne olurdu?" sorusunu dürüstçe (kötü dahil)
@@ -2830,6 +2852,35 @@ function YatirimTavsiyesi({ data }: { data: AnalysisResult }) {
               (nakde) geçmiştir. Sinyale uy, dipte tahmin oyunu oynama.
             </>
           ),
+      });
+    }
+  }
+
+  // 5d) Oynaklık rejimi — piyasa şu an sakin mi çalkantılı mı?
+  if (data.composite?.equityCurves[0]) {
+    const vr = volRegime(data.composite.equityCurves[0].growth, 6);
+    if (vr) {
+      const wild = vr.ratio > 1.3;
+      const calm = vr.ratio < 0.8;
+      items.push({
+        icon: wild ? "🌪️" : calm ? "😌" : "🌊",
+        lead: wild
+          ? "Son aylar normalden çalkantılı."
+          : calm
+          ? "Son aylar normalden sakin."
+          : "Oynaklık normal seviyede.",
+        rest: (
+          <>
+            Son 6 ayın dalgalanması uzun-dönem ortalamasının{" "}
+            <b>{vr.ratio.toFixed(1)} katı</b> (yıllık ~%
+            {(vr.recentAnnual * 100).toFixed(0)}).{" "}
+            {wild
+              ? "Çalkantıda pozisyonu küçük tut, sinyale sıkı uy; tahmine kapılma."
+              : calm
+              ? "Sakin dönemler genelde trendlerin sürdüğü dönemlerdir."
+              : "Olağan koşullar — plana sadık kal."}
+          </>
+        ),
       });
     }
   }
