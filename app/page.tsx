@@ -4134,6 +4134,11 @@ function CrossUniverseRiskReturn({ data }: { data: AnalysisResult }) {
               x={X(p.x) + (p.hl ? 11 : 9)}
               y={Y(p.y) + 3}
               className={`rr-label ${p.hl ? "rr-label-hl" : ""}`}
+              style={
+                p.hl || p.bench
+                  ? undefined
+                  : { fill: CURVE_COLORS[1 + (i % (CURVE_COLORS.length - 1))] }
+              }
             >
               {p.emoji} {p.label}
               {p.sharpe != null ? ` · S ${p.sharpe.toFixed(2)}` : ""}
