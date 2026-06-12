@@ -2360,14 +2360,37 @@ function CollapsibleSection({
   children: ReactNode;
   defaultOpen?: boolean;
 }) {
+  // Başlık düz metinse açık/kapalı durumu localStorage'ta sakla; böylece 10 dk
+  // veri tazelemesi ve sayfa yenilemeleri kullanıcının düzenini korur.
+  const storeKey = typeof title === "string" ? `csec:${title}` : null;
   const [open, setOpen] = useState(defaultOpen);
+  // SSR defaultOpen ile başlar; kayıtlı tercih efektle uygulanır (hydration
+  // uyumsuzluğunu önler).
+  useEffect(() => {
+    if (!storeKey) return;
+    try {
+      const v = window.localStorage.getItem(storeKey);
+      if (v === "0") setOpen(false);
+      else if (v === "1") setOpen(true);
+    } catch {
+      /* localStorage erişilemezse sessizce defaultOpen'da kal */
+    }
+  }, [storeKey]);
+  const toggle = () =>
+    setOpen((o) => {
+      const next = !o;
+      if (storeKey) {
+        try {
+          window.localStorage.setItem(storeKey, next ? "1" : "0");
+        } catch {
+          /* yok say */
+        }
+      }
+      return next;
+    });
   return (
     <div className="csec">
-      <button
-        className="csec-head"
-        onClick={() => setOpen((o) => !o)}
-        aria-expanded={open}
-      >
+      <button className="csec-head" onClick={toggle} aria-expanded={open}>
         <span>{title}</span>
         <span className={`chevron ${open ? "up" : ""}`} aria-hidden="true">▾</span>
       </button>
