@@ -6320,6 +6320,31 @@ function EnsembleLookback() {
         {!loading && !err && !bt && (
           <p className="table-note">Bu evrende ensemble üretilemedi.</p>
         )}
+        {bt &&
+          !loading &&
+          (() => {
+            const ens = bt.strategies.find((s) => s.name.includes("Ensemble"));
+            const singles = bt.strategies.filter(
+              (s) => /look-back/i.test(s.name) && s.sharpe != null
+            );
+            if (ens?.sharpe == null || singles.length < 2) return null;
+            const shs = singles
+              .map((s) => s.sharpe as number)
+              .sort((a, b) => a - b);
+            const lo = shs[0];
+            const hi = shs[shs.length - 1];
+            const med = shs[Math.floor(shs.length / 2)];
+            const nearBest = ens.sharpe >= hi - 0.05;
+            return (
+              <div className={`rob-verdict ${nearBest ? "ok" : ""}`}>
+                Ensemble Sharpe <b>{num(ens.sharpe)}</b> · tekil pencere Sharpe
+                aralığı <b>{num(lo)}–{num(hi)}</b> (medyan {num(med)}) —{" "}
+                {nearBest
+                  ? "ensemble, hangi pencerenin kazanacağını önceden bilmeden en iyi tekil pencereye yakın (timing-luck söndürme çalışıyor)."
+                  : "ensemble tekil pencerelerin ortasına yakın — tek pencere seçim riskini kaldırır ama bu seride en iyiyi yakalayamıyor."}
+              </div>
+            );
+          })()}
       </div>
       {bt && !loading && (
         <BacktestCharts bt={bt} label={`${label} Ensemble`} />
