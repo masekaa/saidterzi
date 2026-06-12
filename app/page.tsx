@@ -2494,6 +2494,16 @@ function BackToTop() {
   );
 }
 
+// Mevcut (güncel) drawdown: büyüme eğrisinin son değeri, tüm-zaman zirvesine
+// göre yüzde kaç aşağıda (≤0). "Şu an dipte miyiz, zirvede mi?" sorusu.
+function curDrawdown(g: number[]): number | null {
+  if (!g || g.length < 2) return null;
+  let peak = g[0];
+  for (const v of g) if (v > peak) peak = v;
+  if (!(peak > 0)) return null;
+  return g[g.length - 1] / peak - 1;
+}
+
 // Sade dil ("Ayşe teyzeye anlatır gibi") yatırım özeti — sayfanın en üstünde,
 // teknik jargon olmadan, somut "bu ay ne yap" maddeleriyle. Tüm sayılar diğer
 // panellerdeki aynı hesaplardan türetilir; burada yalnız sadeleştirilir.
@@ -2632,6 +2642,38 @@ function YatirimTavsiyesi({ data }: { data: AnalysisResult }) {
         </>
       ),
     });
+  }
+
+  // 5b) Şu an zirveden ne kadar uzaktayız (mevcut drawdown) — alış zamanlaması hissi
+  if (data.composite?.equityCurves[0]) {
+    const cd = curDrawdown(data.composite.equityCurves[0].growth);
+    if (cd != null) {
+      const down = Math.abs(cd * 100);
+      items.push({
+        icon: cd > -0.02 ? "🟢" : cd > -0.1 ? "🟡" : "🔴",
+        lead:
+          cd > -0.02
+            ? "Şu an zirveye çok yakınız."
+            : `Şu an en yüksek noktanın %${down.toFixed(0)} altındayız.`,
+        rest:
+          cd > -0.02 ? (
+            <>
+              Karışım yeni zirvelerde geziyor — trend sağlıklı, ama tampon az;
+              sıkı takip et.
+            </>
+          ) : cd > -0.1 ? (
+            <>
+              Ilımlı bir geri çekilme — piyasanın normal nefeslenmesi, panik
+              gerektirmez.
+            </>
+          ) : (
+            <>
+              Ciddi bir düşüş yaşanıyor; sistem büyük olasılıkla zaten savunmaya
+              (nakde) geçmiştir. Sinyale uy, dipte tahmin oyunu oynama.
+            </>
+          ),
+      });
+    }
   }
 
   // 6) Düşüş koruması — 60/40 ile kıyas (varsa)
@@ -5909,6 +5951,9 @@ function CompositeStance({ data }: { data: AnalysisResult }) {
     (inv ? invested : cash).push(`${u.emoji} ${u.label}`);
   }
   const ratio = total > 0 ? invested.length / total : 0;
+  const cd = data.composite?.equityCurves[0]
+    ? curDrawdown(data.composite.equityCurves[0].growth)
+    : null;
   return (
     <div className="stance">
       <div className="stance-row">
@@ -5929,6 +5974,16 @@ function CompositeStance({ data }: { data: AnalysisResult }) {
           </>
         ) : (
           <>Tüm sleeve&apos;ler yatırımda — bileşik tam risk-on.</>
+        )}
+        {cd != null && (
+          <>
+            {" "}
+            Bileşik NAV şu an tüm-zaman zirvesinin{" "}
+            <b className={cd > -0.02 ? "pos-cell" : cd > -0.1 ? "" : "neg"}>
+              %{Math.abs(cd * 100).toFixed(1)}
+            </b>{" "}
+            altında (güncel drawdown).
+          </>
         )}
       </div>
     </div>
