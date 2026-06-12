@@ -6712,7 +6712,7 @@ function BacktestStudio() {
                   {dS >= 0 ? "+" : ""}
                   {num(dS)}
                 </b>{" "}
-                {dC >= 0 ? "geçiyor ✓" : "geçemiyor"}.
+                fark veriyor — {dS >= 0 ? "risk-ayarlı geçiyor ✓" : "risk-ayarlı geçemiyor"}.
               </p>
             );
           })()}
