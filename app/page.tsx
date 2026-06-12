@@ -1253,6 +1253,15 @@ function AnnualReturnsMatrix({ data }: { data: AnalysisResult }) {
         ...cols.map((c) => (c.cagr == null ? "" : (c.cagr * 100).toFixed(1))),
       ].join(",")
     );
+    lines.push(
+      [
+        "Poz_Yil",
+        ...cols.map((c) => {
+          const vals = [...c.byYear.values()];
+          return vals.length ? `${vals.filter((v) => v > 0).length}/${vals.length}` : "";
+        }),
+      ].join(",")
+    );
     const blob = new Blob([lines.join("\r\n")], {
       type: "text/csv;charset=utf-8",
     });
@@ -1353,6 +1362,29 @@ function AnnualReturnsMatrix({ data }: { data: AnalysisResult }) {
                   {c.cagr == null ? "—" : pct(c.cagr, 0)}
                 </td>
               ))}
+            </tr>
+            <tr>
+              <td
+                className="left"
+                title="Pozitif getirili takvim yılı sayısı / toplam yıl"
+              >
+                Poz. Yıl
+              </td>
+              {cols.map((c, i) => {
+                const vals = [...c.byYear.values()];
+                const pos = vals.filter((v) => v > 0).length;
+                const rate = vals.length ? pos / vals.length : 0;
+                return (
+                  <td
+                    key={i}
+                    className={rate >= 0.6 ? "pos-cell" : rate < 0.4 ? "neg" : ""}
+                    style={{ fontVariantNumeric: "tabular-nums" }}
+                    title={`${c.label} — ${pos}/${vals.length} yıl pozitif`}
+                  >
+                    {vals.length ? `${pos}/${vals.length}` : "—"}
+                  </td>
+                );
+              })}
             </tr>
           </tfoot>
         </table>
