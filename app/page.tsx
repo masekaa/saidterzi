@@ -6764,6 +6764,10 @@ function CaptureRatios({ bt }: { bt: BacktestResult }) {
   const dn = dnB !== 0 ? dnS / dnB : null;
   if (up == null && dn == null) return null;
   const benchName = bench.name.replace(/\s*\(.*\)/, "");
+  // Yakalama oranı = yukarı ÷ aşağı (>1 iyi). Aşağı-yakalama ≤0 ise strateji
+  // düşüş aylarında pozitif → oran etkin olarak sonsuz (en iyi durum).
+  const capInfinite = up != null && up > 0 && dn != null && dn <= 0;
+  const capRatio = up != null && dn != null && dn > 0 ? up / dn : null;
 
   return (
     <div className="chart-card">
@@ -6781,13 +6785,32 @@ function CaptureRatios({ bt }: { bt: BacktestResult }) {
             {dn != null ? `%${(dn * 100).toFixed(0)}` : "—"}
           </div>
         </div>
+        <div className="cap-item">
+          <div className="cap-label">Yakalama Oranı (Yukarı÷Aşağı)</div>
+          <div
+            className={`cap-val ${
+              capInfinite || (capRatio != null && capRatio > 1) ? "pos" : "neg"
+            }`}
+          >
+            {capInfinite
+              ? "∞"
+              : capRatio != null
+              ? `${capRatio.toFixed(2)}×`
+              : "—"}
+          </div>
+        </div>
       </div>
       <p className="chart-help">
         Benchmark&apos;ın yükseldiği aylarda strateji getirisinin oranı (yukarı)
         ve düştüğü aylarda oranı (aşağı). <b>İdeal: yüksek yukarı, düşük aşağı.</b>{" "}
         Düşük aşağı-yakalama, dual momentum&apos;un düşüş korumasının somut
         ölçüsüdür (nakde kaçış sayesinde benchmark&apos;ın kayıplarının yalnızca
-        bir kısmını yer).
+        bir kısmını yer). <b>Yakalama oranı</b> ikisini tek sayıya indirger
+        (yukarı ÷ aşağı): <b>&gt;1 değerli</b> — strateji yükselişlerin daha
+        büyük payını alırken düşüşlerin daha küçük payını yer.{" "}
+        {capInfinite
+          ? "Burada ∞: strateji benchmark düşüş aylarında ortalama pozitif (en güçlü koruma)."
+          : null}
       </p>
     </div>
   );
