@@ -18,8 +18,12 @@ import {
   ASSET_CLASS_TOP_N,
   COUNTRY_UNIVERSE,
   COUNTRY_TOP_N,
+  BIST_UNIVERSE,
+  BIST_TOP_N,
+  FX_USDTRY,
   type Instrument,
 } from "@/lib/universe";
+import { mapToUsd } from "@/lib/fx";
 import { runBacktest, runStockBacktest } from "@/lib/backtest";
 import { settledLimit } from "@/lib/concurrency";
 import type { BacktestResult, RawSeries } from "@/lib/types";
@@ -89,7 +93,26 @@ const CONFIGS: Record<string, Cfg> = {
     benchLabel: "Eşit Ağırlık (Tüm Ülkeler)",
     defaultTopN: COUNTRY_TOP_N,
   },
+  bist: {
+    universe: BIST_UNIVERSE,
+    positionLabel: "BIST Momentum",
+    benchLabel: "Eşit Ağırlık (Tüm BIST)",
+    defaultTopN: BIST_TOP_N,
+  },
 };
+
+// BIST (TRY) serilerini USD'ye çevir (FX yoksa graceful). Diğer evrenler USD.
+async function toUsdIfBist(
+  universe: string,
+  raw: Record<string, RawSeries>,
+  fetchMapFn: (list: Instrument[]) => Promise<Record<string, RawSeries>>
+): Promise<Record<string, RawSeries>> {
+  if (universe !== "bist") return raw;
+  const fx =
+    (await fetchMapFn([FX_USDTRY]))[FX_USDTRY.key] ??
+    ({ ticker: FX_USDTRY.ticker, currency: "TRY", currentPrice: NaN, series: [] } as RawSeries);
+  return mapToUsd(raw, fx);
+}
 
 // universe+lookback+topN bazlı kısa önbellek (10 dk).
 const CACHE = new Map<string, { at: number; data: unknown }>();
@@ -159,7 +182,7 @@ export async function GET(req: Request) {
       return NextResponse.json(hit.data);
     }
 
-    const raw = await fetchMap(cfg.universe);
+    const raw = await toUsdIfBist(universe, await fetchMap(cfg.universe), fetchMap);
     backtest = runStockBacktest(raw, tbillRaw, cfg.universe, topN, {
       stratLabel: cfg.positionLabel,
       benchLabel: cfg.benchLabel,

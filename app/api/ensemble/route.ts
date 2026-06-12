@@ -27,8 +27,12 @@ import {
   ASSET_CLASS_TOP_N,
   COUNTRY_UNIVERSE,
   COUNTRY_TOP_N,
+  BIST_UNIVERSE,
+  BIST_TOP_N,
+  FX_USDTRY,
   type Instrument,
 } from "@/lib/universe";
+import { mapToUsd } from "@/lib/fx";
 import { runBacktest, runStockBacktest, runLookbackEnsemble } from "@/lib/backtest";
 import { settledLimit } from "@/lib/concurrency";
 import type { BacktestResult, RawSeries } from "@/lib/types";
@@ -54,6 +58,7 @@ const CONFIGS: Record<string, Cfg> = {
   bond: { universe: BOND_UNIVERSE, topN: BOND_TOP_N, positionLabel: "Tahvil Momentum", benchLabel: "Eşit Ağırlık (Tüm Tahviller)" },
   assetclass: { universe: ASSET_CLASS_UNIVERSE, topN: ASSET_CLASS_TOP_N, positionLabel: "Varlık-Sınıfı Momentum", benchLabel: "Eşit Ağırlık (Tüm Sınıflar)" },
   country: { universe: COUNTRY_UNIVERSE, topN: COUNTRY_TOP_N, positionLabel: "Ülke Momentum", benchLabel: "Eşit Ağırlık (Tüm Ülkeler)" },
+  bist: { universe: BIST_UNIVERSE, topN: BIST_TOP_N, positionLabel: "BIST Momentum", benchLabel: "Eşit Ağırlık (Tüm BIST)" },
 };
 
 const CACHE = new Map<string, { at: number; data: unknown }>();
@@ -106,7 +111,13 @@ export async function GET(req: Request) {
         return NextResponse.json({ error: "Geçersiz evren", universe }, { status: 400 });
       }
       label = cfg.positionLabel;
-      const raw = await fetchMap(cfg.universe);
+      let raw = await fetchMap(cfg.universe);
+      if (universe === "bist") {
+        const fx =
+          (await fetchMap([FX_USDTRY]))[FX_USDTRY.key] ??
+          ({ ticker: FX_USDTRY.ticker, currency: "TRY", currentPrice: NaN, series: [] } as RawSeries);
+        raw = mapToUsd(raw, fx);
+      }
       bt = runLookbackEnsemble(
         (lb) =>
           runStockBacktest(raw, tbillRaw, cfg.universe, cfg.topN, {

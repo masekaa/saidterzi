@@ -195,6 +195,52 @@ export const ASSET_CLASS_UNIVERSE: Instrument[] = [
 ];
 export const ASSET_CLASS_TOP_N = 3;
 
+// --- BIST 100 (Türkiye hisse) evreni ---
+// Borsa İstanbul'un en likit ~26 büyük-cap hissesi (Yahoo `.IS` sembolleri).
+// Bireysel hisse momentumu — diğer hisse evrenleriyle aynı dual-momentum
+// mantığı. ÖNEMLİ: BIST fiyatları TRY; analiz katmanında her seri USD/TRY ile
+// USD'ye çevrilir (FX_USDTRY) → mutlak momentum USD T-Bill eşiğiyle anlamlı
+// olur ve TRY değer kaybı getiriyi şişirmez. Göreli sıralama FX'ten etkilenmez
+// (ortak çarpan), yalnız mutlak eşik ve seviyeler düzelir.
+export const BIST_UNIVERSE: Instrument[] = [
+  { key: "thyao", name: "Türk Hava Yolları", ticker: "THYAO.IS", note: "Havayolu" },
+  { key: "garan", name: "Garanti BBVA", ticker: "GARAN.IS", note: "Banka" },
+  { key: "akbnk", name: "Akbank", ticker: "AKBNK.IS", note: "Banka" },
+  { key: "isctr", name: "İş Bankası (C)", ticker: "ISCTR.IS", note: "Banka" },
+  { key: "ykbnk", name: "Yapı Kredi", ticker: "YKBNK.IS", note: "Banka" },
+  { key: "bimas", name: "BİM", ticker: "BIMAS.IS", note: "Perakende" },
+  { key: "asels", name: "Aselsan", ticker: "ASELS.IS", note: "Savunma" },
+  { key: "kchol", name: "Koç Holding", ticker: "KCHOL.IS", note: "Holding" },
+  { key: "sahol", name: "Sabancı Holding", ticker: "SAHOL.IS", note: "Holding" },
+  { key: "eregl", name: "Ereğli Demir Çelik", ticker: "EREGL.IS", note: "Demir-Çelik" },
+  { key: "tuprs", name: "Tüpraş", ticker: "TUPRS.IS", note: "Rafineri" },
+  { key: "froto", name: "Ford Otosan", ticker: "FROTO.IS", note: "Otomotiv" },
+  { key: "toaso", name: "Tofaş", ticker: "TOASO.IS", note: "Otomotiv" },
+  { key: "sise", name: "Şişecam", ticker: "SISE.IS", note: "Cam" },
+  { key: "petkm", name: "Petkim", ticker: "PETKM.IS", note: "Petrokimya" },
+  { key: "kozal", name: "Koza Altın", ticker: "KOZAL.IS", note: "Madencilik" },
+  { key: "pgsus", name: "Pegasus", ticker: "PGSUS.IS", note: "Havayolu" },
+  { key: "tcell", name: "Turkcell", ticker: "TCELL.IS", note: "Telekom" },
+  { key: "ttkom", name: "Türk Telekom", ticker: "TTKOM.IS", note: "Telekom" },
+  { key: "sasa", name: "Sasa Polyester", ticker: "SASA.IS", note: "Kimya" },
+  { key: "enkai", name: "Enka İnşaat", ticker: "ENKAI.IS", note: "İnşaat" },
+  { key: "tavhl", name: "TAV Havalimanları", ticker: "TAVHL.IS", note: "Havalimanı" },
+  { key: "mgros", name: "Migros", ticker: "MGROS.IS", note: "Perakende" },
+  { key: "arclk", name: "Arçelik", ticker: "ARCLK.IS", note: "Dayanıklı tüketim" },
+  { key: "gubrf", name: "Gübre Fabrikaları", ticker: "GUBRF.IS", note: "Tarım/Gübre" },
+  { key: "hekts", name: "Hektaş", ticker: "HEKTS.IS", note: "Tarım kimya" },
+];
+export const BIST_TOP_N = 5;
+
+// BIST (TRY) serilerini USD'ye çevirmek için kur. Yahoo `USDTRY=X` = 1 USD'nin
+// TRY karşılığı; USD fiyat = TRY fiyat / kur.
+export const FX_USDTRY: Instrument = {
+  key: "usdtry",
+  name: "USD/TRY",
+  ticker: "USDTRY=X",
+  note: "BIST serilerini USD'ye çevirme kuru",
+};
+
 // DMSR güvenli liman + trend referansı
 export const AGG: Instrument = {
   key: "agg",
@@ -219,6 +265,8 @@ export function allTickers(): string[] {
     ...BOND_UNIVERSE,
     ...ASSET_CLASS_UNIVERSE,
     ...COUNTRY_UNIVERSE,
+    ...BIST_UNIVERSE,
+    FX_USDTRY,
     AGG,
   ].forEach((i) => set.add(i.ticker));
   return Array.from(set);

@@ -17,8 +17,11 @@ import {
   BOND_UNIVERSE,
   ASSET_CLASS_UNIVERSE,
   COUNTRY_UNIVERSE,
+  BIST_UNIVERSE,
+  FX_USDTRY,
   type Instrument,
 } from "@/lib/universe";
+import { mapToUsd } from "@/lib/fx";
 import { runBacktest, runStockBacktest } from "@/lib/backtest";
 import { settledLimit } from "@/lib/concurrency";
 import type { RawSeries } from "@/lib/types";
@@ -74,6 +77,11 @@ const CONFIGS: Record<
     universe: COUNTRY_UNIVERSE,
     positionLabel: "Ülke Momentum",
     benchLabel: "Eşit Ağırlık (Tüm Ülkeler)",
+  },
+  bist: {
+    universe: BIST_UNIVERSE,
+    positionLabel: "BIST Momentum",
+    benchLabel: "Eşit Ağırlık (Tüm BIST)",
   },
 };
 
@@ -139,7 +147,13 @@ export async function GET(req: Request) {
           { status: 400 }
         );
       }
-      const raw = await fetchMap(cfg.universe);
+      let raw = await fetchMap(cfg.universe);
+      if (universe === "bist") {
+        const fx =
+          (await fetchMap([FX_USDTRY]))[FX_USDTRY.key] ??
+          ({ ticker: FX_USDTRY.ticker, currency: "TRY", currentPrice: NaN, series: [] } as RawSeries);
+        raw = mapToUsd(raw, fx);
+      }
       const topNs = TOPNS.filter((t) => t <= cfg.universe.length);
       const cells: Cell[] = [];
       for (const lb of LOOKBACKS) {

@@ -54,6 +54,7 @@ const POS_META: Record<string, { label: string; color: string }> = {
   bond: { label: "Tahvil Sepeti (Top-N)", color: "#818cf8" },
   assetclass: { label: "Sınıf Sepeti (Top-N)", color: "#34d399" },
   country: { label: "Ülke Sepeti (Top-N)", color: "#fb923c" },
+  bist: { label: "BIST Sepeti (Top-N)", color: "#e11d48" },
 };
 function posMeta(key: string): { label: string; color: string } {
   return POS_META[key] ?? { label: key.toUpperCase(), color: "#94a3b8" };
@@ -2449,7 +2450,7 @@ function LoadingSkeleton() {
       <div className="skel-row">
         <div className="spinner" />
         <span>
-          ~68 sembol + Fama-French faktörleri çekiliyor ve 5 evren + bileşik
+          ~95 sembol + Fama-French faktörleri çekiliyor ve 11 evren + bileşik
           hesaplanıyor; ilk yükleme birkaç saniye sürebilir (sonra 10 dk
           önbellekte).
         </span>
@@ -2664,6 +2665,34 @@ function YatirimTavsiyesi({ data }: { data: AnalysisResult }) {
         </>
       ),
     });
+  }
+
+  // 1c) BIST 100 (Türkiye) özel vurgusu — kullanıcı isteği: BIST'e ağırlık ver
+  {
+    const bist = data.universes.find((u) => u.id === "bist");
+    if (bist) {
+      const picks = bist.momentum.stocks
+        .filter((s) => s.selected)
+        .sort((a, b) => (a.rank ?? 99) - (b.rank ?? 99));
+      items.push({
+        icon: "🇹🇷",
+        lead: picks.length
+          ? `BIST 100 tarafında bu ay ${picks.length} hisse öne çıkıyor.`
+          : "BIST 100 tarafında bu ay sinyal nakit (temkin).",
+        rest: picks.length ? (
+          <>
+            Momentum zirvesindekiler: <b>{picks.map((s) => s.name).join(", ")}</b>.
+            Hesaplar <b>USD bazlı</b> — TRY değer kaybından arındırılmış gerçek
+            getiri, yani &quot;kâr&quot; kur şişirmesi değil.
+          </>
+        ) : (
+          <>
+            BIST hisselerinin momentumu şu an güvenli faizin (USD) altında —
+            Türkiye tarafında risk almak için acele etme.
+          </>
+        ),
+      });
+    }
   }
 
   // 1b) Sinyal ne kadar yerleşik — pozisyon süresi + son 1 yıl whipsaw
@@ -6923,6 +6952,7 @@ const STUDIO_UNIVERSES = [
   { id: "bond", label: "Tahvil" },
   { id: "assetclass", label: "Varlık Sınıfı" },
   { id: "country", label: "Ülke" },
+  { id: "bist", label: "BIST 100" },
 ];
 
 interface StudioResult {

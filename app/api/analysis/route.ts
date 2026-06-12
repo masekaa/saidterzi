@@ -25,11 +25,15 @@ import {
   ASSET_CLASS_TOP_N,
   COUNTRY_UNIVERSE,
   COUNTRY_TOP_N,
+  BIST_UNIVERSE,
+  BIST_TOP_N,
+  FX_USDTRY,
   DMSR_TOP_N,
   allTickers,
   LOOKBACK_MONTHS,
   type Instrument,
 } from "@/lib/universe";
+import { mapToUsd } from "@/lib/fx";
 import {
   buildAllMethods,
   buildSignalBoard,
@@ -133,6 +137,11 @@ export async function GET(req: Request) {
     const bondRaw2 = mapBy(BOND_UNIVERSE);
     const assetClassRaw = mapBy(ASSET_CLASS_UNIVERSE);
     const countryRaw = mapBy(COUNTRY_UNIVERSE);
+    // BIST (TRY) → USD: mutlak momentum eşiği ve evrenler-arası kıyas tutarlılığı.
+    const fxUsdTry =
+      byTicker[FX_USDTRY.ticker] ??
+      ({ ticker: FX_USDTRY.ticker, currency: "TRY", currentPrice: NaN, series: [] } as RawSeries);
+    const bistRaw = mapToUsd(mapBy(BIST_UNIVERSE), fxUsdTry);
 
     // İki yavaş dış çağrıyı (Ken French zip + FMP earnings) PARALEL başlat —
     // soğuk yükleme süresini kısaltır (sıralı await yerine örtüşürler).
@@ -285,6 +294,18 @@ export async function GET(req: Request) {
         raw: countryRaw,
         universe: COUNTRY_UNIVERSE,
         topN: COUNTRY_TOP_N,
+        withEarnings: false,
+      },
+      {
+        id: "bist",
+        emoji: "🇹🇷",
+        label: "BIST 100 (Türkiye)",
+        sublabel: `${BIST_UNIVERSE.length} likit BIST hissesi · USD bazlı`,
+        positionLabel: "BIST Momentum",
+        benchLabel: "Eşit Ağırlık (Tüm BIST)",
+        raw: bistRaw,
+        universe: BIST_UNIVERSE,
+        topN: BIST_TOP_N,
         withEarnings: false,
       },
     ];
