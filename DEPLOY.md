@@ -48,7 +48,7 @@ npm run build && npm start
 
 ## Notlar
 
-- **Veri tazeliği & önbellek:** `/api/analysis` ~80 sembol (8 evren + çekirdek + tahvil) + Ken French + (varsa) FMP çeker; sonuç sunucu-içi **10 dk önbellekte** tutulur (Yahoo rate-limit + hız). "Yenile" butonu `?refresh=1` ile önbelleği atlar. Fetch'ler **eşzamanlılık-sınırlı** (`lib/concurrency.ts`, en çok 12 paralel istek) — Yahoo 429 riskini azaltır. Fonksiyon süresi `maxDuration=60` ile uzatıldı.
+- **Veri tazeliği & önbellek:** `/api/analysis` ~90 sembol (10 evren + çekirdek) + Ken French + (varsa) FMP çeker; sonuç sunucu-içi **10 dk önbellekte** tutulur (Yahoo rate-limit + hız). "Yenile" butonu `?refresh=1` ile önbelleği atlar. Fetch'ler **eşzamanlılık-sınırlı** (`lib/concurrency.ts`, en çok 12 paralel istek) — Yahoo 429 riskini azaltır. Fonksiyon süresi `maxDuration=60` ile uzatıldı.
 - **Diğer route'lar:** `/api/backtest` (hafif etkileşimli backtest, `maxDuration=30`, 10 dk cache) ve `/api/robustness` (look-back × top-N dayanıklılık grid'i, `maxDuration=45`, 10 dk cache) — her ikisi de yalnız seçilen evreni çeker, on-demand çalışır.
 - **Yahoo güvenilirliği:** Resmi olmayan endpoint; nadiren 403/değişiklik olabilir. UI hata durumunda "Yenile" ile tekrar dener. İleride dayanıklılık için ikinci bir kaynak (Stooq/Alpha Vantage) fallback eklenebilir.
 - **Bölge:** Yahoo bazı IP bölgelerinde farklı davranabilir. Sorun olursa `vercel.json` ile function region (örn. `iad1`) sabitlenebilir.
