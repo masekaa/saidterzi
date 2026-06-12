@@ -269,7 +269,7 @@ function LookbackHeatmap({
   );
 }
 
-function StockMomentumBoard({
+function MomentumBoard({
   data,
   label,
 }: {
@@ -6888,7 +6888,7 @@ function UniverseSection({ u }: { u: UniverseBundle }) {
           );
         })()}
 
-      {u.momentum && <StockMomentumBoard data={u.momentum} label={u.label} />}
+      {u.momentum && <MomentumBoard data={u.momentum} label={u.label} />}
 
       {u.signals && (
         <SignalBoard
