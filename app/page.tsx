@@ -262,7 +262,13 @@ function LookbackHeatmap({ data }: { data: LookbackData }) {
   );
 }
 
-function StockMomentumBoard({ data }: { data: StockMomentumData }) {
+function StockMomentumBoard({
+  data,
+  label,
+}: {
+  data: StockMomentumData;
+  label?: string;
+}) {
   const [sortK, setSortK] = useState<"rank" | "excess" | "prox">("rank");
   if (!data?.stocks?.length) return null;
   const selectedCount = data.stocks.filter((s) => s.selected).length;
@@ -279,8 +285,8 @@ function StockMomentumBoard({ data }: { data: StockMomentumData }) {
   return (
     <>
       <div className="section-label" role="heading" aria-level={2}>
-        Hisse Momentum Panosu — {data.stocks.length} büyük-cap hisse, göreceli
-        sıralama (en güçlü top-{data.topN} seçilir)
+        {label ? `${label} ` : ""}Momentum Panosu — {data.stocks.length} varlık,
+        göreceli sıralama (en güçlü top-{data.topN} seçilir)
       </div>
       <div className="table-scroll">
         <table className="metrics stockboard">
@@ -301,8 +307,8 @@ function StockMomentumBoard({ data }: { data: StockMomentumData }) {
               >
                 #{sh("rank")}
               </th>
-              <th className="left">Hisse</th>
-              <th className="left">Sektör</th>
+              <th className="left">Varlık</th>
+              <th className="left">Not</th>
               <th>12-Ay Getiri</th>
               <th
                 className={`sortable ${sortK === "excess" ? "sorted" : ""}`}
@@ -402,8 +408,8 @@ function StockMomentumBoard({ data }: { data: StockMomentumData }) {
         <b>Göreceli momentum:</b> hisseler 12-ay getiriye göre sıralanır, en
         güçlü {data.topN} tanesi aday olur. <b>Mutlak momentum:</b> aday ancak
         12-ay getirisi T-Bill&apos;i ({pct(data.tbillRet12m)}) geçerse seçilir —
-        şu an <b>{selectedCount}</b> hisse seçili. Dual momentum portföyü bu
-        seçili hisselere eşit ağırlık verir; hiçbiri geçemezse nakitte kalınır.
+        şu an <b>{selectedCount}</b> varlık seçili. Dual momentum portföyü bu
+        seçili varlıklara eşit ağırlık verir; hiçbiri geçemezse nakitte kalınır.
         İvme = son 12 ayın log-fiyat kavisi (hızlanan trend daha kalıcı olur).{" "}
         <b>Kalite</b> = trailing 12-ayın % pozitif ayı (Gray-Vogel 2016): yüksek =
         düzgün/tutarlı yükseliş; düşük = birkaç büyük sıçramaya dayanan kırılgan
@@ -6872,7 +6878,7 @@ function UniverseSection({ u }: { u: UniverseBundle }) {
           );
         })()}
 
-      {u.momentum && <StockMomentumBoard data={u.momentum} />}
+      {u.momentum && <StockMomentumBoard data={u.momentum} label={u.label} />}
 
       {u.signals && (
         <SignalBoard
