@@ -2524,6 +2524,29 @@ function signalStability(
   return { holdMonths, switches, n: t.length };
 }
 
+// Geçmiş tutma-ufku istatistiği: büyüme eğrisindeki tüm kayan `win`-aylık
+// pencereler — kaçı pozitif (isabet), medyan/en kötü/en iyi getiri. "Bu yöntemi
+// 1 yıl tutsaydım tarihsel olarak ne olurdu?" sorusunu dürüstçe (kötü dahil)
+// yanıtlar.
+function holdHorizonStats(
+  g: number[],
+  win = 12
+): { posFrac: number; median: number; worst: number; best: number; n: number } | null {
+  if (!g || g.length < win + 2) return null;
+  const rets: number[] = [];
+  for (let i = win; i < g.length; i++) rets.push(g[i] / g[i - win] - 1);
+  if (rets.length < 6) return null;
+  const sorted = [...rets].sort((a, b) => a - b);
+  const pos = rets.filter((x) => x > 0).length;
+  return {
+    posFrac: pos / rets.length,
+    median: quantile(sorted, 0.5),
+    worst: sorted[0],
+    best: sorted[sorted.length - 1],
+    n: rets.length,
+  };
+}
+
 // Sade dil ("Ayşe teyzeye anlatır gibi") yatırım özeti — sayfanın en üstünde,
 // teknik jargon olmadan, somut "bu ay ne yap" maddeleriyle. Tüm sayılar diğer
 // panellerdeki aynı hesaplardan türetilir; burada yalnız sadeleştirilir.
@@ -2757,6 +2780,26 @@ function YatirimTavsiyesi({ data }: { data: AnalysisResult }) {
         </>
       ),
     });
+  }
+
+  // 5c) Geçmiş 1-yıllık tutma ihtimalleri — dürüst beklenti (kötü dahil)
+  if (data.composite?.equityCurves[0]) {
+    const hh = holdHorizonStats(data.composite.equityCurves[0].growth, 12);
+    if (hh) {
+      const outOf10 = Math.round(hh.posFrac * 10);
+      items.push({
+        icon: "📅",
+        lead: `Geçmişte 1 yıl tuttuğunda 10 denemenin ~${outOf10}'i kazançla bitmiş.`,
+        rest: (
+          <>
+            Medyan 12 aylık getiri <b>%{(hh.median * 100).toFixed(0)}</b>; en
+            kötü 12 ay <b className="neg">%{(hh.worst * 100).toFixed(0)}</b>, en
+            iyisi <b className="pos-cell">%{(hh.best * 100).toFixed(0)}</b>.{" "}
+            <i>Geçmiş, geleceğin garantisi değildir.</i>
+          </>
+        ),
+      });
+    }
   }
 
   // 5b) Şu an zirveden ne kadar uzaktayız (mevcut drawdown) — alış zamanlaması hissi
