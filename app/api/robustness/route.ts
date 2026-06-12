@@ -1,4 +1,4 @@
-// GET /api/robustness?universe=etf|stock|crypto|sector|intl|commodity|factor
+// GET /api/robustness?universe=etf|stock|crypto|sector|intl|commodity|factor|bond|assetclass|country
 // Parametre dayanıklılık (overfitting) testi: bir evrenin verisini BİR KEZ çeker,
 // look-back × top-N grid'inde backtest koşar ve her hücrenin Sharpe/CAGR'ını döner.
 // Strateji yalnız 12-ay/seçili-topN'de mi iyi, yoksa tüm yüzeyde mi sağlam?
@@ -15,6 +15,8 @@ import {
   COMMODITIES_UNIVERSE,
   FACTOR_UNIVERSE,
   BOND_UNIVERSE,
+  ASSET_CLASS_UNIVERSE,
+  COUNTRY_UNIVERSE,
   type Instrument,
 } from "@/lib/universe";
 import { runBacktest, runStockBacktest } from "@/lib/backtest";
@@ -62,6 +64,16 @@ const CONFIGS: Record<
     universe: BOND_UNIVERSE,
     positionLabel: "Tahvil Momentum",
     benchLabel: "Eşit Ağırlık (Tüm Tahviller)",
+  },
+  assetclass: {
+    universe: ASSET_CLASS_UNIVERSE,
+    positionLabel: "Varlık-Sınıfı Momentum",
+    benchLabel: "Eşit Ağırlık (Tüm Sınıflar)",
+  },
+  country: {
+    universe: COUNTRY_UNIVERSE,
+    positionLabel: "Ülke Momentum",
+    benchLabel: "Eşit Ağırlık (Tüm Ülkeler)",
   },
 };
 
