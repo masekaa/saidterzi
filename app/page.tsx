@@ -4200,7 +4200,9 @@ function CrossUniverseComparison({ data }: { data: AnalysisResult }) {
         ? "#22d3a6"
         : s.label.includes("60/40")
         ? "#94a3b8"
-        : CURVE_COLORS[idx % CURVE_COLORS.length],
+        : // 0. renk (yeşil) bileşiğe ayrıldı; diğer çizgilerde 1..N renklerini
+          // kullan ki GEM (idx 0) bileşikle aynı yeşile düşüp karışmasın.
+          CURVE_COLORS[1 + (idx % (CURVE_COLORS.length - 1))],
     };
   });
 
