@@ -7017,7 +7017,7 @@ export default function Home() {
             {loading ? "Yükleniyor…" : "↻ Yenile"}
           </button>
           {data && (
-            <span className="timestamp">
+            <span className="timestamp" aria-live="polite">
               Güncellendi: {fmtTime(data.generatedAt)}{" "}
               <span style={{ opacity: 0.7 }}>({relTime(data.generatedAt)})</span>
               {data.fromCache && (
