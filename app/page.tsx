@@ -2366,6 +2366,14 @@ function CollapsibleSection({
   const [open, setOpen] = useState(defaultOpen);
   // SSR defaultOpen ile başlar; kayıtlı tercih efektle uygulanır (hydration
   // uyumsuzluğunu önler).
+  const persist = (next: boolean) => {
+    if (!storeKey) return;
+    try {
+      window.localStorage.setItem(storeKey, next ? "1" : "0");
+    } catch {
+      /* yok say */
+    }
+  };
   useEffect(() => {
     if (!storeKey) return;
     try {
@@ -2376,16 +2384,22 @@ function CollapsibleSection({
       /* localStorage erişilemezse sessizce defaultOpen'da kal */
     }
   }, [storeKey]);
+  // Üst çubuktaki "Tümünü Aç/Kapat" yayınını dinle.
+  useEffect(() => {
+    const onSetAll = (e: Event) => {
+      const next = (e as CustomEvent<{ open: boolean }>).detail?.open;
+      if (typeof next !== "boolean") return;
+      setOpen(next);
+      persist(next);
+    };
+    window.addEventListener("csec:setall", onSetAll);
+    return () => window.removeEventListener("csec:setall", onSetAll);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [storeKey]);
   const toggle = () =>
     setOpen((o) => {
       const next = !o;
-      if (storeKey) {
-        try {
-          window.localStorage.setItem(storeKey, next ? "1" : "0");
-        } catch {
-          /* yok say */
-        }
-      }
+      persist(next);
       return next;
     });
   return (
@@ -7228,6 +7242,30 @@ export default function Home() {
           </p>
         </div>
         <div className="header-right">
+          <button
+            className="refresh-btn ghost"
+            onClick={() =>
+              window.dispatchEvent(
+                new CustomEvent("csec:setall", { detail: { open: true } })
+              )
+            }
+            title="Tüm bölümleri genişlet"
+            aria-label="Tüm bölümleri genişlet"
+          >
+            ⤢ Tümü
+          </button>
+          <button
+            className="refresh-btn ghost"
+            onClick={() =>
+              window.dispatchEvent(
+                new CustomEvent("csec:setall", { detail: { open: false } })
+              )
+            }
+            title="Tüm bölümleri daralt"
+            aria-label="Tüm bölümleri daralt"
+          >
+            ⤡ Daralt
+          </button>
           <button
             className="refresh-btn ghost"
             onClick={exportCsv}
