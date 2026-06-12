@@ -2504,6 +2504,26 @@ function curDrawdown(g: number[]): number | null {
   return g[g.length - 1] / peak - 1;
 }
 
+// Sinyal kararlılığı: güncel pozisyon kaç aydır değişmedi (holdMonths) ve son
+// 12 ayda kaç kez yön değişti (switches → whipsaw/gel-git ölçüsü). Timeline
+// kronolojik artan sırada kurulur.
+function signalStability(
+  timeline: { date: string; key: string }[]
+): { holdMonths: number; switches: number; n: number } | null {
+  if (!timeline || timeline.length < 2) return null;
+  const t = timeline;
+  const lastKey = t[t.length - 1].key;
+  let holdMonths = 1;
+  for (let i = t.length - 2; i >= 0; i--) {
+    if (t[i].key === lastKey) holdMonths++;
+    else break;
+  }
+  const start = Math.max(1, t.length - 12);
+  let switches = 0;
+  for (let i = start; i < t.length; i++) if (t[i].key !== t[i - 1].key) switches++;
+  return { holdMonths, switches, n: t.length };
+}
+
 // Sade dil ("Ayşe teyzeye anlatır gibi") yatırım özeti — sayfanın en üstünde,
 // teknik jargon olmadan, somut "bu ay ne yap" maddeleriyle. Tüm sayılar diğer
 // panellerdeki aynı hesaplardan türetilir; burada yalnız sadeleştirilir.
@@ -2537,6 +2557,39 @@ function YatirimTavsiyesi({ data }: { data: AnalysisResult }) {
         </>
       ),
     });
+  }
+
+  // 1b) Sinyal ne kadar yerleşik — pozisyon süresi + son 1 yıl whipsaw
+  if (data.backtest?.timeline?.length) {
+    const st = signalStability(data.backtest.timeline);
+    if (st) {
+      const fresh = st.holdMonths <= 1;
+      const choppy = st.switches >= 4;
+      items.push({
+        icon: fresh ? "🆕" : st.holdMonths >= 6 ? "🪨" : "⏳",
+        lead: fresh
+          ? "Sinyal bu ay yeni döndü."
+          : `Ana pozisyon ${st.holdMonths} aydır aynı.`,
+        rest: fresh ? (
+          <>
+            Taze bir karar — bir-iki ay teyit beklemek gel-git (whipsaw) riskini
+            azaltır.
+          </>
+        ) : st.holdMonths >= 6 ? (
+          <>
+            Uzun süredir aynı yönde duruyor; yerleşik bir trend — güçlü işaret.
+            {choppy ? " Yine de son bir yıl biraz oynaktı." : ""}
+          </>
+        ) : (
+          <>
+            Orta yaşta bir sinyal.
+            {choppy
+              ? ` Son 12 ayda ${st.switches} kez yön değişti — piyasa oynak, sık işlem maliyet yaratır.`
+              : " Yön nispeten istikrarlı."}
+          </>
+        ),
+      });
+    }
   }
 
   // 2) Genel hava — piyasa genişliği (kaç varlık yükselişte)
