@@ -2532,6 +2532,68 @@ function YatirimTavsiyesi({ data }: { data: AnalysisResult }) {
   const gem = data.gem;
   const isCash = gem.positionKey === "cash";
 
+  // --- Genel durum sentezi (tek satırlık başlık) ---
+  // Birden çok sinyali [-1,+1] ölçeğine indirip ortalar: ana karar, piyasa
+  // genişliği, evrenlerin yatırımda olma oranı, güncel drawdown derinliği.
+  let scoreSum = 0;
+  let scoreN = 0;
+  scoreSum += isCash ? -1 : 1;
+  scoreN++;
+  {
+    let pos = 0;
+    let tot = 0;
+    for (const u of data.universes)
+      for (const s of u.momentum.stocks)
+        if (s.excessVsTbill != null) {
+          tot++;
+          if (s.excessVsTbill > 0) pos++;
+        }
+    if (tot >= 10) {
+      scoreSum += (pos / tot - 0.5) * 2;
+      scoreN++;
+    }
+  }
+  {
+    const cashUnis = data.universes.filter(
+      (u) => u.momentum.stocks.filter((s) => s.selected).length === 0
+    ).length;
+    const totalUni = data.universes.length + 1;
+    const investedFrac = (totalUni - (cashUnis + (isCash ? 1 : 0))) / totalUni;
+    scoreSum += (investedFrac - 0.5) * 2;
+    scoreN++;
+  }
+  {
+    const cd = data.composite?.equityCurves[0]
+      ? curDrawdown(data.composite.equityCurves[0].growth)
+      : null;
+    if (cd != null) {
+      scoreSum += cd > -0.05 ? 1 : cd > -0.15 ? 0 : -1;
+      scoreN++;
+    }
+  }
+  const stance = scoreN ? scoreSum / scoreN : 0;
+  const verdict =
+    stance > 0.33
+      ? {
+          cls: "v-on",
+          icon: "🟢",
+          label: "Risk Açık",
+          text: "Göstergelerin çoğu yukarıyı işaret ediyor — sistemin kurallarına uyarak yatırımda kalınabilir.",
+        }
+      : stance < -0.33
+      ? {
+          cls: "v-off",
+          icon: "🔴",
+          label: "Savunmada",
+          text: "Göstergelerin çoğu zayıf — sermayeyi korumak öncelik; nakit/temkin ağır basıyor.",
+        }
+      : {
+          cls: "v-mix",
+          icon: "🟡",
+          label: "Karışık / Temkinli",
+          text: "Sinyaller karışık — acele etme, pozisyonları küçük tut ve sinyale sadık kal.",
+        };
+
   // 1) Bu ayın ana kararı
   if (isCash) {
     items.push({
@@ -2803,6 +2865,15 @@ function YatirimTavsiyesi({ data }: { data: AnalysisResult }) {
         <span className="advice-title">📋 Bu Ay Ne Yapmalı? — Sade Özet</span>
         <span className="advice-sub">
           analizlerin en önemli sonuçları, jargon olmadan
+        </span>
+      </div>
+      <div className={`advice-verdict ${verdict.cls}`}>
+        <span className="av-icon" aria-hidden="true">
+          {verdict.icon}
+        </span>
+        <span className="av-body">
+          <b className="av-label">Genel Durum: {verdict.label}</b>
+          <span className="av-text"> {verdict.text}</span>
         </span>
       </div>
       <ul className="advice-list">

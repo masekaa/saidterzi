@@ -1346,6 +1346,38 @@ table.heatmap.corr td {
   font-size: 12px;
   color: var(--text-faint);
 }
+.advice-verdict {
+  display: flex;
+  gap: 11px;
+  align-items: flex-start;
+  border-radius: 11px;
+  padding: 11px 14px;
+  margin-bottom: 14px;
+  border: 1px solid var(--border-soft);
+}
+.advice-verdict .av-icon {
+  font-size: 20px;
+  line-height: 1.3;
+  flex-shrink: 0;
+}
+.advice-verdict .av-label {
+  color: var(--text);
+}
+.advice-verdict .av-text {
+  color: var(--text-dim);
+}
+.advice-verdict.v-on {
+  background: rgba(34, 211, 166, 0.1);
+  border-color: rgba(34, 211, 166, 0.4);
+}
+.advice-verdict.v-mix {
+  background: rgba(245, 158, 11, 0.1);
+  border-color: rgba(245, 158, 11, 0.4);
+}
+.advice-verdict.v-off {
+  background: rgba(248, 113, 113, 0.1);
+  border-color: rgba(248, 113, 113, 0.4);
+}
 .advice-list {
   margin: 0;
   padding: 0;
