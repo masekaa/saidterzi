@@ -365,10 +365,20 @@ export async function GET(req: Request) {
         );
     }
 
+    // BIST bileşik meta-stratejiye DAHİL EDİLMEZ: buildComposite ortak-dönem
+    // KESİŞİMİ kullanır; BIST'in USD serisi USDTRY=X'e bağlı (sleeve'ler içinde
+    // veri açısından en kırılganı), dolayısıyla bileşiğin ortak dönemini sessizce
+    // kısaltıp tüm bileşik istatistiklerini (denetlenmiş manşet) bozabilir. BIST
+    // kendi evreninde tam analiz edilir, evrenler-arası kıyas/lider tablosunda ve
+    // Ayşe-teyze özetinde (genişlik/verdikt/özel madde) ağırlık taşır; yalnız
+    // harmanlanmış meta-stratejiden dışlanır (canlı kapsam doğrulanınca gözden
+    // geçirilebilir).
     const composite = buildComposite(
       [
         { name: "GEM (ETF)", bt: backtest },
-        ...universes.map((u) => ({ name: u.positionLabel, bt: u.backtest })),
+        ...universes
+          .filter((u) => u.id !== "bist")
+          .map((u) => ({ name: u.positionLabel, bt: u.backtest })),
       ],
       tbillRaw
     );
