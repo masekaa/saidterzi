@@ -1189,6 +1189,8 @@ function AnnualReturnsMatrix({ data }: { data: AnalysisResult }) {
     label: string;
     byYear: Map<string, number>;
     cagr: number | null;
+    best: number | null;
+    worst: number | null;
   };
   const cols: Col[] = [];
   const addCol = (emoji: string, label: string, bt: BacktestResult | null) => {
@@ -1205,7 +1207,15 @@ function AnnualReturnsMatrix({ data }: { data: AnalysisResult }) {
     if (prod.size < 1) return;
     const byYear = new Map<string, number>();
     prod.forEach((v, yr) => byYear.set(yr, v - 1));
-    cols.push({ emoji, label, byYear, cagr: bt.strategies[0]?.cagr ?? null });
+    const vals = [...byYear.values()];
+    cols.push({
+      emoji,
+      label,
+      byYear,
+      cagr: bt.strategies[0]?.cagr ?? null,
+      best: vals.length ? Math.max(...vals) : null,
+      worst: vals.length ? Math.min(...vals) : null,
+    });
   };
   addCol("📊", "GEM", data.backtest);
   for (const u of data.universes)
@@ -1297,15 +1307,27 @@ function AnnualReturnsMatrix({ data }: { data: AnalysisResult }) {
                 <td className="left strong">{yr}</td>
                 {cols.map((c, i) => {
                   const v = c.byYear.get(yr);
+                  const extreme =
+                    v != null && (v === c.best || v === c.worst);
                   return (
                     <td
                       key={i}
                       style={
                         v == null
                           ? undefined
-                          : { background: heatColor(v), fontVariantNumeric: "tabular-nums" }
+                          : {
+                              background: heatColor(v),
+                              fontVariantNumeric: "tabular-nums",
+                              fontWeight: extreme ? 700 : undefined,
+                            }
                       }
-                      title={`${c.label} ${yr}`}
+                      title={
+                        v != null && v === c.best
+                          ? `${c.label} ${yr} — en iyi yıl`
+                          : v != null && v === c.worst
+                          ? `${c.label} ${yr} — en kötü yıl`
+                          : `${c.label} ${yr}`
+                      }
                     >
                       {v == null ? "—" : pct(v, 0)}
                     </td>
@@ -1338,9 +1360,10 @@ function AnnualReturnsMatrix({ data }: { data: AnalysisResult }) {
       <p className="table-note">
         Sütun başlığına gel → strateji adı. Renk yoğunluğu getiri büyüklüğünü
         yansıtır; yatay okuma = o yıl evrenler-arası dağılım, dikey okuma = bir
-        stratejinin yıllar arası tutarlılığı. Alt satır = stratejinin <b>tüm dönem
-        CAGR</b>&apos;ı (yıllık getirileri bağlamlandıran çıpa; dönemler farklı
-        başlayabilir).
+        stratejinin yıllar arası tutarlılığı. Her sütunda <b>kalın</b> hücreler o
+        stratejinin <b>en iyi ve en kötü yılı</b>dır (üzerine gel → etiket). Alt
+        satır = stratejinin <b>tüm dönem CAGR</b>&apos;ı (yıllık getirileri
+        bağlamlandıran çıpa; dönemler farklı başlayabilir).
       </p>
     </div>
   );
