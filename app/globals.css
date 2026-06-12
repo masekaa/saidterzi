@@ -806,6 +806,11 @@ table.metrics tr.comp-row .left {
   stroke: var(--text);
   stroke-width: 1.6;
 }
+.box-pct {
+  stroke: #f59e0b;
+  stroke-width: 1.4;
+  opacity: 0.85;
+}
 .box-hl .box-rect {
   fill: rgba(34, 211, 166, 0.25);
   stroke: #22d3a6;

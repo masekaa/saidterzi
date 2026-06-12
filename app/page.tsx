@@ -1842,9 +1842,11 @@ function BoxPlot({ bt }: { bt: BacktestResult }) {
       name: c.name,
       hl: !!c.highlight,
       min: rets[0],
+      p5: quantile(rets, 0.05),
       q1: quantile(rets, 0.25),
       med: quantile(rets, 0.5),
       q3: quantile(rets, 0.75),
+      p95: quantile(rets, 0.95),
       max: rets[rets.length - 1],
     };
   });
@@ -1876,8 +1878,10 @@ function BoxPlot({ bt }: { bt: BacktestResult }) {
       <div className="chart-help">
         Her satır bir strateji. Kutu ne kadar <b>dar</b>sa aylık getiriler o
         kadar istikrarlı. Kutunun ve bıyıkların sola uzanması (negatif bölge) =
-        kayıp ayların büyüklüğü. Stratejinin kutusunu al-tut (benchmark) ile
-        karşılaştır.
+        kayıp ayların büyüklüğü. Bıyık uçları min–max (tek bir uç aya duyarlı);
+        içteki <b>turuncu çizgiler %5 ve %95 yüzdelikler</b> — outlier&apos;a
+        dayanıklı, gerçek kuyruk sınırını gösterir. Stratejinin kutusunu al-tut
+        (benchmark) ile karşılaştır.
       </div>
       <svg className="equity-svg" viewBox={`0 0 ${W} ${H}`} role="img" aria-label="Aylık getiri dağılımı kutu grafiği. Detay: üstteki başlık ve açıklamada.">
         {xTicks.map((v, i) => (
@@ -1905,6 +1909,9 @@ function BoxPlot({ bt }: { bt: BacktestResult }) {
               <line x1={X(s.min)} x2={X(s.max)} y1={cy} y2={cy} className="box-whisker" />
               <line x1={X(s.min)} x2={X(s.min)} y1={cy - 5} y2={cy + 5} className="box-whisker" />
               <line x1={X(s.max)} x2={X(s.max)} y1={cy - 5} y2={cy + 5} className="box-whisker" />
+              {/* %5 ve %95 yüzdelik — sağlam (outlier'a dayanıklı) kuyruk sınırı */}
+              <line x1={X(s.p5)} x2={X(s.p5)} y1={cy - 6} y2={cy + 6} className="box-pct" />
+              <line x1={X(s.p95)} x2={X(s.p95)} y1={cy - 6} y2={cy + 6} className="box-pct" />
               {/* kutu */}
               <rect
                 x={X(s.q1)}
