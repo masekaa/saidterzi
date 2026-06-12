@@ -3364,6 +3364,18 @@ function MomentumValueAdd({ data }: { data: AnalysisResult }) {
         Momentum Al-Tut&apos;u Yeniyor mu? — her evrende momentum vs eşit-ağırlık
         al-tut
       </div>
+      <p className="table-note" style={{ marginTop: 0, marginBottom: 10 }}>
+        Özet:{" "}
+        <b className={wins >= rows.length * 0.6 ? "pos-cell" : wins <= rows.length * 0.4 ? "neg" : ""}>
+          {wins}/{rows.length}
+        </b>{" "}
+        strateji momentum ile al-tut&apos;u CAGR&apos;da geçiyor —{" "}
+        {wins >= rows.length * 0.6
+          ? "momentum geniş ölçüde değer katıyor."
+          : wins <= rows.length * 0.4
+          ? "bu dönemde momentum sınırlı değer katıyor (risk-ayarlı/düşüş-koruma farkına da bak)."
+          : "karışık tablo — Sharpe/IR ile risk-ayarlı katkıyı değerlendir."}
+      </p>
       <div className="table-scroll">
         <table className="metrics">
           <thead>
