@@ -4124,6 +4124,11 @@ function CrossUniverseRiskReturn({ data }: { data: AnalysisResult }) {
               className={
                 p.hl ? "rr-dot rr-hl" : p.bench ? "rr-dot rr-bench" : "rr-dot"
               }
+              style={
+                p.hl || p.bench
+                  ? undefined
+                  : { fill: CURVE_COLORS[1 + (i % (CURVE_COLORS.length - 1))] }
+              }
             />
             <text
               x={X(p.x) + (p.hl ? 11 : 9)}
