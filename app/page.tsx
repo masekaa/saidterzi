@@ -4967,6 +4967,112 @@ function RollingRelative({ bt, label }: { bt: BacktestResult; label: string }) {
   );
 }
 
+// Göreli güç: kümülatif strateji ÷ benchmark oranı (ikisi de 1.0'a normalize).
+// Yükselen çizgi = strateji benchmark'ı kümülatif geçiyor; nerede kazanıldığını
+// (genelde düşüş dönemlerinde) görünür kılar. Equity overlay'den farkı: mutlak
+// seviyeleri değil, ARALARINDAKİ farkın gidişatını tek çizgide gösterir.
+function RelativeStrengthChart({ bt, label }: { bt: BacktestResult; label: string }) {
+  const mom = bt.equityCurves.find((c) => c.highlight);
+  const bench =
+    bt.equityCurves.find((c) => /Eşit[\s-]Ağırlık/.test(c.name)) ??
+    bt.equityCurves.find((c) => !c.highlight);
+  if (!mom || !bench) return null;
+  const m = Math.min(mom.growth.length, bench.growth.length, bt.dates.length);
+  if (m < 13) return null;
+  const g0 = mom.growth[0];
+  const b0 = bench.growth[0];
+  if (!(g0 > 0) || !(b0 > 0)) return null;
+
+  const ratio: number[] = [];
+  for (let i = 0; i < m; i++) {
+    const bv = bench.growth[i];
+    ratio.push(bv > 0 ? mom.growth[i] / g0 / (bv / b0) : NaN);
+  }
+  const valid = ratio.filter((x) => isFinite(x));
+  if (valid.length < 13) return null;
+  const lo = Math.min(...valid);
+  const hi = Math.max(...valid);
+  const span = hi - lo || 1;
+  const finalR = ratio[m - 1];
+  const outPct = (finalR - 1) * 100;
+  const ahead = finalR >= 1;
+
+  const W = 820;
+  const H = 200;
+  const padL = 46;
+  const padR = 14;
+  const padT = 14;
+  const padB = 26;
+  const innerW = W - padL - padR;
+  const innerH = H - padT - padB;
+  const X = (i: number) => padL + (innerW * i) / Math.max(1, m - 1);
+  const Y = (v: number) => padT + innerH * (1 - (v - lo) / span);
+  const oneY = Y(1);
+  const line = ratio
+    .map((v, i) =>
+      isFinite(v) ? `${i === 0 ? "M" : "L"}${X(i).toFixed(1)},${Y(v).toFixed(1)}` : ""
+    )
+    .filter(Boolean)
+    .join(" ");
+
+  const xTicks: { i: number; label: string }[] = [];
+  let ly = "";
+  for (let i = 0; i < m; i++) {
+    const y = bt.dates[i].slice(0, 4);
+    if (y !== ly) {
+      xTicks.push({ i, label: y });
+      ly = y;
+    }
+  }
+  const step = Math.max(1, Math.ceil(xTicks.length / 10));
+  const shown = xTicks.filter((_, idx) => idx % step === 0);
+  const benchName = bench.name.replace(/\s*\(.*\)/, "");
+
+  return (
+    <div className="chart-card">
+      <div className="chart-title">
+        {label} — Göreli Güç (kümülatif: {label} ÷ {benchName}){" "}
+        <span className={ahead ? "pos-cell" : "neg"}>
+          · son {finalR.toFixed(2)}× ({outPct >= 0 ? "+" : ""}
+          {outPct.toFixed(0)}%)
+        </span>
+      </div>
+      <div className="chart-help">
+        Tek çizgi: stratejinin kümülatif büyümesinin al-tut benchmark&apos;ına
+        oranı (ikisi de başlangıçta 1.0). <b>Çizgi yükseliyorsa</b> strateji o
+        dönemde benchmark&apos;ı geçiyor; <b>düzse</b> başa baş, <b>iniyorsa</b>{" "}
+        geride. Eğimin en dikleştiği yerler, kenarın kazanıldığı dönemlerdir —
+        dual momentum&apos;da bu genelde piyasa düşüşleridir (nakde kaçış
+        sayesinde benchmark düşerken strateji daha az kaybeder). Son değer{" "}
+        <b>{finalR.toFixed(2)}×</b> → strateji benchmark&apos;ı kümülatif{" "}
+        <b>{ahead ? `%${outPct.toFixed(0)} geçti` : `%${Math.abs(outPct).toFixed(0)} geride`}</b>.
+      </div>
+      <svg
+        className="equity-svg"
+        viewBox={`0 0 ${W} ${H}`}
+        role="img"
+        aria-label="Kümülatif göreli güç grafiği — strateji bölü benchmark oranı. Detay: üstteki başlık ve açıklamada."
+      >
+        <line x1={padL} x2={W - padR} y1={oneY} y2={oneY} className="grid-line zero" />
+        <text x={padL - 8} y={oneY + 3} className="axis-label" textAnchor="end">
+          1.0×
+        </text>
+        <path
+          d={line}
+          className="equity-line"
+          stroke={ahead ? "#22d3a6" : "#f87171"}
+          style={{ strokeWidth: 2 }}
+        />
+        {shown.map((t, idx) => (
+          <text key={idx} x={X(t.i)} y={H - 8} className="axis-label" textAnchor="middle">
+            {t.label}
+          </text>
+        ))}
+      </svg>
+    </div>
+  );
+}
+
 function RollingVol({ bt, label }: { bt: BacktestResult; label: string }) {
   const curve = bt.equityCurves.find((c) => c.highlight) ?? bt.equityCurves[0];
   const g = curve?.growth;
@@ -7391,6 +7497,7 @@ function BacktestCharts({
       <RollingVol bt={bt} label={label} />
       <RollingSharpe bt={bt} label={label} />
       <RollingRelative bt={bt} label={label} />
+      <RelativeStrengthChart bt={bt} label={label} />
       <ScatterGemVsBench bt={bt} label={label} />
       <CaptureRatios bt={bt} />
       <BoxPlot bt={bt} />
