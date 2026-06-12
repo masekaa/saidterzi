@@ -320,6 +320,9 @@ function MomentumBoard({
               <th className="left">Varlık</th>
               <th className="left">Not</th>
               <th>12-Ay Getiri</th>
+              <th title="12-1 momentum: en son ayı atlayan getiri (Jegadeesh-Titman). 12-Ay ile zıt işaretliyse, getiriyi son ay taşımış → tersine dönüş riski.">
+                12-1
+              </th>
               <th
                 className={`sortable ${sortK === "excess" ? "sorted" : ""}`}
                 onClick={() => setSortK("excess")}
@@ -367,6 +370,34 @@ function MomentumBoard({
                 <td className="left sector">{s.sector}</td>
                 <td className={s.ret12m != null && s.ret12m < 0 ? "neg" : ""}>
                   {pct(s.ret12m)}
+                </td>
+                <td
+                  className={
+                    s.mom121 == null
+                      ? ""
+                      : s.ret12m != null &&
+                        Math.sign(s.mom121) !== Math.sign(s.ret12m)
+                      ? "neg"
+                      : s.mom121 < 0
+                      ? "neg"
+                      : ""
+                  }
+                  title={
+                    s.mom121 != null &&
+                    s.ret12m != null &&
+                    Math.sign(s.mom121) !== Math.sign(s.ret12m)
+                      ? "12-Ay ile zıt işaret: getiriyi büyük ölçüde son ay taşımış — kısa-vade tersine dönüş riski."
+                      : "12-1 momentum (son ay atlanmış)"
+                  }
+                >
+                  {s.mom121 != null
+                    ? `${pct(s.mom121)}${
+                        s.ret12m != null &&
+                        Math.sign(s.mom121) !== Math.sign(s.ret12m)
+                          ? " ⚠"
+                          : ""
+                      }`
+                    : "—"}
                 </td>
                 <td className={s.excessVsTbill != null && s.excessVsTbill < 0 ? "neg" : ""}>
                   {pct(s.excessVsTbill)}
@@ -421,6 +452,10 @@ function MomentumBoard({
         şu an <b>{selectedCount}</b> varlık seçili. Dual momentum portföyü bu
         seçili varlıklara eşit ağırlık verir; hiçbiri geçemezse nakitte kalınır.
         İvme = son 12 ayın log-fiyat kavisi (hızlanan trend daha kalıcı olur).{" "}
+        <b>12-1</b> = en son ayı atlayan momentum (Jegadeesh-Titman 1993): kısa-
+        vade tersine dönüş gürültüsünü ayıklar. 12-Ay pozitif ama 12-1 negatifse
+        (<b>⚠</b>) getiriyi büyük ölçüde son ay taşımıştır — gelecek ay geri
+        çekilme riski yüksektir. Bilgilendirici, seçimi değiştirmez.{" "}
         <b>Kalite</b> = trailing 12-ayın % pozitif ayı (Gray-Vogel 2016): yüksek =
         düzgün/tutarlı yükseliş; düşük = birkaç büyük sıçramaya dayanan kırılgan
         momentum. Sıralamayı değiştirmez, seçimin sağlamlığını gösterir.

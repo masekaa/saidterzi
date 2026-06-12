@@ -951,6 +951,16 @@ export function buildStockMomentum(
   const raw0 = universe.map((s) => {
     const raw = stockRaw[s.key];
     const ret12m = raw ? trailingReturn(raw.series, LOOKBACK_MONTHS).ret : null;
+    // 12-1 momentum (Jegadeesh-Titman 1993, Asness): en son ayı ATLA — kısa-vade
+    // tersine dönüş (1-ay reversal) gürültüsünü ayıklar. Getiri [t-12, t-1] =
+    // fiyat[t-1]/fiyat[t-12]-1. Bilgilendirici; seçimi değiştirmez.
+    let mom121: number | null = null;
+    if (raw && raw.series.length >= LOOKBACK_MONTHS + 1) {
+      const n = raw.series.length;
+      const p1 = raw.series[n - 2].close; // t-1
+      const p12 = raw.series[n - 1 - LOOKBACK_MONTHS].close; // t-12
+      if (p12 > 0 && isFinite(p1) && isFinite(p12)) mom121 = p1 / p12 - 1;
+    }
     const hi = raw ? highestClose(raw.series, LOOKBACK_MONTHS) : { high: null, price: null };
     const highProximity =
       hi.price != null && hi.high != null && hi.high !== 0 ? hi.price / hi.high : null;
@@ -975,7 +985,7 @@ export function buildStockMomentum(
       }
       quality = tot > 0 ? pos / tot : null;
     }
-    return { s, ret12m, highProximity, accelerating, quality };
+    return { s, ret12m, mom121, highProximity, accelerating, quality };
   });
 
   // 2) 12-ay getiriye göre azalan sırala (null'lar sona)
@@ -998,6 +1008,7 @@ export function buildStockMomentum(
       ticker: x.s.ticker,
       sector: x.s.note ?? "",
       ret12m: x.ret12m,
+      mom121: x.mom121,
       excessVsTbill: excess,
       absolute,
       rank,

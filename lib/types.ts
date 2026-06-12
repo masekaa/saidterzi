@@ -130,6 +130,7 @@ export interface StockSignal {
   ticker: string;
   sector: string; // universe note
   ret12m: number | null;
+  mom121?: number | null; // 12-1 momentum: son ayı atlayan getiri (Jegadeesh-Titman)
   excessVsTbill: number | null;
   absolute: Signal | null; // r₁₂ > T-Bill ?
   rank: number | null; // göreceli momentum sırası (1 = en güçlü)
