@@ -6454,8 +6454,11 @@ function RobustnessHeatmap() {
               Hücre = o look-back &amp; top-N ile{" "}
               {metric === "sharpe" ? "yıllık Sharpe" : "yıllık CAGR"} (renk:
               kırmızı≤0 → yeşil yüksek). 12-ay satırı kalın çerçeveli (Antonacci
-              standardı). GEM tekli seçim yaptığından top-N&apos;den bağımsızdır
-              (tek sütun). Yüksek &quot;dayanıklılık&quot; = strateji parametre
+              standardı).{" "}
+              {uni === "etf"
+                ? "GEM tekli seçim yaptığından top-N'den bağımsızdır (tek sütun)."
+                : "Sütunlar farklı top-N (seçilen varlık sayısı) değerleridir."}{" "}
+              Yüksek &quot;dayanıklılık&quot; = strateji parametre
               seçimine duyarlı değil (aşırı-uyum riski düşük). Sharpe görünümü
               risk-ayarlı, CAGR görünümü ham getiri yüzeyini gösterir.
             </p>
