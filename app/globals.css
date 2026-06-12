@@ -1317,6 +1317,67 @@ table.heatmap.corr td {
   flex-shrink: 0;
 }
 
+/* Sade dil yatırım özeti — en üst, en görünür panel */
+.advice {
+  background: linear-gradient(
+    180deg,
+    rgba(34, 211, 166, 0.07),
+    rgba(34, 211, 166, 0.02)
+  );
+  border: 1px solid rgba(34, 211, 166, 0.35);
+  border-left: 4px solid #22d3a6;
+  border-radius: 14px;
+  padding: 16px 20px;
+  margin-bottom: 20px;
+}
+.advice-head {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 4px 12px;
+  margin-bottom: 12px;
+}
+.advice-title {
+  font-size: 16px;
+  font-weight: 800;
+  color: var(--text);
+}
+.advice-sub {
+  font-size: 12px;
+  color: var(--text-faint);
+}
+.advice-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 11px;
+}
+.advice-list li {
+  display: flex;
+  gap: 11px;
+  font-size: 14.5px;
+  color: var(--text-dim);
+  line-height: 1.55;
+}
+.advice-icon {
+  flex-shrink: 0;
+  font-size: 18px;
+  line-height: 1.4;
+}
+.advice-lead {
+  color: var(--text);
+}
+.advice-foot {
+  margin: 13px 0 0;
+  padding-top: 11px;
+  border-top: 1px solid var(--border-soft);
+  font-size: 12px;
+  color: var(--text-faint);
+  line-height: 1.5;
+}
+
 .signals-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));

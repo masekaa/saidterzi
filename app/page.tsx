@@ -2494,6 +2494,242 @@ function BackToTop() {
   );
 }
 
+// Sade dil ("Ayşe teyzeye anlatır gibi") yatırım özeti — sayfanın en üstünde,
+// teknik jargon olmadan, somut "bu ay ne yap" maddeleriyle. Tüm sayılar diğer
+// panellerdeki aynı hesaplardan türetilir; burada yalnız sadeleştirilir.
+function YatirimTavsiyesi({ data }: { data: AnalysisResult }) {
+  const items: { icon: string; lead: string; rest: ReactNode }[] = [];
+  const gem = data.gem;
+  const isCash = gem.positionKey === "cash";
+
+  // 1) Bu ayın ana kararı
+  if (isCash) {
+    items.push({
+      icon: "🛡️",
+      lead: "Bu ay temkinli ol, nakitte bekle.",
+      rest: (
+        <>
+          Ana göstergemiz şu an borsadan uzak durup parayı güvenli tarafta
+          (faiz/mevduat/para piyasası) tutmayı söylüyor — son aylarda trend
+          zayıfladı, düşüşten korunma zamanı.
+        </>
+      ),
+    });
+  } else {
+    items.push({
+      icon: "📈",
+      lead: "Bu ay piyasada kal.",
+      rest: (
+        <>
+          Ana göstergemiz bu ay <b>{gem.positionName}</b> tutmayı öneriyor —
+          yani paranın risk (borsa) tarafında kalması yönünde, çünkü trend hâlâ
+          yukarı.
+        </>
+      ),
+    });
+  }
+
+  // 2) Genel hava — piyasa genişliği (kaç varlık yükselişte)
+  {
+    let pos = 0;
+    let tot = 0;
+    for (const u of data.universes)
+      for (const s of u.momentum.stocks) {
+        if (s.excessVsTbill != null) {
+          tot++;
+          if (s.excessVsTbill > 0) pos++;
+        }
+      }
+    if (tot >= 10) {
+      const br = pos / tot;
+      const hava =
+        br >= 0.6 ? "açık ve güneşli" : br >= 0.4 ? "karışık" : "kapalı ve riskli";
+      items.push({
+        icon: br >= 0.5 ? "🌤️" : "🌧️",
+        lead: `Piyasanın genel havası: ${hava}.`,
+        rest: (
+          <>
+            Takip ettiğimiz {tot} varlığın <b>%{(br * 100).toFixed(0)}</b>&apos;i
+            şu an yükseliş eğiliminde.{" "}
+            {br >= 0.6
+              ? "Çoğunluk yukarı bakıyor — ortam risk almaya elverişli."
+              : br >= 0.4
+              ? "Yön belirsiz — acele karar verme."
+              : "Çoğunluk aşağı bakıyor — kemerleri bağla, savunmada kal."}
+          </>
+        ),
+      });
+    }
+  }
+
+  // 3) Kaç strateji nakitte bekliyor
+  {
+    const cashUnis = data.universes.filter(
+      (u) => u.momentum.stocks.filter((s) => s.selected).length === 0
+    ).length;
+    const totalCash = cashUnis + (isCash ? 1 : 0);
+    const totalUni = data.universes.length + 1;
+    items.push({
+      icon: totalCash > 0 ? "⚠️" : "✅",
+      lead:
+        totalCash > 0
+          ? `${totalCash} stratejimiz şu an nakitte bekliyor (${totalUni} taneden).`
+          : "Tüm stratejiler şu an yatırımda.",
+      rest:
+        totalCash > 0 ? (
+          <>
+            Birçoğu aynı anda kenara çekildiyse piyasa zayıf demektir; pozisyon
+            açarken bir adım temkinli ol.
+          </>
+        ) : (
+          <>Hiçbiri nakde kaçmadı — yöntemlerin hepsi şu an &quot;devam&quot; diyor.</>
+        ),
+    });
+  }
+
+  // 4) Geçmişte en istikrarlı kazandıran yöntem (en yüksek Sharpe)
+  {
+    const strat: { name: string; emoji: string; sharpe: number }[] = [];
+    if (data.backtest?.strategies[0]?.sharpe != null)
+      strat.push({ name: "ETF Dual Momentum", emoji: "📊", sharpe: data.backtest.strategies[0].sharpe });
+    for (const u of data.universes)
+      if (u.backtest?.strategies[0]?.sharpe != null)
+        strat.push({ name: u.positionLabel, emoji: u.emoji, sharpe: u.backtest.strategies[0].sharpe });
+    const best = strat.sort((a, b) => b.sharpe - a.sharpe)[0];
+    if (best)
+      items.push({
+        icon: "🏆",
+        lead: `Geçmişte en istikrarlı kazandıran yöntem: ${best.emoji} ${best.name}.`,
+        rest: (
+          <>
+            Yani en az iniş-çıkışla en düzenli getiriyi bu sağlamış.{" "}
+            <i>Ama geçmiş performans geleceğin garantisi değildir.</i>
+          </>
+        ),
+      });
+  }
+
+  // 5) Yumurtaları tek sepete koyma — bileşik karışım
+  if (data.composite?.equityCurves[0] && data.composite.strategies[0]) {
+    const g = data.composite.equityCurves[0].growth;
+    const mult = g[g.length - 1];
+    const dd = data.composite.strategies[0].maxDrawdown;
+    items.push({
+      icon: "🧩",
+      lead: "Tek bir şeye değil, hepsine birden yatır (bileşik karışım).",
+      rest: (
+        <>
+          Tüm yöntemleri harmanlayınca para ortak dönemde <b>{mult.toFixed(1)}×</b>{" "}
+          olmuş
+          {dd != null ? (
+            <>
+              {" "}
+              ve en kötü dönemde tepeden <b>%{Math.abs(dd * 100).toFixed(0)}</b>{" "}
+              gerilemiş
+            </>
+          ) : null}
+          . Yumurtaları tek sepete koymamak iniş-çıkışı yumuşatıyor.
+        </>
+      ),
+    });
+  }
+
+  // 6) Düşüş koruması — 60/40 ile kıyas (varsa)
+  {
+    const b = data.benchmark6040;
+    const comp = data.composite?.strategies[0];
+    if (b?.maxDrawdown != null && comp?.maxDrawdown != null) {
+      const ours = Math.abs(comp.maxDrawdown * 100);
+      const theirs = Math.abs(b.maxDrawdown * 100);
+      items.push({
+        icon: "🛟",
+        lead: "En güzel yanı: piyasa çakıldığında zararı sınırlaması.",
+        rest: (
+          <>
+            En kötü dönemde bizim karışımımız <b>%{ours.toFixed(0)}</b>{" "}
+            kaybetmiş; klasik &quot;%60 hisse + %40 tahvil&quot; portföyü ise{" "}
+            <b>%{theirs.toFixed(0)}</b>.{" "}
+            {ours < theirs
+              ? "Yani kötü günde daha az acıtmış."
+              : "Bu dönemde klasik portföy daha az düşmüş — fark küçükse normal."}
+          </>
+        ),
+      });
+    }
+  }
+
+  // 7) Küçük uyarı — en kırılgan sinyal (yakında nakde dönebilir)
+  {
+    const cands: { name: string; emoji: string; margin: number }[] = [];
+    const gw = data.signals.assets.find((a) => a.isGemWinner);
+    if (!isCash && gw?.excessVsTbill != null && gw.excessVsTbill > 0)
+      cands.push({ name: "ana strateji", emoji: "📊", margin: gw.excessVsTbill });
+    for (const u of data.universes) {
+      const exc = u.momentum.stocks
+        .filter((s) => s.selected)
+        .map((s) => s.excessVsTbill)
+        .filter((x): x is number => x != null && isFinite(x) && x > 0);
+      if (exc.length)
+        cands.push({ name: u.positionLabel, emoji: u.emoji, margin: Math.min(...exc) });
+    }
+    if (cands.length) {
+      const thin = cands.reduce((a, b) => (b.margin < a.margin ? b : a));
+      if (thin.margin < 0.03)
+        items.push({
+          icon: "🔎",
+          lead: "Küçük uyarı: bir pozisyon zayıf zeminde.",
+          rest: (
+            <>
+              {thin.emoji} <b>{thin.name}</b> seçimi şu an güvenli faizin yalnız
+              kıl payı üstünde; küçük bir düşüşte gelecek ay nakde dönebilir.
+              Sürpriz olmasın.
+            </>
+          ),
+        });
+    }
+  }
+
+  // 8) Altın kural — her zaman
+  items.push({
+    icon: "🧭",
+    lead: "Altın kural.",
+    rest: (
+      <>
+        Acele etme, parayı bölüştür, <b>ayda bir kez</b> buraya bakıp sinyal
+        değiştiyse pozisyonu güncelle. Kaybetmeyi göze alamayacağın parayı riske
+        atma.
+      </>
+    ),
+  });
+
+  return (
+    <div className="advice">
+      <div className="advice-head">
+        <span className="advice-title">📋 Bu Ay Ne Yapmalı? — Sade Özet</span>
+        <span className="advice-sub">
+          analizlerin en önemli sonuçları, jargon olmadan
+        </span>
+      </div>
+      <ul className="advice-list">
+        {items.map((it, i) => (
+          <li key={i}>
+            <span className="advice-icon" aria-hidden="true">
+              {it.icon}
+            </span>
+            <span>
+              <b className="advice-lead">{it.lead}</b> {it.rest}
+            </span>
+          </li>
+        ))}
+      </ul>
+      <p className="advice-foot">
+        Bu sayfa bizim iç kullanımımız için bir <b>karar-destek motoru</b>;
+        sinyaller kurallı ve mekaniktir, kesin kâr vaadi değildir.
+      </p>
+    </div>
+  );
+}
+
 function KeyInsights({ data }: { data: AnalysisResult }) {
   const insights: { icon: string; text: ReactNode }[] = [];
 
@@ -7342,6 +7578,11 @@ export default function Home() {
             </div>
             <p className="hero-rationale">{gem.rationale}</p>
           </div>
+
+          {/* Sade dil yatırım özeti — en üstte, Ayşe teyzeye anlatır gibi */}
+          <ErrorBoundary label="Sade özet">
+            <YatirimTavsiyesi data={data} />
+          </ErrorBoundary>
 
           {/* Otomatik içgörü özeti */}
           <KeyInsights data={data} />
