@@ -2054,6 +2054,19 @@ function ReturnHistogram({ bt, label = "GEM" }: { bt: BacktestResult; label?: st
   const xTicks: number[] = [];
   for (let p = Math.ceil(lo * 10) / 10; p <= hi; p += 0.05) xTicks.push(Number(p.toFixed(2)));
 
+  // Sağlam (robust) özet metrikler — aynı aylık getiri serisinden.
+  const posR = rets.filter((x) => x > 0);
+  const negR = rets.filter((x) => x < 0);
+  const sumAll = rets.reduce((s, x) => s + x, 0);
+  const sumNegAbs = negR.reduce((s, x) => s + Math.abs(x), 0);
+  // Gain-to-Pain (Schwager): Σgetiri / |Σnegatif getiri|. >1 değerli.
+  const gpr = sumNegAbs > 1e-9 ? sumAll / sumNegAbs : null;
+  const winRate = posR.length / n;
+  const avgWin = posR.length ? posR.reduce((s, x) => s + x, 0) / posR.length : null;
+  const avgLoss = negR.length ? sumNegAbs / negR.length : null;
+  const payoff =
+    avgWin != null && avgLoss != null && avgLoss > 1e-9 ? avgWin / avgLoss : null;
+
   return (
     <div className="chart-card">
       <div className="chart-title">
@@ -2106,6 +2119,34 @@ function ReturnHistogram({ bt, label = "GEM" }: { bt: BacktestResult; label?: st
           </text>
         ))}
       </svg>
+      <div className="cap-grid">
+        <div className="cap-item">
+          <div className="cap-label">Gain-to-Pain</div>
+          <div className={`cap-val ${gpr != null && gpr >= 1 ? "pos-cell" : "neg"}`}>
+            {gpr != null ? `${gpr.toFixed(2)}×` : "—"}
+          </div>
+        </div>
+        <div className="cap-item">
+          <div className="cap-label">Pozitif ay oranı</div>
+          <div className={`cap-val ${winRate >= 0.5 ? "pos-cell" : "neg"}`}>
+            {pct(winRate, 0)}
+          </div>
+        </div>
+        <div className="cap-item">
+          <div className="cap-label">Kazanç/Kayıp (payoff)</div>
+          <div className={`cap-val ${payoff != null && payoff >= 1 ? "pos-cell" : "neg"}`}>
+            {payoff != null ? `${payoff.toFixed(2)}×` : "—"}
+          </div>
+        </div>
+      </div>
+      <p className="chart-help">
+        <b>Gain-to-Pain</b> (Schwager): tüm getirilerin toplamı ÷ negatif
+        getirilerin mutlak toplamı — <b>&gt;1 değerli</b>, kazançlar acının
+        kaç katı. <b>Pozitif ay oranı</b>: ayların yüzde kaçı pozitif.{" "}
+        <b>Payoff</b>: ortalama kazançlı ay ÷ ortalama kayıplı ay (yüksek =
+        kazançlar kayıplardan büyük). Düşük isabet (&lt;%50) bile yüksek payoff
+        ile kârlı olabilir — momentum&apos;un tipik imzası.
+      </p>
     </div>
   );
 }
