@@ -906,7 +906,7 @@ function PositionTimeline({ bt, label = "GEM" }: { bt: BacktestResult; label?: s
       </div>
       <div className="chart-help">
         Her dikey dilim bir ay; renk o ay tutulan varlık. Renk değişimi =
-        GEM&apos;in pozisyon değiştirdiği (rotasyon yaptığı) an. Legend&apos;daki
+        stratejinin pozisyon değiştirdiği (rotasyon yaptığı) an. Legend&apos;daki
         %değer, o varlıkta geçirilen toplam zamanın oranı.
       </div>
       <svg
@@ -1448,7 +1448,7 @@ function MonthlyHeatmap({ bt, label = "GEM" }: { bt: BacktestResult; label?: str
         {label} Aylık Getiri Isı Haritası — yıl × ay (yeşil: kâr, kırmızı: zarar)
       </div>
       <div className="chart-help">
-        Her hücre o ayın GEM getirisi (%). Renk yoğunluğu büyüklüğü gösterir:
+        Her hücre o ayın strateji getirisi (%). Renk yoğunluğu büyüklüğü gösterir:
         koyu yeşil güçlü kâr, koyu kırmızı güçlü zarar. Sağdaki <b>Yıl</b>{" "}
         sütunu yıllık bileşik getiri. Kırmızı kümeleri = stres dönemleri.
       </div>
@@ -1780,8 +1780,8 @@ function ScatterGemVsBench({ bt, label = "GEM" }: { bt: BacktestResult; label?: 
       </div>
       <div className="chart-help">
         Her nokta bir ay. Köşegen (kesikli) = eşit getiri. <b>Sol-alt
-        çeyrekte</b> (ikisi de düşüşte) GEM noktalarının köşegenin{" "}
-        <b>üstünde</b> kalması = GEM&apos;in düşüş aylarında daha az kaybetmesi
+        çeyrekte</b> (ikisi de düşüşte) strateji noktalarının köşegenin{" "}
+        <b>üstünde</b> kalması = stratejinin düşüş aylarında daha az kaybetmesi
         (downside koruması).
       </div>
       <svg
@@ -1806,7 +1806,7 @@ function ScatterGemVsBench({ bt, label = "GEM" }: { bt: BacktestResult; label?: 
           {benchName} aylık →
         </text>
         <text x={X(0) + 6} y={pad + 4} className="axis-label" textAnchor="start">
-          ↑ GEM aylık
+          ↑ Strateji aylık
         </text>
       </svg>
     </div>
