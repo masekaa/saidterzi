@@ -1,4 +1,4 @@
-// GET /api/ensemble?universe=etf|stock|crypto|sector|intl|commodity|factor|bond
+// GET /api/ensemble?universe=etf|stock|crypto|sector|intl|commodity|factor|bond|assetclass|country
 // Çok-pencereli (look-back) ensemble: aynı stratejiyi {3,6,9,12} ay
 // look-back'lerinde koşar ve eşit-ağırlık harmanlar (parametre/timing luck'ı
 // azaltır). Veriyi bir kez çeker; verified runBacktest/runStockBacktest +

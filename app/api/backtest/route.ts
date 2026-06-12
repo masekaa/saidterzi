@@ -1,4 +1,4 @@
-// GET /api/backtest?universe=etf|stock|crypto|sector&lookback=12&topN=5
+// GET /api/backtest?universe=etf|stock|crypto|sector|intl|commodity|factor|bond|assetclass|country&lookback=12&topN=5
 // Hafif, etkileşimli backtest: yalnızca seçilen evrenin sembollerini çeker ve
 // kullanıcı parametreleriyle (look-back, top-N) momentum rotasyon backtest'i koşar.
 
