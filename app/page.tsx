@@ -3006,6 +3006,35 @@ function YatirimTavsiyesi({ data }: { data: AnalysisResult }) {
     }
   }
 
+  // 7b) 12-1 momentum kırılganlığı — yalnız seçili pozisyonlarda son-ay-taşıdı
+  // uyarısı varsa görünür (koşullu; her zaman yer kaplamaz).
+  {
+    const fragile: string[] = [];
+    for (const u of data.universes)
+      for (const s of u.momentum.stocks)
+        if (
+          s.selected &&
+          s.mom121 != null &&
+          s.ret12m != null &&
+          Math.sign(s.mom121) !== Math.sign(s.ret12m)
+        )
+          fragile.push(s.name);
+    if (fragile.length) {
+      items.push({
+        icon: "⚠️",
+        lead: `Seçili pozisyonların ${fragile.length} tanesinde momentum kırılgan.`,
+        rest: (
+          <>
+            {fragile.slice(0, 4).join(", ")}
+            {fragile.length > 4 ? ` (+${fragile.length - 4})` : ""} —
+            yükselişlerini büyük ölçüde son ay taşımış (12-1 ölçütü ters). Kısa-
+            vadeli geri çekilme riski; bu pozisyonlara fazla yüklenme.
+          </>
+        ),
+      });
+    }
+  }
+
   // 8) Altın kural — her zaman
   items.push({
     icon: "🧭",
