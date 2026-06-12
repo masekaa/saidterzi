@@ -7091,8 +7091,9 @@ export default function Home() {
         <div>
           <h1 className="title">Dual Momentum Analiz Motoru</h1>
           <p className="subtitle">
-            Altın · S&amp;P 500 · NASDAQ — Antonacci stratejilerinin canlı,
-            şeffaf hesaplamaları (12 ay look-back, T-Bill eşiği)
+            10 varlık evreni · GEM + bileşik meta-strateji — Antonacci dual
+            momentum&apos;un canlı, şeffaf hesaplamaları (12 ay look-back, T-Bill
+            eşiği)
           </p>
         </div>
         <div className="header-right">
