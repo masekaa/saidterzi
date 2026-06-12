@@ -6843,6 +6843,35 @@ function UniverseSection({ u }: { u: UniverseBundle }) {
         </div>
       )}
 
+      {bt?.strategies[0] &&
+        (() => {
+          const mom = bt.strategies[0];
+          const bench =
+            bt.strategies.find((s) => /Eşit[\s-]Ağırlık/.test(s.name)) ??
+            bt.strategies[bt.strategies.length - 1];
+          if (!bench || bench === mom) return null;
+          const dC = (mom.cagr ?? 0) - (bench.cagr ?? 0);
+          const dS = (mom.sharpe ?? 0) - (bench.sharpe ?? 0);
+          return (
+            <p className="table-note" style={{ marginTop: 0 }}>
+              Momentum vs eşit-ağırlık al-tut: CAGR{" "}
+              <b className={dC >= 0 ? "pos-cell" : "neg"}>
+                {dC >= 0 ? "+" : ""}
+                {pct(dC)}
+              </b>{" "}
+              · Sharpe{" "}
+              <b className={dS >= 0 ? "pos-cell" : "neg"}>
+                {dS >= 0 ? "+" : ""}
+                {num(dS)}
+              </b>{" "}
+              —{" "}
+              {dS > 0
+                ? "momentum bu evrende risk-ayarlı değer katıyor."
+                : "bu evrende momentum al-tut'u risk-ayarlı geçemiyor (düşüş korumasına da bak)."}
+            </p>
+          );
+        })()}
+
       {u.momentum && <StockMomentumBoard data={u.momentum} />}
 
       {u.signals && (
