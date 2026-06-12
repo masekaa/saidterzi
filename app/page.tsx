@@ -29,14 +29,16 @@ const CURVE_COLORS = [
   "#c084fc",
   "#94a3b8",
   "#f472b6",
-  // 10 evren + GEM + bileşik aynı grafikte çizilebildiğinden ≥10 ayrık renk
-  // gerekir; aksi halde renkler tekrarlayıp evrenler karışır.
+  // 11 evren + GEM + bileşik + benchmark'lar aynı grafikte çizilebildiğinden
+  // bol ayrık renk gerekir; aksi halde renkler tekrarlayıp evrenler karışır.
   "#22d3ee",
   "#a3e635",
   "#fb7185",
   "#818cf8",
   "#fcd34d",
   "#e879f9",
+  "#fdba74",
+  "#c4b5fd",
 ];
 
 // Pozisyon bandı için varlık etiket + renk haritası (anahtar -> {label,color})
@@ -7889,7 +7891,7 @@ export default function Home() {
         <div>
           <h1 className="title">Dual Momentum Analiz Motoru</h1>
           <p className="subtitle">
-            10 varlık evreni · GEM + bileşik meta-strateji — Antonacci dual
+            11 varlık evreni · GEM + bileşik meta-strateji — Antonacci dual
             momentum&apos;un canlı, şeffaf hesaplamaları (12 ay look-back, T-Bill
             eşiği)
           </p>

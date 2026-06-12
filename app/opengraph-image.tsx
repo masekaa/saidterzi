@@ -6,7 +6,7 @@ import { ImageResponse } from "next/og";
 // çizilmiş bir grafik-çubuk motifi kullanıyoruz (glyph sorunu olmaz).
 export const runtime = "edge";
 export const alt =
-  "Dual Momentum Analiz — 10 varlık evreni, canlı backtest ve risk analizi";
+  "Dual Momentum Analiz — 11 varlık evreni, canlı backtest ve risk analizi";
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 
@@ -63,7 +63,7 @@ export default function OgImage() {
             maxWidth: 1000,
           }}
         >
-          10 varlik evreni · esit-agirlik &amp; risk-parity bilesik · interaktif
+          11 varlik evreni · esit-agirlik &amp; risk-parity bilesik · interaktif
           backtest studyosu · PSR/DSR · 60/40 kiyas · Fama-French alpha
         </div>
         <div

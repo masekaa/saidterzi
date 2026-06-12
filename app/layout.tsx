@@ -3,9 +3,9 @@ import { SITE_URL } from "@/lib/site";
 import "./globals.css";
 
 const TITLE =
-  "Dual Momentum Analiz — 10 varlık evreninde canlı momentum (GEM · bileşik · backtest stüdyosu)";
+  "Dual Momentum Analiz — 11 varlık evreninde canlı momentum (GEM · bileşik · backtest stüdyosu)";
 const DESC =
-  "Antonacci Dual Momentum: 10 evren (ETF/GEM, hisse, kripto, sektör, uluslararası, emtia, faktör, tahvil, varlık-sınıfı, ülke) momentum stratejisi; eşit-ağırlık & risk-parity bileşik, interaktif backtest stüdyosu, Fama-French alpha, Olasılıksal/Deflated Sharpe (PSR/DSR), 60/40 kıyas ve tam risk analizi. Canlı, anahtarsız veri.";
+  "Antonacci Dual Momentum: 11 evren (ETF/GEM, hisse, kripto, sektör, uluslararası, emtia, faktör, tahvil, varlık-sınıfı, ülke, BIST 100) momentum stratejisi; eşit-ağırlık & risk-parity bileşik, interaktif backtest stüdyosu, Fama-French alpha, Olasılıksal/Deflated Sharpe (PSR/DSR), 60/40 kıyas ve tam risk analizi. Canlı, anahtarsız veri.";
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
