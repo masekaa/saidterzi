@@ -405,7 +405,7 @@ function StockMomentumBoard({
         </table>
       </div>
       <p className="table-note">
-        <b>Göreceli momentum:</b> hisseler 12-ay getiriye göre sıralanır, en
+        <b>Göreceli momentum:</b> varlıklar 12-ay getiriye göre sıralanır, en
         güçlü {data.topN} tanesi aday olur. <b>Mutlak momentum:</b> aday ancak
         12-ay getirisi T-Bill&apos;i ({pct(data.tbillRet12m)}) geçerse seçilir —
         şu an <b>{selectedCount}</b> varlık seçili. Dual momentum portföyü bu
@@ -1869,7 +1869,7 @@ function BoxPlot({ bt }: { bt: BacktestResult }) {
       <div className="chart-help">
         Her satır bir strateji. Kutu ne kadar <b>dar</b>sa aylık getiriler o
         kadar istikrarlı. Kutunun ve bıyıkların sola uzanması (negatif bölge) =
-        kayıp ayların büyüklüğü. GEM&apos;in kutusunu hisse al-tut ile
+        kayıp ayların büyüklüğü. Stratejinin kutusunu al-tut (benchmark) ile
         karşılaştır.
       </div>
       <svg className="equity-svg" viewBox={`0 0 ${W} ${H}`} role="img" aria-label="Aylık getiri dağılımı kutu grafiği. Detay: üstteki başlık ve açıklamada.">
@@ -7254,8 +7254,9 @@ export default function Home() {
               }
             >
               <p className="chart-help" style={{ maxWidth: "80ch" }}>
-                Tüm evrenlerin (GEM, hisse, kripto, sektör, uluslararası, emtia)
-                momentum stratejilerini her ay <b>eşit ağırlıkla</b> birleştiren
+                Tüm evrenlerin (GEM + hisse, kripto, sektör, uluslararası, emtia,
+                faktör, tahvil, varlık-sınıfı, ülke) momentum stratejilerini her
+                ay <b>eşit ağırlıkla</b> birleştiren
                 çeşitlendirilmiş meta-strateji.
                 Sleeve&apos;ler imperfect korelasyonlu olduğundan bileşik
                 genelde tek bir sleeve&apos;den <b>daha yüksek Sharpe / daha
