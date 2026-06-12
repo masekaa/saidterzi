@@ -207,12 +207,19 @@ function SignalBoard({
   );
 }
 
-function LookbackHeatmap({ data }: { data: LookbackData }) {
+function LookbackHeatmap({
+  data,
+  label,
+}: {
+  data: LookbackData;
+  label?: string;
+}) {
   if (!data?.assets?.length) return null;
   return (
     <>
       <div className="section-label" role="heading" aria-level={2}>
-        Look-back Duyarlılık — farklı geri-bakış pencerelerinde 12→1 ay getiri
+        {label ? `${label} ` : ""}Look-back Duyarlılık — farklı geri-bakış
+        pencerelerinde 12→1 ay getiri
       </div>
       <div className="chart-card">
         <div className="table-scroll">
@@ -6890,7 +6897,7 @@ function UniverseSection({ u }: { u: UniverseBundle }) {
         />
       )}
 
-      {u.lookback && <LookbackHeatmap data={u.lookback} />}
+      {u.lookback && <LookbackHeatmap data={u.lookback} label={u.label} />}
 
       {bt && (
         <CollapsibleSection
