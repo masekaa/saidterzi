@@ -4636,6 +4636,9 @@ function MarginalContribution({ data }: { data: AnalysisResult }) {
         Değerler = tam bileşik − o sleeve&apos;siz bileşik. <b>Pozitif Δ Getiri/Vol</b>{" "}
         = sleeve risk-ayarlı getiriyi artırıyor; <b>pozitif Δ MaxDD</b> = çıkarınca
         düşüş derinleşiyor (sleeve koruyucu). Negatif = sleeve bileşiği zayıflatıyor.
+        BIST hariç (ana bileşikle aynı sleeve kümesi). <em>Bu atıf yaklaşıktır</em>{" "}
+        — eğrilerden yeniden kurulan sabit-pencere hesabıdır; manşet bileşik
+        istatistikleriyle birebir aynı olmayabilir.
       </div>
       <div className="table-scroll">
         <table className="metrics">
