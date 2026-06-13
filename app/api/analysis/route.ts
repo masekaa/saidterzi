@@ -365,6 +365,13 @@ export async function GET(req: Request) {
         );
     }
 
+    // Şeffaflık: USD/TRY kuru çekilemezse BIST USD'ye çevrilemez ve TRY cinsinde
+    // kalır → mutlak momentum eşiği (USD T-Bill) yanıltıcı olur. Kullanıcıyı uyar.
+    if (!fxUsdTry.series.length)
+      warnings.push(
+        `BIST: USD/TRY kuru (${FX_USDTRY.ticker}) alınamadı — BIST serileri TRY cinsinden gösteriliyor (USD'ye çevrilemedi); mutlak momentum eşiği ve getiri seviyeleri yanıltıcı olabilir.`
+      );
+
     // BIST bileşik meta-stratejiye DAHİL EDİLMEZ: buildComposite ortak-dönem
     // KESİŞİMİ kullanır; BIST'in USD serisi USDTRY=X'e bağlı (sleeve'ler içinde
     // veri açısından en kırılganı), dolayısıyla bileşiğin ortak dönemini sessizce
