@@ -2862,6 +2862,38 @@ function YatirimTavsiyesi({ data }: { data: AnalysisResult }) {
       });
   }
 
+  // 4b) En güçlü / en zayıf evren — bu ay nereye eğilim var (ayrıntı)
+  {
+    const ranked = data.universes
+      .map((u) => {
+        let pos = 0;
+        let tot = 0;
+        for (const s of u.momentum.stocks)
+          if (s.excessVsTbill != null) {
+            tot++;
+            if (s.excessVsTbill > 0) pos++;
+          }
+        return { label: u.label, emoji: u.emoji, breadth: tot ? pos / tot : 0, tot };
+      })
+      .filter((r) => r.tot > 0)
+      .sort((a, b) => b.breadth - a.breadth);
+    if (ranked.length >= 3) {
+      const s = ranked[0];
+      const w = ranked[ranked.length - 1];
+      items.push({
+        icon: "🎯",
+        lead: `Bu ay momentum en güçlü: ${s.emoji} ${s.label}.`,
+        rest: (
+          <>
+            Varlıklarının <b>%{Math.round(s.breadth * 100)}</b>&apos;i yükselişte.
+            En zayıf ise {w.emoji} {w.label} (%{Math.round(w.breadth * 100)}). İlgi
+            ve risk iştahı şu an güçlü evrenlerde yoğun.
+          </>
+        ),
+      });
+    }
+  }
+
   // 5) Yumurtaları tek sepete koyma — bileşik karışım
   if (data.composite?.equityCurves[0] && data.composite.strategies[0]) {
     const g = data.composite.equityCurves[0].growth;
