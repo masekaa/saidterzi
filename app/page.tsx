@@ -674,6 +674,8 @@ function MethodCard({
 }
 
 function EquityChart({ bt }: { bt: BacktestResult }) {
+  // Legend üzerine gelince o eğriyi vurgula (çok-eğrili bileşik grafiğinde işe yarar).
+  const [hover, setHover] = useState<string | null>(null);
   const curves = bt.equityCurves;
   const dates = bt.dates;
   if (!curves?.length || !dates?.length) return null;
@@ -781,6 +783,10 @@ function EquityChart({ bt }: { bt: BacktestResult }) {
             d={path(c.growth)}
             className={`equity-line ${c.highlight ? "equity-hl" : ""}`}
             stroke={c.highlight ? CURVE_COLORS[0] : CURVE_COLORS[idx % CURVE_COLORS.length]}
+            style={{
+              opacity: hover && hover !== c.name ? 0.16 : 1,
+              transition: "opacity 0.12s",
+            }}
           />
         ))}
       </svg>
@@ -799,7 +805,19 @@ function EquityChart({ bt }: { bt: BacktestResult }) {
               b.final - a.final
           )
           .map(({ c, idx, final }) => (
-            <span className="legend-item" key={c.name}>
+            <span
+              className="legend-item"
+              key={c.name}
+              onMouseEnter={() => setHover(c.name)}
+              onMouseLeave={() => setHover(null)}
+              onFocus={() => setHover(c.name)}
+              onBlur={() => setHover(null)}
+              tabIndex={0}
+              style={{
+                cursor: "pointer",
+                opacity: hover && hover !== c.name ? 0.45 : 1,
+              }}
+            >
               <span
                 className="legend-swatch"
                 style={{
