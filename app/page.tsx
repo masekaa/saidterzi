@@ -8515,8 +8515,9 @@ export default function Home() {
               defaultOpen
               title={
                 <>
-                  🧩 Dual Momentum Bileşik — {data.universes.length + 1} evrenin
-                  eşit-ağırlık birleşimi ({data.composite.startDate} →{" "}
+                  🧩 Dual Momentum Bileşik —{" "}
+                  {1 + data.universes.filter((u) => u.id !== "bist").length}{" "}
+                  evrenin eşit-ağırlık birleşimi ({data.composite.startDate} →{" "}
                   {data.composite.endDate}, {data.composite.months} ay)
                 </>
               }
