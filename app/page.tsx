@@ -2773,6 +2773,10 @@ function YatirimTavsiyesi({ data }: { data: AnalysisResult }) {
       const picks = bist.momentum.stocks
         .filter((s) => s.selected)
         .sort((a, b) => (a.rank ?? 99) - (b.rank ?? 99));
+      const buffers = picks
+        .map((s) => s.excessVsTbill)
+        .filter((x): x is number => x != null && isFinite(x) && x > 0);
+      const minBuf = buffers.length ? Math.min(...buffers) * 100 : null;
       items.push({
         icon: "🇹🇷",
         lead: picks.length
@@ -2783,6 +2787,13 @@ function YatirimTavsiyesi({ data }: { data: AnalysisResult }) {
             Momentum zirvesindekiler: <b>{picks.map((s) => s.name).join(", ")}</b>.
             Hesaplar <b>USD bazlı</b> — TRY değer kaybından arındırılmış gerçek
             getiri, yani &quot;kâr&quot; kur şişirmesi değil.
+            {minBuf != null && (
+              <>
+                {" "}
+                En zayıf seçimin tamponu <b>~%{minBuf.toFixed(0)}</b> (bu kadar
+                gerilerse nakde döner).
+              </>
+            )}
           </>
         ) : (
           <>
