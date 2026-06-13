@@ -2744,6 +2744,16 @@ function YatirimTavsiyesi({ data }: { data: AnalysisResult }) {
       scoreN++;
     }
   }
+  {
+    // 10-ay MA trend filtresi (Faber) — yön sinyali (üstünde = risk-on).
+    const mt = data.composite?.equityCurves[0]
+      ? maTrend(data.composite.equityCurves[0].growth, 10)
+      : null;
+    if (mt) {
+      scoreSum += mt.above ? 1 : -1;
+      scoreN++;
+    }
+  }
   const stance = scoreN ? scoreSum / scoreN : 0;
   const verdict =
     stance > 0.33
