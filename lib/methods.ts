@@ -880,6 +880,23 @@ export function buildSignalBoard(
       const p12 = raw.series[n - 1 - LOOKBACK_MONTHS].close;
       if (p12 > 0 && isFinite(p1) && isFinite(p12)) mom121 = p1 / p12 - 1;
     }
+    // Trailing 12-ay yıllıklandırılmış oynaklık (risk bağlamı: yüksek momentum +
+    // yüksek oynaklık = daha kırılgan/riskli pozisyon).
+    let vol12m: number | null = null;
+    if (raw && raw.series.length >= LOOKBACK_MONTHS + 1) {
+      const n = raw.series.length;
+      const rets: number[] = [];
+      for (let i = n - LOOKBACK_MONTHS; i < n; i++) {
+        const prev = raw.series[i - 1].close;
+        if (prev > 0) rets.push(raw.series[i].close / prev - 1);
+      }
+      if (rets.length >= 2) {
+        const m = rets.reduce((s, x) => s + x, 0) / rets.length;
+        const v =
+          rets.reduce((s, x) => s + (x - m) ** 2, 0) / (rets.length - 1);
+        vol12m = Math.sqrt(v) * Math.sqrt(12);
+      }
+    }
     const excess =
       ret12m != null && tRet != null ? ret12m - tRet : null;
     const absolute: Signal | null =
@@ -907,6 +924,7 @@ export function buildSignalBoard(
       ticker: a.ticker,
       ret12m,
       mom121,
+      vol12m,
       excessVsTbill: excess,
       absolute,
       maAbove,

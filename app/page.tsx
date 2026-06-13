@@ -167,6 +167,9 @@ function SignalBoard({
               </th>
               <th>T-Bill&apos;e Karşı (excess)</th>
               <th>Mutlak Sinyal</th>
+              <th title="Trailing 12-ayın yıllıklandırılmış oynaklığı (risk). Yüksek momentum + yüksek oynaklık = daha kırılgan pozisyon.">
+                Yıllık Oyn.
+              </th>
               <th>Trend (12-Ay MA)</th>
               <th>52-Hafta Yakınlık</th>
             </tr>
@@ -209,6 +212,9 @@ function SignalBoard({
                   <SignalBadge signal={a.absolute ?? undefined} />
                 </td>
                 <td>
+                  {a.vol12m != null ? `%${(a.vol12m * 100).toFixed(0)}` : "—"}
+                </td>
+                <td>
                   {a.maAbove == null ? (
                     "—"
                   ) : (
@@ -235,9 +241,11 @@ function SignalBoard({
         {pct(board.tbillRet12m)}). Mutlak sinyal excess&gt;0 ise AL/TUT.{" "}
         <b>12-1</b>: en son ayı atlayan momentum (Jegadeesh-Titman); 12-Ay ile
         zıt işaretliyse (<b>⚠</b>) getiriyi büyük ölçüde son ay taşımıştır —
-        kısa-vade tersine dönüş riski. Trend: ay-sonu fiyat 12-ay basit hareketli
-        ortalamanın üstünde mi. 52-hafta yakınlık: güncel fiyat / son 12 ayın en
-        yüksek ay-sonu kapanışı.
+        kısa-vade tersine dönüş riski. <b>Yıllık Oyn.:</b> trailing 12-ayın
+        yıllıklandırılmış oynaklığı — yüksek momentum + yüksek oynaklık daha
+        kırılgan/riskli bir pozisyona işaret eder (aynı getiri, daha çok dalgalanma).
+        Trend: ay-sonu fiyat 12-ay basit hareketli ortalamanın üstünde mi.
+        52-hafta yakınlık: güncel fiyat / son 12 ayın en yüksek ay-sonu kapanışı.
       </p>
     </>
   );
