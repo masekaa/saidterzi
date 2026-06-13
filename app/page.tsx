@@ -4543,7 +4543,10 @@ function MarginalContribution({ data }: { data: AnalysisResult }) {
     if (m.size > 12) sleeves.push({ id, label, emoji, map: m });
   };
   add("etf", "GEM", "📊", data.backtest);
-  for (const u of data.universes)
+  // BIST bileşiğe dahil değil (buildComposite hariç tutar) → marjinal katkı da
+  // gerçek bileşiğin sleeve'lerini atfetmeli, yoksa atıf tutarsız olur (ayrıca
+  // BIST'in FX-bağımlı kısa serisi ortak dönemi gereksiz kısaltabilir).
+  for (const u of data.universes.filter((u) => u.id !== "bist"))
     add(
       u.id,
       u.positionLabel.replace(" Momentum", "").replace(" (DMSR)", ""),
