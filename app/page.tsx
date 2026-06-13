@@ -3228,6 +3228,9 @@ function YatirimTavsiyesi({ data }: { data: AnalysisResult }) {
       `Genel Durum: ${verdict.label} — ${verdict.text}`,
       "",
       ...items.map((it) => `${it.icon} ${it.lead}`),
+      "",
+      ...(asOfMonth ? [`Sinyaller ${asOfMonth} ayı sonu verisine dayanır.`] : []),
+      "Kurallı karar-destek motoru; kesin kâr vaadi değildir.",
     ];
     try {
       void navigator.clipboard?.writeText(lines.join("\n"));
