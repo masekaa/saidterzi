@@ -872,6 +872,14 @@ export function buildSignalBoard(
   const assets: AssetSignal[] = universe.map((a) => {
     const raw = core[a.key];
     const ret12m = raw ? trailingReturn(raw.series, LOOKBACK_MONTHS).ret : null;
+    // 12-1 momentum (son ayı atla; kısa-vade tersine dönüş gürültüsünü ayıkla).
+    let mom121: number | null = null;
+    if (raw && raw.series.length >= LOOKBACK_MONTHS + 1) {
+      const n = raw.series.length;
+      const p1 = raw.series[n - 2].close;
+      const p12 = raw.series[n - 1 - LOOKBACK_MONTHS].close;
+      if (p12 > 0 && isFinite(p1) && isFinite(p12)) mom121 = p1 / p12 - 1;
+    }
     const excess =
       ret12m != null && tRet != null ? ret12m - tRet : null;
     const absolute: Signal | null =
@@ -898,6 +906,7 @@ export function buildSignalBoard(
       name: a.name,
       ticker: a.ticker,
       ret12m,
+      mom121,
       excessVsTbill: excess,
       absolute,
       maAbove,

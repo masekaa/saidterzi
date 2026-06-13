@@ -162,6 +162,9 @@ function SignalBoard({
             <tr>
               <th className="left">Varlık</th>
               <th>12-Ay Getiri</th>
+              <th title="12-1 momentum: en son ayı atlayan getiri (Jegadeesh-Titman). 12-Ay ile zıt işaretliyse getiriyi son ay taşımış → tersine dönüş riski.">
+                12-1
+              </th>
               <th>T-Bill&apos;e Karşı (excess)</th>
               <th>Mutlak Sinyal</th>
               <th>Trend (12-Ay MA)</th>
@@ -178,6 +181,26 @@ function SignalBoard({
                 </td>
                 <td className={a.ret12m != null && a.ret12m < 0 ? "neg" : ""}>
                   {pct(a.ret12m)}
+                </td>
+                <td
+                  className={
+                    a.mom121 == null
+                      ? ""
+                      : opposed(a.mom121, a.ret12m)
+                      ? "neg"
+                      : a.mom121 < 0
+                      ? "neg"
+                      : ""
+                  }
+                  title={
+                    opposed(a.mom121, a.ret12m)
+                      ? "12-Ay ile zıt işaret: getiriyi büyük ölçüde son ay taşımış — kısa-vade tersine dönüş riski."
+                      : "12-1 momentum (son ay atlanmış)"
+                  }
+                >
+                  {a.mom121 != null
+                    ? `${pct(a.mom121)}${opposed(a.mom121, a.ret12m) ? " ⚠" : ""}`
+                    : "—"}
                 </td>
                 <td className={a.excessVsTbill != null && a.excessVsTbill < 0 ? "neg" : ""}>
                   {pct(a.excessVsTbill)}

@@ -98,6 +98,7 @@ export interface AssetSignal {
   name: string;
   ticker: string;
   ret12m: number | null; // 12 aylık total return
+  mom121?: number | null; // 12-1 momentum (son ay atlanmış; Jegadeesh-Titman)
   excessVsTbill: number | null; // ret12m - T-Bill 12m (mutlak momentum girdisi)
   absolute: Signal | null; // LONG (excess>0) / CASH
   maAbove: boolean | null; // fiyat >= 12-ay SMA
