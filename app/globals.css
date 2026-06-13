@@ -1392,6 +1392,14 @@ table.heatmap.corr td {
   font-size: 14.5px;
   color: var(--text-dim);
   line-height: 1.55;
+  border-left: 2px solid transparent;
+  padding-left: 10px;
+}
+.advice-list li.li-warn {
+  border-left-color: #f87171;
+}
+.advice-list li.li-good {
+  border-left-color: #22d3a6;
 }
 .advice-icon {
   flex-shrink: 0;

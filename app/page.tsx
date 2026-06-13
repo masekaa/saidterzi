@@ -3066,16 +3066,20 @@ function YatirimTavsiyesi({ data }: { data: AnalysisResult }) {
         </span>
       </div>
       <ul className="advice-list">
-        {items.map((it, i) => (
-          <li key={i}>
-            <span className="advice-icon" aria-hidden="true">
-              {it.icon}
-            </span>
-            <span>
-              <b className="advice-lead">{it.lead}</b> {it.rest}
-            </span>
-          </li>
-        ))}
+        {items.map((it, i) => {
+          const warn = ["⚠️", "🔴", "🌪️", "🔎"].includes(it.icon);
+          const good = ["🟢", "✅", "😌"].includes(it.icon);
+          return (
+            <li key={i} className={warn ? "li-warn" : good ? "li-good" : ""}>
+              <span className="advice-icon" aria-hidden="true">
+                {it.icon}
+              </span>
+              <span>
+                <b className="advice-lead">{it.lead}</b> {it.rest}
+              </span>
+            </li>
+          );
+        })}
       </ul>
       <p className="advice-foot">
         Bu sayfa bizim iç kullanımımız için bir <b>karar-destek motoru</b>;
