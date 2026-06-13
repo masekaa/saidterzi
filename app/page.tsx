@@ -3232,12 +3232,20 @@ function YatirimTavsiyesi({ data }: { data: AnalysisResult }) {
       ...(asOfMonth ? [`Sinyaller ${asOfMonth} ayı sonu verisine dayanır.`] : []),
       "Kurallı karar-destek motoru; kesin kâr vaadi değildir.",
     ];
+    // Yalnız yazma GERÇEKTEN başarılıysa "Kopyalandı" göster (pano yoksa veya
+    // izin reddedilirse yanlış başarı bildirme).
     try {
-      void navigator.clipboard?.writeText(lines.join("\n"));
-      setCopied(true);
-      window.setTimeout(() => setCopied(false), 1600);
+      const p = navigator.clipboard?.writeText(lines.join("\n"));
+      if (p && typeof p.then === "function") {
+        p.then(() => {
+          setCopied(true);
+          window.setTimeout(() => setCopied(false), 1600);
+        }).catch(() => {
+          /* izin reddedildi / pano erişilemedi — sessiz */
+        });
+      }
     } catch {
-      /* pano erişilemezse sessizce geç */
+      /* pano API yok — sessizce geç */
     }
   };
 
