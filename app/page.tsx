@@ -4782,7 +4782,9 @@ function CustomComposite({ data }: { data: AnalysisResult }) {
           Sleeve&apos;leri aç/kapat; eşit-ağırlık bileşik <b>ortak dönemde</b>{" "}
           anında yeniden hesaplanır. &quot;Kriptoyu çıkarırsam Calmar ne olur?&quot;
           gibi soruları dene. Calmar (CAGR ÷ |MaxDD|) risksiz-oran gerektirmez,
-          adil kıyastır.
+          adil kıyastır. <b>Not:</b> burası tüm sleeve&apos;leri (BIST dahil) açık
+          başlatan bir kum havuzudur; ana &quot;Dual Momentum Bileşik&quot; ise
+          BIST&apos;i hariç tutar — sayılar bu yüzden farklı olabilir.
         </div>
         <div className="cc-toggles">
           {sleeves.map((s) => {
