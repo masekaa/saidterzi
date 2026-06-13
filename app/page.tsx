@@ -7741,6 +7741,23 @@ function BacktestStudio() {
             {busy && <span className="studio-updating"> · ⟳ güncelleniyor…</span>}
           </div>
           {(() => {
+            // Bu parametrelerle güncel ay pozisyonu (timeline son kaydı).
+            const last = bt.timeline?.[bt.timeline.length - 1];
+            if (!last) return null;
+            const isCashPos = last.key === "bil" || last.key === "cash";
+            const meta = posMeta(last.key);
+            return (
+              <p className="table-note">
+                <b>Bu ay bu parametrelerle:</b>{" "}
+                <span className={`badge ${isCashPos ? "badge-cash" : "badge-long"}`}>
+                  <span className="dot" />
+                  {isCashPos ? "NAKİT" : meta.label}
+                </span>{" "}
+                tutulurdu (en güncel ay sinyali).
+              </p>
+            );
+          })()}
+          {(() => {
             const mom = bt.strategies[0];
             const bench =
               bt.strategies.find((s) => /Eşit[\s-]Ağırlık/.test(s.name)) ??
