@@ -2654,6 +2654,7 @@ function holdHorizonStats(
 // panellerdeki aynı hesaplardan türetilir; burada yalnız sadeleştirilir.
 function YatirimTavsiyesi({ data }: { data: AnalysisResult }) {
   const [showAll, setShowAll] = useState(false);
+  const [copied, setCopied] = useState(false);
   // Yazdırırken (Ctrl+P / PDF) tüm ayrıntıyı aç → aylık rapor eksiksiz çıksın.
   useEffect(() => {
     const expand = () => setShowAll(true);
@@ -3173,6 +3174,22 @@ function YatirimTavsiyesi({ data }: { data: AnalysisResult }) {
     /* tarih ayrıştırılamazsa damgayı atla */
   }
 
+  const copyText = () => {
+    const lines = [
+      `Bu Ay Ne Yapmalı?${monthLabel ? ` — ${monthLabel}` : ""}`,
+      `Genel Durum: ${verdict.label} — ${verdict.text}`,
+      "",
+      ...items.map((it) => `${it.icon} ${it.lead}`),
+    ];
+    try {
+      void navigator.clipboard?.writeText(lines.join("\n"));
+      setCopied(true);
+      window.setTimeout(() => setCopied(false), 1600);
+    } catch {
+      /* pano erişilemezse sessizce geç */
+    }
+  };
+
   return (
     <div className="advice">
       <div className="advice-head">
@@ -3181,6 +3198,14 @@ function YatirimTavsiyesi({ data }: { data: AnalysisResult }) {
         <span className="advice-sub">
           analizlerin en önemli sonuçları, jargon olmadan
         </span>
+        <button
+          className="advice-copy"
+          onClick={copyText}
+          title="Özeti düz metin olarak panoya kopyala"
+          aria-label="Yatırım özetini panoya kopyala"
+        >
+          {copied ? "✓ Kopyalandı" : "⧉ Kopyala"}
+        </button>
       </div>
       <div className={`advice-verdict ${verdict.cls}`}>
         <span className="av-icon" aria-hidden="true">
