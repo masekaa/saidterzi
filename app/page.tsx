@@ -2809,6 +2809,12 @@ function YatirimTavsiyesi({ data }: { data: AnalysisResult }) {
         .map((s) => s.excessVsTbill)
         .filter((x): x is number => x != null && isFinite(x) && x > 0);
       const minBuf = buffers.length ? Math.min(...buffers) * 100 : null;
+      const vols = picks
+        .map((s) => s.vol12m)
+        .filter((x): x is number => x != null && isFinite(x) && x > 0);
+      const avgVol = vols.length
+        ? (vols.reduce((a, b) => a + b, 0) / vols.length) * 100
+        : null;
       items.push({
         icon: "🇹🇷",
         lead: picks.length
@@ -2824,6 +2830,13 @@ function YatirimTavsiyesi({ data }: { data: AnalysisResult }) {
                 {" "}
                 En zayıf seçimin tamponu <b>~%{minBuf.toFixed(0)}</b> (bu kadar
                 gerilerse nakde döner).
+              </>
+            )}
+            {avgVol != null && (
+              <>
+                {" "}
+                Seçimlerin ortalama yıllık oynaklığı <b>~%{avgVol.toFixed(0)}</b>
+                {avgVol > 35 ? " — gelişen piyasa, yüksek dalgalanma; pozisyonu küçük tut" : ""}.
               </>
             )}
           </>

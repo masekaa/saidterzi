@@ -997,22 +997,31 @@ export function buildStockMomentum(
     // düzgün/tutarlı yükseliş (kaliteli momentum); düşük = birkaç büyük sıçrama
     // (kırılgan). Momentum sıralamasını DEĞİŞTİRMEZ — yalnız bilgilendirici.
     let quality: number | null = null;
+    let vol12m: number | null = null;
     if (raw && raw.series.length >= LOOKBACK_MONTHS + 1) {
       const win = raw.series.slice(raw.series.length - (LOOKBACK_MONTHS + 1));
       const fit = quadraticFit(win.map((p) => Math.log(p.close)));
       if (fit) accelerating = fit.c > 0;
       let pos = 0,
         tot = 0;
+      const rets: number[] = [];
       for (let j = 1; j < win.length; j++) {
         const ret = win[j].close / win[j - 1].close - 1;
         if (isFinite(ret)) {
           tot++;
           if (ret > 0) pos++;
+          rets.push(ret);
         }
       }
       quality = tot > 0 ? pos / tot : null;
+      // Trailing 12-ay yıllıklandırılmış oynaklık (risk bağlamı; bilgilendirici).
+      if (rets.length >= 2) {
+        const mn = rets.reduce((a, b) => a + b, 0) / rets.length;
+        const vv = rets.reduce((a, b) => a + (b - mn) ** 2, 0) / (rets.length - 1);
+        vol12m = Math.sqrt(vv) * Math.sqrt(12);
+      }
     }
-    return { s, ret12m, mom121, highProximity, accelerating, quality };
+    return { s, ret12m, mom121, vol12m, highProximity, accelerating, quality };
   });
 
   // 2) 12-ay getiriye göre azalan sırala (null'lar sona)
@@ -1036,6 +1045,7 @@ export function buildStockMomentum(
       sector: x.s.note ?? "",
       ret12m: x.ret12m,
       mom121: x.mom121,
+      vol12m: x.vol12m,
       excessVsTbill: excess,
       absolute,
       rank,
