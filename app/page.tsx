@@ -3535,8 +3535,20 @@ function UniverseMomentumStrength({ data }: { data: AnalysisResult }) {
         }
       return { label: u.label, emoji: u.emoji, breadth: tot ? pos / tot : 0, pos, tot };
     })
-    .filter((r) => r.tot > 0)
-    .sort((a, b) => b.breadth - a.breadth);
+    .filter((r) => r.tot > 0);
+  // ETF/GEM evreni (çekirdek varlıklar — buildStockMomentum kullanmaz, ayrı ekle).
+  {
+    let gpos = 0;
+    let gtot = 0;
+    for (const a of data.signals.assets)
+      if (a.excessVsTbill != null) {
+        gtot++;
+        if (a.excessVsTbill > 0) gpos++;
+      }
+    if (gtot > 0)
+      rows.push({ label: "ETF (GEM)", emoji: "📊", breadth: gpos / gtot, pos: gpos, tot: gtot });
+  }
+  rows.sort((a, b) => b.breadth - a.breadth);
   if (rows.length < 2) return null;
   const strongest = rows[0];
   const weakest = rows[rows.length - 1];
