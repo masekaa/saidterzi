@@ -163,6 +163,21 @@ export function annualVolatility(monthlyReturns: number[]): number | null {
   return Math.sqrt(variance) * Math.sqrt(12);
 }
 
+// Bir fiyat serisinin son `lookback` ayının yıllıklandırılmış oynaklığı.
+// (Sinyal panosu + momentum panosu aynı tanımı paylaşsın → tek kaynak.)
+export function trailingAnnualizedVol(
+  series: MonthlyPoint[],
+  lookback: number
+): number | null {
+  if (!series || series.length < lookback + 1) return null;
+  const rets: number[] = [];
+  for (let i = series.length - lookback; i < series.length; i++) {
+    const prev = series[i - 1].close;
+    if (prev > 0) rets.push(series[i].close / prev - 1);
+  }
+  return annualVolatility(rets);
+}
+
 // Sharpe = (ortalama(excess) / std(excess)) × √12
 // excess_t = r_t − rf_t  (rf = T-Bill aylık getirisi)
 export function sharpeRatio(

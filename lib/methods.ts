@@ -11,6 +11,7 @@ import {
   toMonthlyReturns,
   trendTStat,
   annualVolatility,
+  trailingAnnualizedVol,
 } from "./calc";
 import {
   CORE_ASSETS,
@@ -882,21 +883,7 @@ export function buildSignalBoard(
     }
     // Trailing 12-ay yıllıklandırılmış oynaklık (risk bağlamı: yüksek momentum +
     // yüksek oynaklık = daha kırılgan/riskli pozisyon).
-    let vol12m: number | null = null;
-    if (raw && raw.series.length >= LOOKBACK_MONTHS + 1) {
-      const n = raw.series.length;
-      const rets: number[] = [];
-      for (let i = n - LOOKBACK_MONTHS; i < n; i++) {
-        const prev = raw.series[i - 1].close;
-        if (prev > 0) rets.push(raw.series[i].close / prev - 1);
-      }
-      if (rets.length >= 2) {
-        const m = rets.reduce((s, x) => s + x, 0) / rets.length;
-        const v =
-          rets.reduce((s, x) => s + (x - m) ** 2, 0) / (rets.length - 1);
-        vol12m = Math.sqrt(v) * Math.sqrt(12);
-      }
-    }
+    const vol12m = raw ? trailingAnnualizedVol(raw.series, LOOKBACK_MONTHS) : null;
     const excess =
       ret12m != null && tRet != null ? ret12m - tRet : null;
     const absolute: Signal | null =
@@ -997,30 +984,24 @@ export function buildStockMomentum(
     // düzgün/tutarlı yükseliş (kaliteli momentum); düşük = birkaç büyük sıçrama
     // (kırılgan). Momentum sıralamasını DEĞİŞTİRMEZ — yalnız bilgilendirici.
     let quality: number | null = null;
-    let vol12m: number | null = null;
     if (raw && raw.series.length >= LOOKBACK_MONTHS + 1) {
       const win = raw.series.slice(raw.series.length - (LOOKBACK_MONTHS + 1));
       const fit = quadraticFit(win.map((p) => Math.log(p.close)));
       if (fit) accelerating = fit.c > 0;
       let pos = 0,
         tot = 0;
-      const rets: number[] = [];
       for (let j = 1; j < win.length; j++) {
         const ret = win[j].close / win[j - 1].close - 1;
         if (isFinite(ret)) {
           tot++;
           if (ret > 0) pos++;
-          rets.push(ret);
         }
       }
       quality = tot > 0 ? pos / tot : null;
-      // Trailing 12-ay yıllıklandırılmış oynaklık (risk bağlamı; bilgilendirici).
-      if (rets.length >= 2) {
-        const mn = rets.reduce((a, b) => a + b, 0) / rets.length;
-        const vv = rets.reduce((a, b) => a + (b - mn) ** 2, 0) / (rets.length - 1);
-        vol12m = Math.sqrt(vv) * Math.sqrt(12);
-      }
     }
+    // Trailing 12-ay yıllıklandırılmış oynaklık (paylaşılan helper → sinyal
+    // panosuyla birebir aynı tanım).
+    const vol12m = raw ? trailingAnnualizedVol(raw.series, LOOKBACK_MONTHS) : null;
     return { s, ret12m, mom121, vol12m, highProximity, accelerating, quality };
   });
 
