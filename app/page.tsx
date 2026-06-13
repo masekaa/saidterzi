@@ -2766,6 +2766,11 @@ function YatirimTavsiyesi({ data }: { data: AnalysisResult }) {
       gwMain?.excessVsTbill != null && gwMain.excessVsTbill > 0
         ? gwMain.excessVsTbill * 100
         : null;
+    const vol =
+      gwMain?.vol12m != null && isFinite(gwMain.vol12m)
+        ? gwMain.vol12m * 100
+        : null;
+    const volWord = vol == null ? "" : vol < 12 ? "düşük" : vol < 25 ? "orta" : "yüksek";
     items.push({
       icon: "📈",
       lead: "Bu ay piyasada kal.",
@@ -2779,6 +2784,13 @@ function YatirimTavsiyesi({ data }: { data: AnalysisResult }) {
               {" "}
               Güvenlik tamponu <b>~%{buffer.toFixed(0)}</b>: 12-aylık getirisi bu
               kadar gerilerse pozisyon nakde döner.
+            </>
+          )}
+          {vol != null && (
+            <>
+              {" "}
+              Bu pozisyonun yıllık oynaklığı <b>~%{vol.toFixed(0)}</b> ({volWord}{" "}
+              dalgalanma).
             </>
           )}
         </>
