@@ -3154,9 +3154,18 @@ function YatirimTavsiyesi({ data }: { data: AnalysisResult }) {
   });
 
   let monthLabel = "";
+  let asOfMonth = "";
   try {
     if (data.generatedAt)
       monthLabel = new Date(data.generatedAt).toLocaleDateString("tr-TR", {
+        month: "long",
+        year: "numeric",
+      });
+    // Sinyallerin dayandığı veri ayı (GEM backtest'in son ayı). Ay içinde bu
+    // ay henüz tamamlanmamış olabilir → sinyal ay sonunda kesinleşir.
+    const endDate = data.backtest?.endDate;
+    if (endDate)
+      asOfMonth = new Date(endDate).toLocaleDateString("tr-TR", {
         month: "long",
         year: "numeric",
       });
@@ -3222,6 +3231,12 @@ function YatirimTavsiyesi({ data }: { data: AnalysisResult }) {
         );
       })()}
       <p className="advice-foot">
+        {asOfMonth && (
+          <>
+            Sinyaller <b>{asOfMonth}</b> ayı sonu (en güncel aylık kapanış)
+            verisine dayanır; ay içinde değerler ay sonunda kesinleşir.{" "}
+          </>
+        )}
         Bu sayfa bizim iç kullanımımız için bir <b>karar-destek motoru</b>;
         sinyaller kurallı ve mekaniktir, kesin kâr vaadi değildir.
       </p>
