@@ -78,6 +78,13 @@ function growthToRets(g: number[]): number[] {
   return r;
 }
 
+// İki sayı KESİN zıt işaretli mi (biri >0 diğeri <0). Tam sıfır veya null →
+// false (sıfır "zıt" sayılmaz). 12-1 vs 12-ay momentum sapma kontrolü için.
+function opposed(a: number | null | undefined, b: number | null | undefined): boolean {
+  if (a == null || b == null) return false;
+  return (a > 0 && b < 0) || (a < 0 && b > 0);
+}
+
 // Pearson korelasyon (iki getiri serisi)
 function pearson(a: number[], b: number[]): number {
   const m = Math.min(a.length, b.length);
@@ -375,25 +382,21 @@ function MomentumBoard({
                   className={
                     s.mom121 == null
                       ? ""
-                      : s.ret12m != null &&
-                        Math.sign(s.mom121) !== Math.sign(s.ret12m)
+                      : opposed(s.mom121, s.ret12m)
                       ? "neg"
                       : s.mom121 < 0
                       ? "neg"
                       : ""
                   }
                   title={
-                    s.mom121 != null &&
-                    s.ret12m != null &&
-                    Math.sign(s.mom121) !== Math.sign(s.ret12m)
+                    opposed(s.mom121, s.ret12m)
                       ? "12-Ay ile zıt işaret: getiriyi büyük ölçüde son ay taşımış — kısa-vade tersine dönüş riski."
                       : "12-1 momentum (son ay atlanmış)"
                   }
                 >
                   {s.mom121 != null
                     ? `${pct(s.mom121)}${
-                        s.ret12m != null &&
-                        Math.sign(s.mom121) !== Math.sign(s.ret12m)
+                        opposed(s.mom121, s.ret12m)
                           ? " ⚠"
                           : ""
                       }`
@@ -3012,13 +3015,7 @@ function YatirimTavsiyesi({ data }: { data: AnalysisResult }) {
     const fragile: string[] = [];
     for (const u of data.universes)
       for (const s of u.momentum.stocks)
-        if (
-          s.selected &&
-          s.mom121 != null &&
-          s.ret12m != null &&
-          Math.sign(s.mom121) !== Math.sign(s.ret12m)
-        )
-          fragile.push(s.name);
+        if (s.selected && opposed(s.mom121, s.ret12m)) fragile.push(s.name);
     if (fragile.length) {
       items.push({
         icon: "⚠️",
