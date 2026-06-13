@@ -5169,7 +5169,8 @@ function CrossUniverseRiskReturn({ data }: { data: AnalysisResult }) {
         (yeşil) tekil evrenlerin sol-üstünde oturması = çeşitlendirme faydası; ⚪
         Pasif (gri) hiçbir şey yapmama alternatifidir; <b>⚖️ 60/40</b> (SPY/AGG)
         evrensel &quot;tembel portföy&quot; referansıdır — stratejilerin ona göre
-        nerede durduğuna bak.
+        nerede durduğuna bak. <em>İpucu: bir noktanın üzerine gelince o evren
+        vurgulanır, diğerleri soluklaşır.</em>
       </div>
       <svg
         className="equity-svg"
@@ -5363,7 +5364,8 @@ function CrossUniverseComparison({ data }: { data: AnalysisResult }) {
           <b>doğrudan ve adil</b> karşılaştırılabilirler. En genç evren (kripto)
           başlangıcı dönemi belirler. <b>🧩 Bileşik</b> (kalın yeşil) ve{" "}
           <b>⚖️ 60/40</b> (gri kesik, SPY/AGG evrensel referans) kıyas için öne
-          çıkar.
+          çıkar. <em>İpucu: alttaki açıklama (legend) öğesine gelince o çizgi
+          vurgulanır.</em>
         </div>
         <svg className="equity-svg" viewBox={`0 0 ${W} ${H}`} role="img" aria-label="Ortak dönem birikimli getiri karşılaştırma grafiği. Detay: üstteki başlık ve açıklamada.">
           {yTicks.map((v, i) => (
