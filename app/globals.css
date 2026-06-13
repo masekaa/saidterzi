@@ -1834,6 +1834,18 @@ table.heatmap.corr td {
   display: inline-flex;
   align-items: center;
   gap: 6px;
+  padding: 2px 6px;
+  border-radius: 6px;
+  transition: background 0.12s;
+}
+/* Etkileşimli legend (hover ile grafikte ilgili çizgiyi vurgular) — affordans */
+.legend-item:hover {
+  background: var(--panel-2);
+}
+.legend-item:focus-visible {
+  background: var(--panel-2);
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
 }
 .legend-swatch {
   width: 11px;
