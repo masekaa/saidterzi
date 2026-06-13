@@ -2875,24 +2875,31 @@ function YatirimTavsiyesi({ data }: { data: AnalysisResult }) {
 
   // 4) Geçmişte en istikrarlı kazandıran yöntem (en yüksek Sharpe)
   {
-    const strat: { name: string; emoji: string; sharpe: number }[] = [];
-    if (data.backtest?.strategies[0]?.sharpe != null)
-      strat.push({ name: "ETF Dual Momentum", emoji: "📊", sharpe: data.backtest.strategies[0].sharpe });
+    const strat: { name: string; emoji: string; sharpe: number; months: number }[] = [];
+    if (data.backtest?.strategies[0]?.sharpe != null && data.backtest.months)
+      strat.push({ name: "ETF Dual Momentum", emoji: "📊", sharpe: data.backtest.strategies[0].sharpe, months: data.backtest.months });
     for (const u of data.universes)
-      if (u.backtest?.strategies[0]?.sharpe != null)
-        strat.push({ name: u.positionLabel, emoji: u.emoji, sharpe: u.backtest.strategies[0].sharpe });
+      if (u.backtest?.strategies[0]?.sharpe != null && u.backtest.months)
+        strat.push({ name: u.positionLabel, emoji: u.emoji, sharpe: u.backtest.strategies[0].sharpe, months: u.backtest.months });
     const best = strat.sort((a, b) => b.sharpe - a.sharpe)[0];
-    if (best)
+    if (best) {
+      const years = Math.round(best.months / 12);
+      const short = best.months < 150; // ~12.5 yıl altı: 2008'i görmemiş olabilir
       items.push({
         icon: "🏆",
         lead: `Geçmişte en istikrarlı kazandıran yöntem: ${best.emoji} ${best.name}.`,
         rest: (
           <>
-            Yani en az iniş-çıkışla en düzenli getiriyi bu sağlamış.{" "}
-            <i>Ama geçmiş performans geleceğin garantisi değildir.</i>
+            Yani en az iniş-çıkışla en düzenli getiriyi bu sağlamış (
+            <b>{years} yıllık</b> geçmiş
+            {short
+              ? ", kısa — 2008 gibi büyük krizleri görmemiş olabilir, kıyas tam adil değil"
+              : ""}
+            ). <i>Geçmiş performans geleceğin garantisi değildir.</i>
           </>
         ),
       });
+    }
   }
 
   // 4b) En güçlü / en zayıf evren — bu ay nereye eğilim var (ayrıntı)
