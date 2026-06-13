@@ -3123,10 +3123,22 @@ function YatirimTavsiyesi({ data }: { data: AnalysisResult }) {
     ),
   });
 
+  let monthLabel = "";
+  try {
+    if (data.generatedAt)
+      monthLabel = new Date(data.generatedAt).toLocaleDateString("tr-TR", {
+        month: "long",
+        year: "numeric",
+      });
+  } catch {
+    /* tarih ayrıştırılamazsa damgayı atla */
+  }
+
   return (
     <div className="advice">
       <div className="advice-head">
         <span className="advice-title">📋 Bu Ay Ne Yapmalı? — Sade Özet</span>
+        {monthLabel && <span className="advice-month">{monthLabel}</span>}
         <span className="advice-sub">
           analizlerin en önemli sonuçları, jargon olmadan
         </span>

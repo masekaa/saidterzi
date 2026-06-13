@@ -1350,6 +1350,16 @@ table.heatmap.corr td {
   font-weight: 800;
   color: var(--text);
 }
+.advice-month {
+  font-size: 12px;
+  font-weight: 700;
+  color: #22d3a6;
+  background: rgba(34, 211, 166, 0.12);
+  border: 1px solid rgba(34, 211, 166, 0.3);
+  border-radius: 6px;
+  padding: 2px 8px;
+  text-transform: capitalize;
+}
 .advice-sub {
   font-size: 12px;
   color: var(--text-faint);
