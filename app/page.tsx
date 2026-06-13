@@ -2994,7 +2994,8 @@ function YatirimTavsiyesi({ data }: { data: AnalysisResult }) {
     // Adil kıyas: yalnız benzer (uzun) geçmişe sahip kohort içinde sırala —
     // kısa-geçmişli evrenler (kripto/BIST) sırf 2008'i atladığı için "en
     // istikrarlı" tahtına oturmasın. En az 2 aday kalmazsa tümüne düş.
-    const maxM = Math.max(...strat.map((s) => s.months));
+    // strat boşsa Math.max(...[]) = -Infinity tuzağına düşme (savunmacı).
+    const maxM = strat.length ? Math.max(...strat.map((s) => s.months)) : 0;
     const eligible = strat.filter((s) => s.months >= 0.8 * maxM);
     const pool = eligible.length >= 2 ? eligible : strat;
     const best = pool.sort((a, b) => b.sharpe - a.sharpe)[0];
