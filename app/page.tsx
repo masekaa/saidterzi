@@ -6570,9 +6570,10 @@ function CompositeStance({ data }: { data: AnalysisResult }) {
     (inv ? invested : cash).push(`${u.emoji} ${u.label}`);
   }
   const ratio = total > 0 ? invested.length / total : 0;
-  const cd = data.composite?.equityCurves[0]
-    ? curDrawdown(data.composite.equityCurves[0].growth)
-    : null;
+  const cg = data.composite?.equityCurves[0]?.growth;
+  const cd = cg ? curDrawdown(cg) : null;
+  const mt = cg ? maTrend(cg, 10) : null;
+  const vr = cg ? volRegime(cg, 6) : null;
   return (
     <div className="stance">
       <div className="stance-row">
@@ -6605,6 +6606,31 @@ function CompositeStance({ data }: { data: AnalysisResult }) {
           </>
         )}
       </div>
+      {(mt || vr) && (
+        <div className="stance-text" style={{ marginTop: 6 }}>
+          <b>Rejim:</b>{" "}
+          {mt && (
+            <>
+              trend{" "}
+              <b className={mt.above ? "pos-cell" : "neg"}>
+                {mt.above ? "▲ yukarı" : "▼ aşağı"}
+              </b>{" "}
+              (10-ay ort. {mt.above ? "üstünde" : "altında"}, %
+              {Math.abs((mt.ratio - 1) * 100).toFixed(0)})
+            </>
+          )}
+          {mt && vr ? " · " : ""}
+          {vr && (
+            <>
+              oynaklık{" "}
+              <b className={vr.ratio > 1.3 ? "neg" : vr.ratio < 0.8 ? "pos-cell" : ""}>
+                {vr.ratio > 1.3 ? "çalkantılı" : vr.ratio < 0.8 ? "sakin" : "normal"}
+              </b>{" "}
+              (uzun-dönemin {vr.ratio.toFixed(1)}×&apos;i)
+            </>
+          )}
+        </div>
+      )}
     </div>
   );
 }
