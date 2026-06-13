@@ -2729,6 +2729,11 @@ function YatirimTavsiyesi({ data }: { data: AnalysisResult }) {
 
   // 1) Bu ayın ana kararı
   if (isCash) {
+    const gwCash = data.signals.assets.find((a) => a.isGemWinner);
+    const gap =
+      gwCash?.excessVsTbill != null && gwCash.excessVsTbill < 0
+        ? Math.abs(gwCash.excessVsTbill) * 100
+        : null;
     items.push({
       icon: "🛡️",
       lead: "Bu ay temkinli ol, nakitte bekle.",
@@ -2737,6 +2742,13 @@ function YatirimTavsiyesi({ data }: { data: AnalysisResult }) {
           Ana göstergemiz şu an borsadan uzak durup parayı güvenli tarafta
           (faiz/mevduat/para piyasası) tutmayı söylüyor — son aylarda trend
           zayıfladı, düşüşten korunma zamanı.
+          {gap != null && (
+            <>
+              {" "}
+              En güçlü aday şu an eşiğin <b>~%{gap.toFixed(0)}</b> altında;
+              yeniden yatırıma dönmek için o kadar toparlanması gerekir.
+            </>
+          )}
         </>
       ),
     });
