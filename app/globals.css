@@ -1409,6 +1409,57 @@ table.heatmap.corr td {
 .advice-lead {
   color: var(--text);
 }
+/* Evren momentum gücü (risk iştahı barları) */
+.ums-list {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  margin-top: 10px;
+}
+.ums-row {
+  display: grid;
+  grid-template-columns: minmax(110px, 180px) 1fr 86px;
+  align-items: center;
+  gap: 10px;
+  font-size: 13px;
+}
+.ums-label {
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.ums-track {
+  background: var(--panel);
+  border: 1px solid var(--border-soft);
+  border-radius: 6px;
+  height: 16px;
+  overflow: hidden;
+}
+.ums-fill {
+  height: 100%;
+  border-radius: 6px 0 0 6px;
+  transition: width 0.3s ease;
+}
+.ums-fill.pos {
+  background: #22d3a6;
+}
+.ums-fill.mid {
+  background: #f59e0b;
+}
+.ums-fill.neg {
+  background: #f87171;
+}
+.ums-val {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-dim);
+}
+.ums-sub {
+  color: var(--text-faint);
+  font-size: 11px;
+}
+
 .advice-toggle {
   margin-top: 10px;
   background: transparent;

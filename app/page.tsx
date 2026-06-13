@@ -3425,6 +3425,62 @@ function KeyInsights({ data }: { data: AnalysisResult }) {
   );
 }
 
+// Evrenler-arası "risk iştahı haritası": her evrende T-Bill eşiğini geçen
+// (pozitif mutlak momentum) varlık oranı, güçlüden zayıfa sıralı. Bu ay momentum
+// nerede geniş (risk-on), nerede dar (savunmacı)? Tek bakışta gösterir.
+function UniverseMomentumStrength({ data }: { data: AnalysisResult }) {
+  const rows = data.universes
+    .map((u) => {
+      let pos = 0;
+      let tot = 0;
+      for (const s of u.momentum.stocks)
+        if (s.excessVsTbill != null) {
+          tot++;
+          if (s.excessVsTbill > 0) pos++;
+        }
+      return { label: u.label, emoji: u.emoji, breadth: tot ? pos / tot : 0, pos, tot };
+    })
+    .filter((r) => r.tot > 0)
+    .sort((a, b) => b.breadth - a.breadth);
+  if (rows.length < 2) return null;
+  const strongest = rows[0];
+  const weakest = rows[rows.length - 1];
+  return (
+    <div className="chart-card">
+      <div className="chart-title">
+        Evren Momentum Gücü — bu ay nerede risk iştahı var?
+      </div>
+      <div className="chart-help">
+        Her evrende T-Bill eşiğini geçen (pozitif mutlak momentum) varlık oranı.
+        Yüksek = geniş katılım / risk-on; düşük = dar / savunmacı.{" "}
+        <b>
+          En güçlü: {strongest.emoji} {strongest.label}
+        </b>
+        ; en zayıf: {weakest.emoji} {weakest.label}.
+      </div>
+      <div className="ums-list">
+        {rows.map((r) => {
+          const p100 = Math.round(r.breadth * 100);
+          const tone = r.breadth >= 0.6 ? "pos" : r.breadth >= 0.4 ? "mid" : "neg";
+          return (
+            <div className="ums-row" key={r.label}>
+              <div className="ums-label">
+                {r.emoji} {r.label}
+              </div>
+              <div className="ums-track">
+                <div className={`ums-fill ${tone}`} style={{ width: `${p100}%` }} />
+              </div>
+              <div className="ums-val">
+                %{p100} <span className="ums-sub">({r.pos}/{r.tot})</span>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 function ConsolidatedSignals({ data }: { data: AnalysisResult }) {
   const gem = data.gem;
   const etfCash = gem.positionKey === "cash";
@@ -8129,6 +8185,11 @@ export default function Home() {
 
           {/* Bu ayın tüm evren sinyalleri */}
           <ConsolidatedSignals data={data} />
+
+          {/* Evrenler-arası risk iştahı haritası */}
+          <ErrorBoundary label="Evren momentum gücü">
+            <UniverseMomentumStrength data={data} />
+          </ErrorBoundary>
 
           {/* Metodoloji açıklaması */}
           <MethodologyPanel />
