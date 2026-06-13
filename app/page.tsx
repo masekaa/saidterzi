@@ -2705,6 +2705,18 @@ function YatirimTavsiyesi({ data }: { data: AnalysisResult }) {
   const gem = data.gem;
   const isCash = gem.positionKey === "cash";
 
+  // Piyasa genişliği — verdikt sentezi + "genel hava" maddesi tek kaynaktan
+  // hesaplasın (iki kopya = sapma riski). Tüm evrenlerdeki varlıkların T-Bill
+  // eşiğini geçen oranı.
+  let breadthPos = 0;
+  let breadthTot = 0;
+  for (const u of data.universes)
+    for (const s of u.momentum.stocks)
+      if (s.excessVsTbill != null) {
+        breadthTot++;
+        if (s.excessVsTbill > 0) breadthPos++;
+      }
+
   // --- Genel durum sentezi (tek satırlık başlık) ---
   // Birden çok sinyali [-1,+1] ölçeğine indirip ortalar: ana karar, piyasa
   // genişliği, evrenlerin yatırımda olma oranı, güncel drawdown derinliği.
@@ -2712,19 +2724,9 @@ function YatirimTavsiyesi({ data }: { data: AnalysisResult }) {
   let scoreN = 0;
   scoreSum += isCash ? -1 : 1;
   scoreN++;
-  {
-    let pos = 0;
-    let tot = 0;
-    for (const u of data.universes)
-      for (const s of u.momentum.stocks)
-        if (s.excessVsTbill != null) {
-          tot++;
-          if (s.excessVsTbill > 0) pos++;
-        }
-    if (tot >= 10) {
-      scoreSum += (pos / tot - 0.5) * 2;
-      scoreN++;
-    }
+  if (breadthTot >= 10) {
+    scoreSum += (breadthPos / breadthTot - 0.5) * 2;
+    scoreN++;
   }
   {
     const cashUnis = data.universes.filter(
@@ -2927,17 +2929,9 @@ function YatirimTavsiyesi({ data }: { data: AnalysisResult }) {
 
   // 2) Genel hava — piyasa genişliği (kaç varlık yükselişte)
   {
-    let pos = 0;
-    let tot = 0;
-    for (const u of data.universes)
-      for (const s of u.momentum.stocks) {
-        if (s.excessVsTbill != null) {
-          tot++;
-          if (s.excessVsTbill > 0) pos++;
-        }
-      }
+    const tot = breadthTot;
     if (tot >= 10) {
-      const br = pos / tot;
+      const br = breadthPos / tot;
       const hava =
         br >= 0.6 ? "açık ve güneşli" : br >= 0.4 ? "karışık" : "kapalı ve riskli";
       items.push({
