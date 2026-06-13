@@ -214,6 +214,16 @@ body {
   line-height: 1.6;
   margin: 16px 0 0;
 }
+.hero-warn {
+  margin: 12px 0 0;
+  padding: 9px 13px;
+  border-radius: 9px;
+  background: rgba(245, 158, 11, 0.1);
+  border: 1px solid rgba(245, 158, 11, 0.35);
+  color: var(--text);
+  font-size: 13.5px;
+  line-height: 1.5;
+}
 
 /* Badges */
 .badge {

@@ -8361,6 +8361,18 @@ export default function Home() {
               </span>
             </div>
             <p className="hero-rationale">{gem.rationale}</p>
+            {!isCash &&
+              (() => {
+                const gw = data.signals.assets.find((a) => a.isGemWinner);
+                if (gw && opposed(gw.mom121, gw.ret12m))
+                  return (
+                    <p className="hero-warn">
+                      ⚠ Bu seçimin yükselişini büyük ölçüde son ay taşımış (12-1
+                      ölçütü ters); gelecek ay geri çekilme riski yüksek olabilir.
+                    </p>
+                  );
+                return null;
+              })()}
           </div>
 
           {/* Sade dil yatırım özeti — en üstte, Ayşe teyzeye anlatır gibi */}
