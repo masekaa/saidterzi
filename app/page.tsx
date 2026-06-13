@@ -806,7 +806,7 @@ function EquityChart({ bt }: { bt: BacktestResult }) {
           )
           .map(({ c, idx, final }) => (
             <span
-              className="legend-item"
+              className="legend-item legend-interactive"
               key={c.name}
               onMouseEnter={() => setHover(c.name)}
               onMouseLeave={() => setHover(null)}
@@ -5446,7 +5446,7 @@ function CrossUniverseComparison({ data }: { data: AnalysisResult }) {
             .sort((a, b) => b.finalMult - a.finalMult)
             .map((l) => (
               <span
-                className="legend-item"
+                className="legend-item legend-interactive"
                 key={l.label}
                 onMouseEnter={() => setHover(l.label)}
                 onMouseLeave={() => setHover(null)}
