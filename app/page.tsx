@@ -6561,7 +6561,11 @@ function DrawdownEpisodes({ bt, label }: { bt: BacktestResult; label: string }) 
 }
 
 function CompositeHoldings({ data }: { data: AnalysisResult }) {
-  const sleeves = 1 + data.universes.length;
+  // BIST bileşik meta-stratejiye dahil DEĞİL (buildComposite onu hariç tutar) →
+  // replike-et portföyü de aynı sleeve kümesini kullanmalı, yoksa gösterilen
+  // hedef portföy bileşiğin istatistikleriyle tutarsız olur.
+  const activeUniverses = data.universes.filter((u) => u.id !== "bist");
+  const sleeves = 1 + activeUniverses.length;
   const w = 1 / sleeves;
   const map = new Map<string, { label: string; weight: number }>();
   let cash = 0;
@@ -6579,8 +6583,8 @@ function CompositeHoldings({ data }: { data: AnalysisResult }) {
     addH(tk, `${data.gem.positionName} (${tk})`, w);
   }
 
-  // Evrenler
-  for (const u of data.universes) {
+  // Evrenler (BIST hariç — bileşikle hizalı)
+  for (const u of activeUniverses) {
     const picks = u.momentum.stocks.filter((s) => s.selected);
     if (picks.length === 0) cash += w;
     else {
@@ -6626,10 +6630,11 @@ function CompositeHoldings({ data }: { data: AnalysisResult }) {
         </button>
       </div>
       <div className="chart-help">
-        Her sleeve (ETF + {data.universes.length} evren) bileşikte %
+        Her sleeve (ETF + {activeUniverses.length} evren) bileşikte %
         {(w * 100).toFixed(1)} pay alır; yatırımdaki sleeve&apos;in payı seçili
         varlıklara eşit bölünür, nakitteki sleeve T-Bill&apos;de durur. Aşağıdaki
-        ağırlıklar bileşiğin <b>bu ayki hedef portföyüdür</b>.
+        ağırlıklar bileşiğin <b>bu ayki hedef portföyüdür</b>. (BIST 100 bileşiğe
+        dahil değildir — kendi evreninde ayrı izlenir.)
       </div>
       <div className="rpw-list">
         {rows.map((r) => (
@@ -6664,11 +6669,14 @@ function CompositeHoldings({ data }: { data: AnalysisResult }) {
 }
 
 function CompositeStance({ data }: { data: AnalysisResult }) {
-  const total = 1 + data.universes.length;
+  // BIST bileşiğe dahil değil (buildComposite hariç tutar) → duruş sayımı da
+  // onu saymamalı, yoksa "X/total sleeve yatırımda" oranı bileşikle tutarsız olur.
+  const activeUniverses = data.universes.filter((u) => u.id !== "bist");
+  const total = 1 + activeUniverses.length;
   const invested: string[] = [];
   const cash: string[] = [];
   (data.gem.positionKey === "cash" ? cash : invested).push("📊 ETF");
-  for (const u of data.universes) {
+  for (const u of activeUniverses) {
     const inv = u.momentum.stocks.some((s) => s.selected);
     (inv ? invested : cash).push(`${u.emoji} ${u.label}`);
   }
