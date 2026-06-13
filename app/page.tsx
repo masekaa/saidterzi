@@ -2628,6 +2628,12 @@ function holdHorizonStats(
 // panellerdeki aynı hesaplardan türetilir; burada yalnız sadeleştirilir.
 function YatirimTavsiyesi({ data }: { data: AnalysisResult }) {
   const [showAll, setShowAll] = useState(false);
+  // Yazdırırken (Ctrl+P / PDF) tüm ayrıntıyı aç → aylık rapor eksiksiz çıksın.
+  useEffect(() => {
+    const expand = () => setShowAll(true);
+    window.addEventListener("beforeprint", expand);
+    return () => window.removeEventListener("beforeprint", expand);
+  }, []);
   const items: { icon: string; lead: string; rest: ReactNode }[] = [];
   const gem = data.gem;
   const isCash = gem.positionKey === "cash";

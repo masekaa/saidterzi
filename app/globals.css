@@ -49,8 +49,16 @@
   .view-tabs,
   .header-right,
   .refresh-btn,
-  .mini-btn {
+  .mini-btn,
+  .advice-toggle {
     display: none !important;
+  }
+  .advice-verdict {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+  .advice {
+    box-shadow: none !important;
   }
   .wrap {
     max-width: 100% !important;
