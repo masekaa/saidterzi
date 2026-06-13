@@ -232,9 +232,12 @@ function SignalBoard({
       </div>
       <p className="table-note">
         Excess = 12-ay getiri − T-Bill 12-ay getirisi (
-        {pct(board.tbillRet12m)}). Mutlak sinyal excess&gt;0 ise AL/TUT. Trend:
-        ay-sonu fiyat 12-ay basit hareketli ortalamanın üstünde mi. 52-hafta
-        yakınlık: güncel fiyat / son 12 ayın en yüksek ay-sonu kapanışı.
+        {pct(board.tbillRet12m)}). Mutlak sinyal excess&gt;0 ise AL/TUT.{" "}
+        <b>12-1</b>: en son ayı atlayan momentum (Jegadeesh-Titman); 12-Ay ile
+        zıt işaretliyse (<b>⚠</b>) getiriyi büyük ölçüde son ay taşımıştır —
+        kısa-vade tersine dönüş riski. Trend: ay-sonu fiyat 12-ay basit hareketli
+        ortalamanın üstünde mi. 52-hafta yakınlık: güncel fiyat / son 12 ayın en
+        yüksek ay-sonu kapanışı.
       </p>
     </>
   );
@@ -3114,6 +3117,10 @@ function YatirimTavsiyesi({ data }: { data: AnalysisResult }) {
   // uyarısı varsa görünür (koşullu; her zaman yer kaplamaz).
   {
     const fragile: string[] = [];
+    // Manşet GEM seçimi de kontrol edilir (en önemli pozisyon).
+    const gw = data.signals.assets.find((a) => a.isGemWinner);
+    if (!isCash && gw && opposed(gw.mom121, gw.ret12m))
+      fragile.push(`Ana strateji (${gw.name})`);
     for (const u of data.universes)
       for (const s of u.momentum.stocks)
         if (s.selected && opposed(s.mom121, s.ret12m)) fragile.push(s.name);
