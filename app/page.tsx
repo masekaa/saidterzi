@@ -2587,6 +2587,19 @@ function volRegime(
   return { ratio: recent / full, recentAnnual: recent * A, fullAnnual: full * A };
 }
 
+// Hareketli-ortalama trend filtresi (Faber 2007): büyüme eğrisinin güncel
+// değeri son `win`-aylık basit ortalamasının üstünde mi? Üstünde = trend yukarı
+// (devam), altında = trend zayıf (riski azalt). Klasik trend-takip overlay'i.
+function maTrend(g: number[], win = 10): { ratio: number; above: boolean } | null {
+  if (!g || g.length < win + 2) return null;
+  let sum = 0;
+  for (let i = g.length - win; i < g.length; i++) sum += g[i];
+  const ma = sum / win;
+  if (!(ma > 0)) return null;
+  const last = g[g.length - 1];
+  return { ratio: last / ma, above: last >= ma };
+}
+
 // Geçmiş tutma-ufku istatistiği: büyüme eğrisindeki tüm kayan `win`-aylık
 // pencereler — kaçı pozitif (isabet), medyan/en kötü/en iyi getiri. "Bu yöntemi
 // 1 yıl tutsaydım tarihsel olarak ne olurdu?" sorusunu dürüstçe (kötü dahil)
@@ -2954,6 +2967,32 @@ function YatirimTavsiyesi({ data }: { data: AnalysisResult }) {
     }
   }
 
+  // 5e) Hareketli-ortalama trend filtresi (Faber) — trend yukarı mı aşağı mı?
+  if (data.composite?.equityCurves[0]) {
+    const mt = maTrend(data.composite.equityCurves[0].growth, 10);
+    if (mt) {
+      const dist = (mt.ratio - 1) * 100;
+      items.push({
+        icon: mt.above ? "📈" : "📉",
+        lead: mt.above
+          ? "Bileşik strateji uzun-vadeli ortalamasının üstünde."
+          : "Bileşik strateji uzun-vadeli ortalamasının altına indi.",
+        rest: mt.above ? (
+          <>
+            10-aylık ortalamanın <b>%{dist.toFixed(0)}</b> üstünde — trend
+            yukarı; klasik trend-takip kuralı &quot;devam&quot; der.
+          </>
+        ) : (
+          <>
+            10-aylık ortalamanın <b>%{Math.abs(dist).toFixed(0)}</b> altında —
+            trend zayıflamış; klasik trend-takip (Faber) bu durumda riski
+            azaltmayı önerir.
+          </>
+        ),
+      });
+    }
+  }
+
   // 6) Düşüş koruması — 60/40 ile kıyas (varsa)
   {
     const b = data.benchmark6040;
@@ -3064,8 +3103,8 @@ function YatirimTavsiyesi({ data }: { data: AnalysisResult }) {
       </div>
       <ul className="advice-list">
         {items.map((it, i) => {
-          const warn = ["⚠️", "🔴", "🌪️", "🔎"].includes(it.icon);
-          const good = ["🟢", "✅", "😌"].includes(it.icon);
+          const warn = ["⚠️", "🔴", "🌪️", "🔎", "📉"].includes(it.icon);
+          const good = ["🟢", "✅", "😌", "📈"].includes(it.icon);
           return (
             <li key={i} className={warn ? "li-warn" : good ? "li-good" : ""}>
               <span className="advice-icon" aria-hidden="true">
