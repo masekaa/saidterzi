@@ -2627,6 +2627,7 @@ function holdHorizonStats(
 // teknik jargon olmadan, somut "bu ay ne yap" maddeleriyle. Tüm sayılar diğer
 // panellerdeki aynı hesaplardan türetilir; burada yalnız sadeleştirilir.
 function YatirimTavsiyesi({ data }: { data: AnalysisResult }) {
+  const [showAll, setShowAll] = useState(false);
   const items: { icon: string; lead: string; rest: ReactNode }[] = [];
   const gem = data.gem;
   const isCash = gem.positionKey === "cash";
@@ -3105,6 +3106,11 @@ function YatirimTavsiyesi({ data }: { data: AnalysisResult }) {
         {items.map((it, i) => {
           const warn = ["⚠️", "🔴", "🌪️", "🔎", "📉"].includes(it.icon);
           const good = ["🟢", "✅", "😌", "📈"].includes(it.icon);
+          // Varsayılan: ilk 5 çekirdek madde + tüm uyarılar + altın kural her
+          // zaman görünür; daha derin analitik maddeleri katlanır (Ayşe teyze
+          // önce özü görsün, ayrıntı isteğe bağlı). Uyarı asla gizlenmez.
+          const collapsible = i >= 5 && !warn && it.icon !== "🧭";
+          if (!showAll && collapsible) return null;
           return (
             <li key={i} className={warn ? "li-warn" : good ? "li-good" : ""}>
               <span className="advice-icon" aria-hidden="true">
@@ -3117,6 +3123,24 @@ function YatirimTavsiyesi({ data }: { data: AnalysisResult }) {
           );
         })}
       </ul>
+      {(() => {
+        const hidden = items.filter(
+          (it, i) =>
+            i >= 5 &&
+            !["⚠️", "🔴", "🌪️", "🔎", "📉"].includes(it.icon) &&
+            it.icon !== "🧭"
+        ).length;
+        if (!hidden) return null;
+        return (
+          <button
+            className="advice-toggle"
+            onClick={() => setShowAll((s) => !s)}
+            aria-expanded={showAll}
+          >
+            {showAll ? "Daha az göster" : `+${hidden} ayrıntı daha göster`}
+          </button>
+        );
+      })()}
       <p className="advice-foot">
         Bu sayfa bizim iç kullanımımız için bir <b>karar-destek motoru</b>;
         sinyaller kurallı ve mekaniktir, kesin kâr vaadi değildir.
