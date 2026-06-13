@@ -2881,7 +2881,13 @@ function YatirimTavsiyesi({ data }: { data: AnalysisResult }) {
     for (const u of data.universes)
       if (u.backtest?.strategies[0]?.sharpe != null && u.backtest.months)
         strat.push({ name: u.positionLabel, emoji: u.emoji, sharpe: u.backtest.strategies[0].sharpe, months: u.backtest.months });
-    const best = strat.sort((a, b) => b.sharpe - a.sharpe)[0];
+    // Adil kıyas: yalnız benzer (uzun) geçmişe sahip kohort içinde sırala —
+    // kısa-geçmişli evrenler (kripto/BIST) sırf 2008'i atladığı için "en
+    // istikrarlı" tahtına oturmasın. En az 2 aday kalmazsa tümüne düş.
+    const maxM = Math.max(...strat.map((s) => s.months));
+    const eligible = strat.filter((s) => s.months >= 0.8 * maxM);
+    const pool = eligible.length >= 2 ? eligible : strat;
+    const best = pool.sort((a, b) => b.sharpe - a.sharpe)[0];
     if (best) {
       const years = Math.round(best.months / 12);
       const short = best.months < 150; // ~12.5 yıl altı: 2008'i görmemiş olabilir
