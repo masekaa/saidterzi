@@ -3065,9 +3065,11 @@ function YatirimTavsiyesi({ data }: { data: AnalysisResult }) {
     });
   }
 
-  // 5c) Geçmiş 1-yıllık tutma ihtimalleri — dürüst beklenti (kötü dahil)
+  // 5c) Geçmiş tutma ihtimalleri — dürüst beklenti (kötü dahil) + zaman çeşitlemesi
   if (data.composite?.equityCurves[0]) {
-    const hh = holdHorizonStats(data.composite.equityCurves[0].growth, 12);
+    const g = data.composite.equityCurves[0].growth;
+    const hh = holdHorizonStats(g, 12);
+    const hh3 = holdHorizonStats(g, 36); // 3 yıl (varsa)
     if (hh) {
       const outOf10 = Math.round(hh.posFrac * 10);
       items.push({
@@ -3077,7 +3079,15 @@ function YatirimTavsiyesi({ data }: { data: AnalysisResult }) {
           <>
             Medyan 12 aylık getiri <b>%{(hh.median * 100).toFixed(0)}</b>; en
             kötü 12 ay <b className="neg">%{(hh.worst * 100).toFixed(0)}</b>, en
-            iyisi <b className="pos-cell">%{(hh.best * 100).toFixed(0)}</b>.{" "}
+            iyisi <b className="pos-cell">%{(hh.best * 100).toFixed(0)}</b>.
+            {hh3 && (
+              <>
+                {" "}
+                <b>3 yıl</b> tutulduğunda kazanç oranı{" "}
+                <b className="pos-cell">%{(hh3.posFrac * 100).toFixed(0)}</b>&apos;e
+                çıkıyor — uzun tutmak (zaman çeşitlemesi) kayıp ihtimalini azaltır.
+              </>
+            )}{" "}
             <i>Geçmiş, geleceğin garantisi değildir.</i>
           </>
         ),
