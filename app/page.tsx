@@ -5042,6 +5042,9 @@ function CustomComposite({ data }: { data: AnalysisResult }) {
 }
 
 function CrossUniverseRiskReturn({ data }: { data: AnalysisResult }) {
+  // 14 etiketli nokta üst üste binebilir → bir noktaya gelince onu öne çıkar,
+  // diğerlerini soluklaştır (kalabalıkta tek evreni izole etmeyi kolaylaştırır).
+  const [hover, setHover] = useState<number | null>(null);
   type Ser = {
     label: string;
     emoji: string;
@@ -5191,11 +5194,20 @@ function CrossUniverseRiskReturn({ data }: { data: AnalysisResult }) {
           Volatilite (yıllık)
         </text>
         {pts.map((p, i) => (
-          <g key={i}>
+          <g
+            key={i}
+            onMouseEnter={() => setHover(i)}
+            onMouseLeave={() => setHover(null)}
+            style={{
+              opacity: hover != null && hover !== i ? 0.18 : 1,
+              transition: "opacity 0.12s",
+              cursor: "pointer",
+            }}
+          >
             <circle
               cx={X(p.x)}
               cy={Y(p.y)}
-              r={p.hl ? 7.5 : 5}
+              r={p.hl ? 7.5 : hover === i ? 6.5 : 5}
               className={
                 p.hl ? "rr-dot rr-hl" : p.bench ? "rr-dot rr-bench" : "rr-dot"
               }
