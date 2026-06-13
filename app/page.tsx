@@ -323,13 +323,21 @@ function MomentumBoard({
   const [sortK, setSortK] = useState<"rank" | "excess" | "prox">("rank");
   if (!data?.stocks?.length) return null;
   const selectedCount = data.stocks.filter((s) => s.selected).length;
-  // Risk-ayarlı momentum lideri (getiri ÷ oynaklık ≈ Sharpe). Ham getiri lideri
-  // ile farklıysa, ham lider yüksek-oynaklıkla şişmiş olabilir → bilgilendirici.
+  // Risk-ayarlı momentum lideri (getiri ÷ oynaklık ≈ Sharpe) — YALNIZ top-N
+  // momentum adayları arasında (yoksa düşük-getirili sakin bir hisse oranla
+  // öne çıkıp yanıltır). Ham lider ile farklıysa: ham lider daha oynak olabilir.
   const rawLeader = data.stocks.find((s) => s.rank === 1);
   let raLeader: (typeof data.stocks)[number] | null = null;
   let bestRa = -Infinity;
   for (const s of data.stocks) {
-    if (s.ret12m != null && s.ret12m > 0 && s.vol12m != null && s.vol12m > 0) {
+    if (
+      s.rank != null &&
+      s.rank <= data.topN &&
+      s.ret12m != null &&
+      s.ret12m > 0 &&
+      s.vol12m != null &&
+      s.vol12m > 0
+    ) {
       const ra = s.ret12m / s.vol12m;
       if (ra > bestRa) {
         bestRa = ra;
@@ -514,10 +522,11 @@ function MomentumBoard({
       </p>
       {raDiffers && rawLeader && raLeader && (
         <p className="table-note">
-          <b>Risk-ayarlı not:</b> ham 12-ay lideri <b>{rawLeader.name}</b> en
-          yüksek getiriye sahip; ancak risk-ayarlı bakışta (getiri ÷ oynaklık ≈
-          Sharpe) <b>{raLeader.name}</b> daha güçlü — ham lider muhtemelen daha
-          oynak. Strateji ham getiriye göre seçer; bu yalnız bağlamdır.
+          <b>Risk-ayarlı not:</b> top-{data.topN} sepetinde ham 12-ay lideri{" "}
+          <b>{rawLeader.name}</b> en yüksek getiriye sahip; ancak risk-ayarlı
+          bakışta (getiri ÷ oynaklık ≈ Sharpe) <b>{raLeader.name}</b> daha güçlü —
+          ham lider muhtemelen daha oynak. Strateji ham getiriye göre seçer; bu
+          yalnız bağlamdır.
         </p>
       )}
     </>
