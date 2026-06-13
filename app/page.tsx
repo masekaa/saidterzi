@@ -813,6 +813,7 @@ function EquityChart({ bt }: { bt: BacktestResult }) {
               onFocus={() => setHover(c.name)}
               onBlur={() => setHover(null)}
               tabIndex={0}
+              title="Üzerine gelince grafikte bu eğriyi vurgular"
               style={{
                 cursor: "pointer",
                 opacity: hover && hover !== c.name ? 0.45 : 1,
