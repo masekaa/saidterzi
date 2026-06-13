@@ -2741,6 +2741,11 @@ function YatirimTavsiyesi({ data }: { data: AnalysisResult }) {
       ),
     });
   } else {
+    const gwMain = data.signals.assets.find((a) => a.isGemWinner);
+    const buffer =
+      gwMain?.excessVsTbill != null && gwMain.excessVsTbill > 0
+        ? gwMain.excessVsTbill * 100
+        : null;
     items.push({
       icon: "📈",
       lead: "Bu ay piyasada kal.",
@@ -2749,6 +2754,13 @@ function YatirimTavsiyesi({ data }: { data: AnalysisResult }) {
           Ana göstergemiz bu ay <b>{gem.positionName}</b> tutmayı öneriyor —
           yani paranın risk (borsa) tarafında kalması yönünde, çünkü trend hâlâ
           yukarı.
+          {buffer != null && (
+            <>
+              {" "}
+              Güvenlik tamponu <b>~%{buffer.toFixed(0)}</b>: 12-aylık getirisi bu
+              kadar gerilerse pozisyon nakde döner.
+            </>
+          )}
         </>
       ),
     });
