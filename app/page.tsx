@@ -5226,6 +5226,9 @@ function CrossUniverseRiskReturn({ data }: { data: AnalysisResult }) {
 }
 
 function CrossUniverseComparison({ data }: { data: AnalysisResult }) {
+  // Hangi seri vurgulanıyor (legend üzerine gelince diğerleri soluklaşır) —
+  // 14 çizgili grafik tek bir evreni izlemeyi kolaylaştırır.
+  const [hover, setHover] = useState<string | null>(null);
   type Ser = {
     label: string;
     emoji: string;
@@ -5393,7 +5396,15 @@ function CrossUniverseComparison({ data }: { data: AnalysisResult }) {
               className="equity-line"
               stroke={l.label.includes("Bileşik") ? "#22d3a6" : l.color}
               strokeDasharray={l.label.includes("60/40") ? "5 4" : undefined}
-              style={{ strokeWidth: l.label.includes("Bileşik") ? 3.5 : 2 }}
+              style={{
+                strokeWidth: l.label.includes("Bileşik")
+                  ? 3.5
+                  : hover === l.label
+                  ? 3.2
+                  : 2,
+                opacity: hover && hover !== l.label ? 0.16 : 1,
+                transition: "opacity 0.12s",
+              }}
             />
           ))}
         </svg>
@@ -5402,7 +5413,20 @@ function CrossUniverseComparison({ data }: { data: AnalysisResult }) {
             .slice()
             .sort((a, b) => b.finalMult - a.finalMult)
             .map((l) => (
-              <span className="legend-item" key={l.label}>
+              <span
+                className="legend-item"
+                key={l.label}
+                onMouseEnter={() => setHover(l.label)}
+                onMouseLeave={() => setHover(null)}
+                onFocus={() => setHover(l.label)}
+                onBlur={() => setHover(null)}
+                tabIndex={0}
+                title="Üzerine gelince grafikte bu çizgiyi vurgular"
+                style={{
+                  cursor: "pointer",
+                  opacity: hover && hover !== l.label ? 0.4 : 1,
+                }}
+              >
                 <span
                   className="legend-swatch"
                   style={{ background: l.color }}
