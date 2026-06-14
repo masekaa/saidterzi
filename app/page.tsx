@@ -5224,6 +5224,10 @@ function CrossUniverseRiskReturn({ data }: { data: AnalysisResult }) {
               cursor: "pointer",
             }}
           >
+            <title>
+              {p.emoji} {p.label} — CAGR {pct(p.y)}, yıllık oynaklık {pct(p.x)}
+              {p.sharpe != null ? `, Sharpe ${p.sharpe.toFixed(2)}` : ""}
+            </title>
             <circle
               cx={X(p.x)}
               cy={Y(p.y)}
