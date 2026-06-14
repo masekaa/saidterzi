@@ -40,3 +40,8 @@ Thumbs.db
 .vscode/
 .idea/
 *.log
+
+# ML pipeline downloaded data (regenerable)
+ml/data/
+__pycache__/
+ml/**/__pycache__/
