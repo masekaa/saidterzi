@@ -8470,6 +8470,21 @@ export default function Home() {
             momentum&apos;un canlı, şeffaf hesaplamaları (12 ay look-back, T-Bill
             eşiği)
           </p>
+          <a
+            href="/oynaklik"
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 6,
+              marginTop: 8,
+              fontSize: 13.5,
+              fontWeight: 600,
+              color: "var(--accent)",
+              textDecoration: "none",
+            }}
+          >
+            ⚡ Yeni: Gün-İçi Oynaklık Radarı (BIST) →
+          </a>
         </div>
         <div className="header-right">
           <button
