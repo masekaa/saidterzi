@@ -488,10 +488,18 @@ export default function OynaklikPage() {
           style={{
             border: "1px solid var(--border)",
             borderRadius: 12,
-            overflow: "hidden",
+            overflowX: "auto",
+            overflowY: "hidden",
           }}
         >
-          <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 14 }}>
+          <table
+            style={{
+              width: "100%",
+              minWidth: 640,
+              borderCollapse: "collapse",
+              fontSize: 14,
+            }}
+          >
             <thead>
               <tr style={{ background: "var(--panel)", textAlign: "left" }}>
                 <th style={th}>Hisse</th>
