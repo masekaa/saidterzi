@@ -992,6 +992,17 @@ export default function OynaklikPage() {
         </div>
       )}
 
+      {/* İlk yüklemede iskelet (algılanan performans). */}
+      {loading && !data && (
+        <div className="skel-wrap" aria-hidden="true">
+          <div className="skel" style={{ height: 56 }} />
+          <div className="skel" style={{ height: 88 }} />
+          {Array.from({ length: 6 }).map((_, i) => (
+            <div key={i} className="skel" style={{ height: 44 }} />
+          ))}
+        </div>
+      )}
+
       {data && data.stocks.length > 0 && (
         <AdviceLine stocks={data.stocks} marketOpen={data.marketOpen} />
       )}
