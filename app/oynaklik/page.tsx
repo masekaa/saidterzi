@@ -400,6 +400,10 @@ function AdviceLine({ stocks, marketOpen }: { stocks: StockVol[]; marketOpen: bo
   const top = sorted[0];
   const calm = sorted[sorted.length - 1];
   const nm = (s: StockVol) => s.ticker.replace(".IS", "");
+  // Hacim sıçraması olan hisseler (oynaklığı teyit edebilir).
+  const spikes = withH1
+    .filter((s) => s.volRatio != null && s.volRatio >= 1.5)
+    .sort((a, b) => (b.volRatio ?? 0) - (a.volRatio ?? 0));
 
   let tip: string;
   let accent: string;
@@ -436,7 +440,17 @@ function AdviceLine({ stocks, marketOpen }: { stocks: StockVol[]; marketOpen: bo
       <b style={{ color: "var(--long)" }}>
         {nm(calm)} (±%{calm.h1!.expectedMovePct.toFixed(2)})
       </b>
-      . {tip}{" "}
+      . {tip}
+      {spikes.length > 0 && (
+        <>
+          {" "}
+          <span style={{ color: "var(--accent)" }}>
+            🔊 Hacim sıçraması: {spikes.slice(0, 3).map(nm).join(", ")}
+            {spikes.length > 3 ? ` +${spikes.length - 3}` : ""}
+          </span>{" "}
+          (hareketi teyit edebilir).
+        </>
+      )}{" "}
       <span style={{ color: "var(--text-faint)", fontSize: 12.5 }}>
         (Yön değil, hareket büyüklüğü; yatırım tavsiyesi değildir.)
       </span>
