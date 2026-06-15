@@ -748,6 +748,27 @@ export default function OynaklikPage() {
         ← Dual Momentum ana sayfa
       </a>
 
+      {/* Ekran okuyucu için durum bildirimi (otomatik yenilemede de duyurulur). */}
+      <div
+        aria-live="polite"
+        style={{
+          position: "absolute",
+          width: 1,
+          height: 1,
+          overflow: "hidden",
+          clip: "rect(0 0 0 0)",
+          whiteSpace: "nowrap",
+        }}
+      >
+        {loading
+          ? "Oynaklık verisi yükleniyor"
+          : err
+          ? `Veri alınamadı: ${err}`
+          : data
+          ? `${data.stocks.length} hisse güncellendi`
+          : ""}
+      </div>
+
       <h1 style={{ fontSize: 28, margin: "14px 0 6px", fontWeight: 800 }}>
         Gün-İçi Oynaklık Radarı · BIST
       </h1>
