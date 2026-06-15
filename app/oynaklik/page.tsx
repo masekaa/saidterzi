@@ -24,6 +24,8 @@ interface VolResponse {
   asof: string;
   exchangeTz: string;
   gran: string;
+  marketOpen: boolean;
+  lastBar: number | null;
   meta: {
     h1: { r2: number; rho: number; rhoNaive: number; nTest: number };
     h2: { r2: number; rho: number; rhoNaive: number; nTest: number };
@@ -337,11 +339,48 @@ export default function OynaklikPage() {
           {loading ? "Yükleniyor…" : "Yenile"}
         </button>
         {data && (
+          <span
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 6,
+              fontSize: 13,
+              fontWeight: 600,
+              color: data.marketOpen ? "var(--long)" : "var(--text-dim)",
+            }}
+          >
+            <span style={{ fontSize: 10 }}>{data.marketOpen ? "🟢" : "🔴"}</span>
+            {data.marketOpen ? "Borsa açık" : "Borsa kapalı"}
+          </span>
+        )}
+        {data && (
           <span style={{ color: "var(--text-faint)", fontSize: 13 }}>
-            Güncelleme: {fmtTime(data.asof)} · {data.exchangeTz}
+            {data.marketOpen ? "Güncelleme" : "Son seans"}:{" "}
+            {data.lastBar != null
+              ? fmtTime(new Date(data.lastBar * 1000).toISOString())
+              : fmtTime(data.asof)}{" "}
+            · {data.exchangeTz}
           </span>
         )}
       </div>
+
+      {data && !data.marketOpen && data.stocks.length > 0 && (
+        <div
+          style={{
+            background: "var(--panel-2)",
+            border: "1px solid var(--border)",
+            borderLeft: "4px solid var(--cash)",
+            borderRadius: 10,
+            padding: "10px 14px",
+            fontSize: 13,
+            color: "var(--text-dim)",
+            marginBottom: 16,
+          }}
+        >
+          Borsa şu an kapalı — aşağıdaki tahminler <b>son seans kapanışı</b> verisine
+          dayanıyor. Seans açıldığında (BIST ~10:00–18:00) canlı güncellenir.
+        </div>
+      )}
 
       {err && (
         <div style={{ color: "var(--danger)", fontSize: 14, marginBottom: 16 }}>
