@@ -287,6 +287,61 @@ function SummaryStrip({ stocks }: { stocks: StockVol[] }) {
   );
 }
 
+// Sade-dil "şimdi ne yapmalı?" özeti — projenin Ayşe-teyze felsefesi, gün-içine uygulanmış.
+function AdviceLine({ stocks, marketOpen }: { stocks: StockVol[]; marketOpen: boolean }) {
+  const withH1 = stocks.filter((s) => s.h1);
+  if (withH1.length === 0) return null;
+  const total = withH1.length;
+  const high = withH1.filter((s) => s.h1!.regime === "high").length;
+  const low = withH1.filter((s) => s.h1!.regime === "low").length;
+  const sorted = [...withH1].sort((a, b) => b.h1!.expectedMovePct - a.h1!.expectedMovePct);
+  const top = sorted[0];
+  const calm = sorted[sorted.length - 1];
+  const nm = (s: StockVol) => s.ticker.replace(".IS", "");
+
+  let tip: string;
+  let accent: string;
+  if (high >= total * 0.45) {
+    tip = "Oynaklık yüksek — pozisyonları küçük tutmak ve stop’ları geniş bırakmak mantıklı.";
+    accent = "var(--cash)";
+  } else if (low >= total * 0.45) {
+    tip = "Piyasa sakin — büyük sıçrama beklentisi düşük, dar bantlı hareket olası.";
+    accent = "var(--long)";
+  } else {
+    tip = "Hareket seçici — geneli değil, tek tek hisseye bakmak gerekiyor.";
+    accent = "var(--accent)";
+  }
+  const pre = marketOpen ? "Şu an" : "Son seansa göre";
+  return (
+    <div
+      style={{
+        background: "var(--panel-2)",
+        border: "1px solid var(--border)",
+        borderLeft: `4px solid ${accent}`,
+        borderRadius: 12,
+        padding: "14px 16px",
+        marginBottom: 16,
+        fontSize: 14.5,
+        lineHeight: 1.6,
+        color: "var(--text)",
+      }}
+    >
+      <b>📊 {pre} ne yapmalı?</b> {pre} BIST’te en hareketlisi{" "}
+      <b style={{ color: "var(--cash)" }}>
+        {nm(top)} (±%{top.h1!.expectedMovePct.toFixed(2)})
+      </b>
+      , en sakini{" "}
+      <b style={{ color: "var(--long)" }}>
+        {nm(calm)} (±%{calm.h1!.expectedMovePct.toFixed(2)})
+      </b>
+      . {tip}{" "}
+      <span style={{ color: "var(--text-faint)", fontSize: 12.5 }}>
+        (Yön değil, hareket büyüklüğü; yatırım tavsiyesi değildir.)
+      </span>
+    </div>
+  );
+}
+
 // Sektör-bazlı oynaklık: hangi sektörler şu an daha hareketli (1 saat beklenen).
 function SectorBreakdown({ stocks }: { stocks: StockVol[] }) {
   const withH1 = stocks.filter((s) => s.h1 && s.note);
@@ -722,6 +777,9 @@ export default function OynaklikPage() {
         </div>
       )}
 
+      {data && data.stocks.length > 0 && (
+        <AdviceLine stocks={data.stocks} marketOpen={data.marketOpen} />
+      )}
       {data && data.stocks.length > 0 && <SummaryStrip stocks={data.stocks} />}
       {data && data.stocks.length > 0 && <SectorBreakdown stocks={data.stocks} />}
 
