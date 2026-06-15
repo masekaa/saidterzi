@@ -87,6 +87,14 @@ function RegimeBadge({ p, price }: { p: VolPrediction | null; price?: number | n
           ≈ {band} ₺
         </span>
       )}
+      {p.rangePct && (
+        <span
+          style={{ color: "var(--text-faint)", fontSize: 11, fontVariantNumeric: "tabular-nums" }}
+          title="Bu rejimde gerçekleşen hareketin tipik aralığı (p25–p75)"
+        >
+          tipik %{p.rangePct[0].toFixed(2)}–%{p.rangePct[1].toFixed(2)}
+        </span>
+      )}
     </span>
   );
 }

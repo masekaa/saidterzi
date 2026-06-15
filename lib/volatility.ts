@@ -22,6 +22,7 @@ export interface VolModel {
   intercept: number;
   regime_thresholds: { low: number; high: number };
   regime_actual_move: { low: number; normal: number; high: number };
+  regime_move_range?: { low: [number, number]; normal: [number, number]; high: [number, number] };
   oos: { r2_ridge: number; rho_ridge: number; rho_naive: number; n_test: number };
   reliability?: { pred: number; actual: number; n: number }[];
   note: string;
@@ -58,6 +59,8 @@ export interface VolPrediction {
   regime: Regime;
   // O rejimin OOS'ta GERÇEKLEŞEN ortalama mutlak hareketi (kalibre, dürüst sayı)
   expectedMovePct: number;
+  // Belirsizlik: o rejimde gerçekleşen hareketin tipik aralığı (p25–p75), yüzde
+  rangePct: [number, number] | null;
   drivers: Driver[]; // tahmini en çok belirleyen özellikler (lineer model katkıları)
 }
 
@@ -194,9 +197,11 @@ export function predict(model: VolModel, x: number[]): VolPrediction {
   const { low, high } = model.regime_thresholds;
   const regime: Regime = pred < low ? "low" : pred < high ? "normal" : "high";
   const expectedMovePct = model.regime_actual_move[regime] * 100;
+  const r = model.regime_move_range?.[regime];
+  const rangePct: [number, number] | null = r ? [r[0] * 100, r[1] * 100] : null;
   // En etkili 3 sürücü (mutlak katkıya göre).
   const drivers = contribs
     .sort((a, b) => Math.abs(b.effect) - Math.abs(a.effect))
     .slice(0, 3);
-  return { pred, predPct: pred * 100, regime, expectedMovePct, drivers };
+  return { pred, predPct: pred * 100, regime, expectedMovePct, rangePct, drivers };
 }

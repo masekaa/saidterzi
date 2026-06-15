@@ -97,6 +97,11 @@ def main():
     q33, q67 = np.quantile(p_tr, [1 / 3, 2 / 3])
     reg_te = np.where(p_ridge < q33, 0, np.where(p_ridge < q67, 1, 2))
     means = [float(yte[reg_te == k].mean()) for k in (0, 1, 2)]
+    # Belirsizlik: her rejimde gercek hareketin p25-p75 araligi (OOS).
+    ranges = [
+        [float(np.quantile(yte[reg_te == k], 0.25)), float(np.quantile(yte[reg_te == k], 0.75))]
+        for k in (0, 1, 2)
+    ]
     print("    Rejim kalibrasyonu (OOS gercek ortalama |hareket|, %):")
     for k, lbl in enumerate(["dusuk ", "normal", "yuksek"]):
         n = int((reg_te == k).sum())
@@ -132,6 +137,9 @@ def main():
         "regime_thresholds": {"low": float(q33), "high": float(q67)},
         "regime_actual_move": {  # rejim -> OOS gercek ortalama mutlak getiri
             "low": means[0], "normal": means[1], "high": means[2],
+        },
+        "regime_move_range": {  # rejim -> OOS gercek hareket p25-p75 araligi
+            "low": ranges[0], "normal": ranges[1], "high": ranges[2],
         },
         "oos": {
             "r2_ridge": float(r2_ridge), "rho_ridge": float(rho_ridge),
