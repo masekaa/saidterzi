@@ -3348,6 +3348,11 @@ function YatirimTavsiyesi({ data }: { data: AnalysisResult }) {
     const lines = [
       `Bu Ay Ne Yapmalı?${monthLabel ? ` — ${monthLabel}` : ""}`,
       `Genel Durum: ${verdict.label} — ${verdict.text}`,
+      scoreN > 0
+        ? `Sinyal gücü: ${
+            Math.abs(stance) < 0.33 ? "zayıf" : Math.abs(stance) < 0.66 ? "orta" : "güçlü"
+          } (%${Math.round(Math.abs(stance) * 100)}, ${scoreN} gösterge)`
+        : "",
       "",
       ...items.map((it) => `${it.icon} ${it.lead}`),
       "",
@@ -3395,6 +3400,24 @@ function YatirimTavsiyesi({ data }: { data: AnalysisResult }) {
         <span className="av-body">
           <b className="av-label">Genel Durum: {verdict.label}</b>
           <span className="av-text"> {verdict.text}</span>
+          {scoreN > 0 && (
+            <span
+              className="av-strength"
+              title={`${scoreN} bağımsız göstergenin sentezi; |eğilim|=${Math.abs(stance).toFixed(2)} (0 = kararsız, 1 = tam mutabık)`}
+              style={{ display: "block", marginTop: 4, fontSize: 12.5, opacity: 0.85 }}
+            >
+              Sinyal gücü:{" "}
+              <b>
+                {Math.abs(stance) < 0.33
+                  ? "zayıf"
+                  : Math.abs(stance) < 0.66
+                  ? "orta"
+                  : "güçlü"}
+              </b>{" "}
+              (%{Math.round(Math.abs(stance) * 100)} · {scoreN} gösterge) — düşük güçte
+              sinyale fazla yüklenme.
+            </span>
+          )}
         </span>
       </div>
       <ul className="advice-list">
