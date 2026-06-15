@@ -444,6 +444,35 @@ export default function OynaklikPage() {
     load();
   }, [load]);
 
+  // Tercihleri (granülerlik, sıralama, rejim filtresi) hatırla.
+  const [prefsLoaded, setPrefsLoaded] = useState(false);
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem("oynaklik:prefs");
+      if (raw) {
+        const p = JSON.parse(raw);
+        if (p.gran === "60m" || p.gran === "5m") setGran(p.gran);
+        if (["name", "price", "day", "move1", "move2"].includes(p.sortKey)) setSortKey(p.sortKey);
+        if (p.sortDir === "asc" || p.sortDir === "desc") setSortDir(p.sortDir);
+        if (["all", "low", "normal", "high"].includes(p.rf)) setRf(p.rf);
+      }
+    } catch {
+      /* yok say */
+    }
+    setPrefsLoaded(true);
+  }, []);
+  useEffect(() => {
+    if (!prefsLoaded) return; // ilk yüklemede ezme
+    try {
+      localStorage.setItem(
+        "oynaklik:prefs",
+        JSON.stringify({ gran, sortKey, sortDir, rf })
+      );
+    } catch {
+      /* yok say */
+    }
+  }, [prefsLoaded, gran, sortKey, sortDir, rf]);
+
   const fmtTime = (iso: string) =>
     new Date(iso).toLocaleString("tr-TR", {
       hour: "2-digit",
