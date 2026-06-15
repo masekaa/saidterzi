@@ -8,6 +8,8 @@ Dual momentum'u **on bir varlık evreninde** canlı hesaplayan dashboard:
 **📊 ETF (GEM)** · **📈 Hisse** (24 büyük-cap) · **🪙 Kripto** (10 coin) · **🏭 Sektör** (11 SPDR / DMSR) · **🌍 Uluslararası** (8 bölgesel ETF) · **🛢️ Emtia** (8 reel-varlık ETF) · **🎛️ Faktör/Stil** (7 tek-faktör ETF: MTUM/VLUE/QUAL/USMV/SIZE/VUG/HDV) · **🏦 Tahvil** (7 sabit-getiri ETF: SHY/IEF/TLT/LQD/HYG/TIP/EMB) · **🌐 Varlık Sınıfı** (8 sınıf-ETF'i — saf GTAA: hisse/tahvil/altın/emtia/REIT rotasyonu) · **🗺️ Ülke Rotasyonu** (10 tek-ülke MSCI ETF'i — country momentum) · **🇹🇷 BIST 100** (26 likit Türk hissesi — USD bazlı, USDTRY=X ile çevrilir).
 Her evren aynı tam analiz paketini alır; üst sekmelerden geçilir. Tüm sleeve'ler ayrıca **eşit-ağırlık + risk-parity bileşik** meta-stratejide birleşir.
 
+> 🆕 **Gün-İçi Oynaklık Radarı** ([`/oynaklik`](#-gün-içi-oynaklık-radarı-bist--oynaklik)): aylık momentumdan ayrı, BIST hisseleri için **gün-içi ML oynaklık tahmini** (yön değil, hareket büyüklüğü). Detay aşağıda.
+
 ```bash
 npm install
 npm run dev      # http://localhost:3000
@@ -54,11 +56,38 @@ Deploy için → [`DEPLOY.md`](DEPLOY.md). Veri: Yahoo Finance (keyless). Çekir
 
 Sayfa sonunda **📐 Metodoloji & Bilinen Kısıtlar** paneli: sinyal-`t`/uygulama-`t+1` zamanlaması, toplam-getiri veri, T-Bill eşiği, işlem maliyeti modeli ve **seçim/hayatta-kalma yanlılığı** (evrenler bugünün bilgisiyle seçildi) gibi varsayımları açıkça beyan eder. Tüm çıktılar **JSON/CSV** olarak indirilebilir; sonuçlar **10 dk sunucu önbelleğinde**, sayfa mobil-uyumlu ve erişilebilir (ARIA), hata-izolasyonlu (ErrorBoundary).
 
+## 📈 Gün-İçi Oynaklık Radarı (BIST) — `/oynaklik`
+
+Dual Momentum (aylık) tarafından ayrı, **gün-içi ML tabanlı** bir sayfa. BIST hisselerinin
+önümüzdeki **1–2 saatte ne kadar oynayacağını** (hareketin **büyüklüğünü**) tahmin eder.
+
+**Önemli — dürüstlük:** Yön (artış/azalış) **tahmin edilmez**. Kısa-vade yön tahmini
+istatistiksel olarak yazı-tura: LightGBM, lojistik **ve LSTM (derin öğrenme)** modellerinin
+hepsi "hep çoğunluğu söyle" naive baseline'ını **geçemedi** (OOS AUC ~0.51–0.53). Oynaklık
+(hareket büyüklüğü) ise gerçekten tahmin edilebilir — oynaklık kümelenmesi etkisi.
+
+**Model:** çevrimdışı Python (`ml/`) ile eğitilen **Ridge** regresör (hedef = `|H-bar ileri
+log-getiri|`). Katsayılar JSON'a aktarılır (`lib/models/`), tarayıcı/sunucu tarafında çıkarım
+yapılır (`lib/volatility.ts`). OOS: Ridge ρ=0.25 vs naive geçmiş-oynaklık ρ=0.18 (60m, +1s).
+**Granülerlik geçişi:** Saatlik (60m, ~2 yıl) / 5 dakikalık (~3 ay). **TS↔Python özellik
+paritesi** birebir doğrulanmış (`ml/parity_check.mjs`, max fark ~4e-17).
+
+**Sayfa ne gösterir:** sade-dil "şimdi ne yapmalı?" özeti · piyasa-geneli oynaklık hükmü +
+en oynak/en sakin hisseler · **sektör kırılımı** · düşük/normal/yüksek **rejim** + beklenen
+±% hareket + **TL fiyat bandı** · gün-içi **sparkline** · tıkla-aç **"neden bu rejim?"**
+(lineer model sürücü katkıları) + **rejim geçmişi** şeridi + **"normalin kaç katı?"** bağlamı ·
+**model güvenilirlik eğrisi** (OOS kalibrasyon) · arama + rejim filtresi + sıralanabilir
+sütunlar · **CSV indir** · borsa açık/kapalı durumu + açıkken otomatik yenileme · tercih
+hatırlama. Çerçeve her yerde açık: **yön değil büyüklük, yatırım tavsiyesi değildir.**
+
 ## 📂 Yapı
 
 | Klasör/Dosya | İçerik |
 |--------------|--------|
 | `app/`, `lib/` | Canlı analiz web uygulaması (Next.js/TypeScript) |
+| `app/oynaklik/`, `app/api/volatility/` | Gün-içi Oynaklık Radarı sayfası + API |
+| `ml/` | Çevrimdışı Python ML hattı (veri çekme, özellik, eğitim, parite testi) + `RESULTS.md` (dürüst OOS bulgular) |
+| `lib/volatility.ts`, `lib/models/` | TS çıkarım + aktarılmış Ridge model JSON'ları |
 | [`dual-momentum-kapsam/`](dual-momentum-kapsam/) | Kitabın tüm teknik içeriğinin kapsam dokümanı (TR + İng. terimli). Hem referans arşivi hem kodlanabilir spesifikasyon. |
 | [`DEPLOY.md`](DEPLOY.md) | Vercel deploy rehberi |
 
