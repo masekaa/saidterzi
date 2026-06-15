@@ -50,6 +50,12 @@ geçiyor (rho 0.28 vs 0.165). Risk zamanlaması için kullanışlı:
 Rejim kalibrasyonu (OOS gerçek ort. |hareket|): +1s → düşük %0.33 · normal %0.42 · yüksek %0.62.
 Web: `app/oynaklik` sayfası + `/api/volatility` (gün-içi 60m bar → `lib/volatility.ts` çıkarım).
 
+**Parite doğrulaması:** `ml/parity_fixture.py` (Python ground-truth) + `ml/parity_check.mjs`
+(Node) — `lib/volatility.ts` özellik hesabı, eğitimdeki `build_dataset.py` ile **birebir**
+(max fark 3.8e-17, kayan-nokta gürültüsü). Yani çıkarım, modelin eğitildiği özelliklerle
+aynı; sessiz TS↔Python sapması yok. Çalıştırma: `python ml/parity_fixture.py THYAO 60m`
+sonra `node ml/parity_check.mjs`.
+
 ### 5 dakikalık granülerlik (ek, ~3 ay veri, 128k bar)
 Aynı dürüst kurulum 5m barlarda da test edildi. **Yön yine ölü** (LightGBM/lojistik
 AUC ~0.51, naive ~%57'yi geçemiyor). **Oynaklık yine gerçek** ve naive'i geçiyor:
