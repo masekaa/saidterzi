@@ -61,6 +61,8 @@ export interface VolPrediction {
   expectedMovePct: number;
   // Belirsizlik: o rejimde gerçekleşen hareketin tipik aralığı (p25–p75), yüzde
   rangePct: [number, number] | null;
+  // Tahmin bir rejim eşiğine çok yakınsa (düşük güven): rejim çağrısı sınırda.
+  borderline: boolean;
   drivers: Driver[]; // tahmini en çok belirleyen özellikler (lineer model katkıları)
 }
 
@@ -199,11 +201,16 @@ export function predict(model: VolModel, x: number[]): VolPrediction {
   const expectedMovePct = model.regime_actual_move[regime] * 100;
   const r = model.regime_move_range?.[regime];
   const rangePct: [number, number] | null = r ? [r[0] * 100, r[1] * 100] : null;
+  // Sınırda mı? En yakın eşiğe uzaklık, normal-bant genişliğinin %12'sinden azsa.
+  const bandW = Math.max(high - low, 1e-9);
+  const distToEdge =
+    regime === "low" ? low - pred : regime === "high" ? pred - high : Math.min(pred - low, high - pred);
+  const borderline = distToEdge < 0.12 * bandW;
   // En etkili 3 sürücü (mutlak katkıya göre).
   const drivers = contribs
     .sort((a, b) => Math.abs(b.effect) - Math.abs(a.effect))
     .slice(0, 3);
-  return { pred, predPct: pred * 100, regime, expectedMovePct, rangePct, drivers };
+  return { pred, predPct: pred * 100, regime, expectedMovePct, rangePct, borderline, drivers };
 }
 
 // --- Oynaklık Radarı API sözleşmesi (route.ts + page.tsx tek kaynak) ---

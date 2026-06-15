@@ -52,6 +52,14 @@ function RegimeBadge({ p, price }: { p: VolPrediction | null; price?: number | n
         <span style={{ color: "var(--text)", fontVariantNumeric: "tabular-nums" }}>
           ±%{p.expectedMovePct.toFixed(2)}
         </span>
+        {p.borderline && (
+          <span
+            title="Tahmin bir rejim eşiğine çok yakın — rejim çağrısı sınırda, düşük güven"
+            style={{ color: "var(--text-faint)", fontSize: 11 }}
+          >
+            ~sınırda
+          </span>
+        )}
       </span>
       {band && (
         <span
