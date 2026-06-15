@@ -138,22 +138,38 @@ function ReliabilityChart({ pts }: { pts: { pred: number; actual: number }[] }) 
 }
 
 // Gün-içi mini fiyat grafiği (son ~30 bar kapanışı). Yükseliş yeşil, düşüş kırmızı.
-function Sparkline({ data }: { data: number[] }) {
+function Sparkline({ data, baseline }: { data: number[]; baseline?: number | null }) {
   const w = 84;
   const h = 26;
   if (!data || data.length < 2) return <span style={{ color: "var(--text-faint)" }}>—</span>;
-  const min = Math.min(...data);
-  const max = Math.max(...data);
+  // Önceki kapanış (baseline) ölçeğe dahil edilir ki referans çizgisi görünsün.
+  const withBase = baseline != null && Number.isFinite(baseline) ? [...data, baseline] : data;
+  const min = Math.min(...withBase);
+  const max = Math.max(...withBase);
   const span = max - min || 1;
+  const yOf = (v: number) => h - 1 - ((v - min) / span) * (h - 2);
   const pts = data.map((v, i) => {
     const x = (i / (data.length - 1)) * (w - 2) + 1;
-    const y = h - 1 - ((v - min) / span) * (h - 2);
-    return `${x.toFixed(1)},${y.toFixed(1)}`;
+    return `${x.toFixed(1)},${yOf(v).toFixed(1)}`;
   });
-  const up = data[data.length - 1] >= data[0];
+  // Renk: gün başına (önceki kapanış) göre yukarıda mı?
+  const ref = baseline != null && Number.isFinite(baseline) ? baseline : data[0];
+  const up = data[data.length - 1] >= ref;
   const color = up ? "var(--long)" : "var(--danger)";
+  const baseY = baseline != null && Number.isFinite(baseline) ? yOf(baseline) : null;
   return (
     <svg width={w} height={h} style={{ display: "block" }} aria-hidden="true">
+      {baseY != null && (
+        <line
+          x1={1}
+          y1={baseY}
+          x2={w - 1}
+          y2={baseY}
+          stroke="var(--text-faint)"
+          strokeWidth={0.75}
+          strokeDasharray="2 2"
+        />
+      )}
       <polyline points={pts.join(" ")} fill="none" stroke={color} strokeWidth={1.5} />
     </svg>
   );
@@ -1169,7 +1185,7 @@ export default function OynaklikPage() {
                       : "—"}
                   </td>
                   <td style={td}>
-                    <Sparkline data={s.spark} />
+                    <Sparkline data={s.spark} baseline={s.prevClose} />
                   </td>
                   <td style={td}>
                     <RegimeBadge p={s.h1} price={s.lastPrice} />
