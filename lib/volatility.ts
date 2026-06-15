@@ -205,3 +205,35 @@ export function predict(model: VolModel, x: number[]): VolPrediction {
     .slice(0, 3);
   return { pred, predPct: pred * 100, regime, expectedMovePct, rangePct, drivers };
 }
+
+// --- Oynaklık Radarı API sözleşmesi (route.ts + page.tsx tek kaynak) ---
+export interface StockVol {
+  ticker: string;
+  name: string;
+  note?: string;
+  lastPrice: number | null;
+  prevClose: number | null;
+  dayChangePct: number | null; // gün içi % değişim
+  asof: number | null; // son barın zamanı (unix sn)
+  spark: number[]; // son ~30 kapanış (mini grafik)
+  regimeHistory: Regime[]; // son ~12 barın rejimi
+  typicalMovePct: number | null; // hissenin tipik 1-bar |hareketi| (son ~60 bar)
+  volRatio: number | null; // son bar hacmi / önceki 12 bar ort. (>1.5 = spike)
+  h1: VolPrediction | null; // ~1 saat
+  h2: VolPrediction | null; // ~2 saat
+}
+
+export interface VolResponse {
+  asof: string;
+  exchangeTz: string;
+  gran: string;
+  marketOpen: boolean;
+  lastBar: number | null;
+  marketVolHistory: number[]; // BIST kesitsel ort. beklenen hareket, bar bar
+  meta: {
+    h1: { r2: number; rho: number; rhoNaive: number; nTest: number };
+    h2: { r2: number; rho: number; rhoNaive: number; nTest: number };
+    reliability: { pred: number; actual: number; n: number }[];
+  };
+  stocks: StockVol[];
+}

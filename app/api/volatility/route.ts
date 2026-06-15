@@ -12,43 +12,14 @@ import {
   DEFAULT_GRAN,
   computeFeatures,
   predict,
-  type VolPrediction,
+  type Regime,
+  type StockVol,
+  type VolResponse,
 } from "@/lib/volatility";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 export const maxDuration = 60;
-
-interface StockVol {
-  ticker: string;
-  name: string;
-  note?: string;
-  lastPrice: number | null;
-  prevClose: number | null;
-  dayChangePct: number | null; // gün içi % değişim
-  asof: number | null; // son barın zamanı (unix sn)
-  spark: number[]; // son ~30 kapanış (mini grafik için)
-  regimeHistory: string[]; // son ~12 barın rejimi (low/normal/high)
-  typicalMovePct: number | null; // hissenin tipik 1-bar |hareketi| (son ~60 bar)
-  volRatio: number | null; // son bar hacmi / önceki 12 bar ort. (>1.5 = spike)
-  h1: VolPrediction | null;
-  h2: VolPrediction | null;
-}
-
-interface VolResponse {
-  asof: string;
-  exchangeTz: string;
-  gran: string;
-  marketOpen: boolean; // son bar yeterince taze mi (seans açık mı)
-  lastBar: number | null; // en taze barın zamanı (unix sn)
-  marketVolHistory: number[]; // BIST kesitsel ort. beklenen hareket, bar bar
-  meta: {
-    h1: { r2: number; rho: number; rhoNaive: number; nTest: number };
-    h2: { r2: number; rho: number; rhoNaive: number; nTest: number };
-    reliability: { pred: number; actual: number; n: number }[];
-  };
-  stocks: StockVol[];
-}
 
 // Sunucu-içi önbellek (gün-içi veri — 3 dk taze), granülerlik başına.
 const cache: Record<string, { at: number; data: VolResponse }> = {};
@@ -72,7 +43,7 @@ export async function GET(req: Request) {
     const h2 = feats ? predict(pair.h2, feats) : null;
     // Rejim + hareket geçmişi: son ~12 bar için (her biri kendi geçmişiyle) h1.
     const okBars = series.bars.filter((b) => b.c != null);
-    const regimeHistory: string[] = [];
+    const regimeHistory: Regime[] = [];
     const moveHistory: number[] = []; // beklenen ±% hareket, bar bar (endeks için)
     for (let i = Math.max(26, okBars.length - 12); i < okBars.length; i++) {
       const f = computeFeatures(okBars.slice(0, i + 1), series.gmtoffset);

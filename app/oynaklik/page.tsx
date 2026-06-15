@@ -6,37 +6,13 @@
 // şekilde rastgele. Yalnız "ne kadar oynar" tahmin edilir (oynaklık kümelenmesi).
 
 import { Fragment, useCallback, useEffect, useState } from "react";
-import type { Driver, Regime, VolPrediction } from "@/lib/volatility";
-
-interface StockVol {
-  ticker: string;
-  name: string;
-  note?: string;
-  lastPrice: number | null;
-  prevClose: number | null;
-  dayChangePct: number | null;
-  asof: number | null;
-  spark: number[];
-  regimeHistory: Regime[];
-  typicalMovePct: number | null;
-  volRatio: number | null;
-  h1: VolPrediction | null;
-  h2: VolPrediction | null;
-}
-interface VolResponse {
-  asof: string;
-  exchangeTz: string;
-  gran: string;
-  marketOpen: boolean;
-  lastBar: number | null;
-  marketVolHistory: number[];
-  meta: {
-    h1: { r2: number; rho: number; rhoNaive: number; nTest: number };
-    h2: { r2: number; rho: number; rhoNaive: number; nTest: number };
-    reliability: { pred: number; actual: number; n: number }[];
-  };
-  stocks: StockVol[];
-}
+import type {
+  Driver,
+  Regime,
+  VolPrediction,
+  StockVol,
+  VolResponse,
+} from "@/lib/volatility";
 
 const REGIME_TR: Record<Regime, string> = {
   low: "Düşük",
