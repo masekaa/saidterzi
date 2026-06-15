@@ -246,10 +246,13 @@ function sortValue(s: StockVol, k: SortKey): number | string {
       return s.lastPrice ?? -Infinity;
     case "day":
       return s.dayChangePct ?? -Infinity;
+    // Birincil: rejimin kalibre ±%'si; ikincil (ondalık): ham model gücü (predPct)
+    // → aynı rejimdeki hisseler model konviksiyonuna göre ayrışır. predPct (~%1)
+    // asla rejimler-arası ~%0.1'lik kalibre farkını (×1000) geçmez.
     case "move1":
-      return s.h1?.expectedMovePct ?? -Infinity;
+      return s.h1 ? s.h1.expectedMovePct * 1000 + s.h1.predPct : -Infinity;
     case "move2":
-      return s.h2?.expectedMovePct ?? -Infinity;
+      return s.h2 ? s.h2.expectedMovePct * 1000 + s.h2.predPct : -Infinity;
   }
 }
 
