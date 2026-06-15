@@ -29,6 +29,7 @@ interface VolResponse {
   meta: {
     h1: { r2: number; rho: number; rhoNaive: number; nTest: number };
     h2: { r2: number; rho: number; rhoNaive: number; nTest: number };
+    reliability: { pred: number; actual: number; n: number }[];
   };
   stocks: StockVol[];
 }
@@ -84,6 +85,59 @@ function RegimeBadge({ p, price }: { p: VolPrediction | null; price?: number | n
         </span>
       )}
     </span>
+  );
+}
+
+// Güvenilirlik eğrisi: tahmin edilen oynaklık (x) vs gerçekleşen (y), 10 OOS kova.
+// Noktalar köşegene yakınsa model kalibre demektir.
+function ReliabilityChart({ pts }: { pts: { pred: number; actual: number }[] }) {
+  const W = 220;
+  const H = 150;
+  const pad = 28;
+  if (!pts || pts.length < 2) return null;
+  const xs = pts.map((p) => p.pred * 100);
+  const ys = pts.map((p) => p.actual * 100);
+  const lo = Math.min(...xs, ...ys);
+  const hi = Math.max(...xs, ...ys);
+  const span = hi - lo || 1;
+  const sx = (v: number) => pad + ((v - lo) / span) * (W - pad - 6);
+  const sy = (v: number) => H - pad - ((v - lo) / span) * (H - pad - 6);
+  return (
+    <svg width={W} height={H} role="img" aria-label="Model güvenilirlik eğrisi">
+      {/* y=x köşegen (ideal kalibrasyon) */}
+      <line
+        x1={sx(lo)}
+        y1={sy(lo)}
+        x2={sx(hi)}
+        y2={sy(hi)}
+        stroke="var(--text-faint)"
+        strokeDasharray="3 3"
+        strokeWidth={1}
+      />
+      {/* nokta-çizgi */}
+      <polyline
+        points={pts.map((p) => `${sx(p.pred * 100)},${sy(p.actual * 100)}`).join(" ")}
+        fill="none"
+        stroke="var(--accent)"
+        strokeWidth={1.5}
+      />
+      {pts.map((p, i) => (
+        <circle key={i} cx={sx(p.pred * 100)} cy={sy(p.actual * 100)} r={2.6} fill="var(--accent)" />
+      ))}
+      <text x={W / 2} y={H - 6} textAnchor="middle" fontSize="10" fill="var(--text-faint)">
+        tahmin %
+      </text>
+      <text
+        x={10}
+        y={H / 2}
+        textAnchor="middle"
+        fontSize="10"
+        fill="var(--text-faint)"
+        transform={`rotate(-90 10 ${H / 2})`}
+      >
+        gerçekleşen %
+      </text>
+    </svg>
   );
 }
 
@@ -297,6 +351,26 @@ export default function OynaklikPage() {
             sıra-korelasyon ρ={data.meta.h1.rho.toFixed(2)} (naive geçmiş-oynaklık
             ρ={data.meta.h1.rhoNaive.toFixed(2)} → model naive’i geçiyor), R²=
             {data.meta.h1.r2.toFixed(2)}. <b>Yatırım tavsiyesi değildir.</b>
+          </div>
+        )}
+        {data && data.meta.reliability.length > 1 && (
+          <div
+            style={{
+              marginTop: 12,
+              display: "flex",
+              gap: 14,
+              alignItems: "center",
+              flexWrap: "wrap",
+            }}
+          >
+            <ReliabilityChart pts={data.meta.reliability} />
+            <div style={{ flex: "1 1 200px", fontSize: 12.5, color: "var(--text-faint)" }}>
+              <b style={{ color: "var(--text-dim)" }}>Güvenilirlik eğrisi.</b> Test
+              döneminde, modelin “düşük/yüksek oynaklık” dediği hisselerin{" "}
+              <b>gerçekten</b> o kadar oynayıp oynamadığı. Noktalar kesik köşegene ne
+              kadar yakınsa model o kadar kalibre — tahmin ettiği büyüklük gerçekleşene
+              denk geliyor demektir.
+            </div>
           </div>
         )}
       </div>

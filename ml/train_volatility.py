@@ -102,6 +102,24 @@ def main():
         n = int((reg_te == k).sum())
         print(f"      {lbl}: {n:6d} ornek | gercek ort hareket = %{means[k]*100:.2f}")
 
+    # --- Güvenilirlik eğrisi (OOS, 10 kova): tahmin <-> gerçekleşen ---
+    order = np.argsort(p_ridge)
+    reliability = []
+    nb = 10
+    for k in range(nb):
+        lo = k * len(order) // nb
+        hi = (k + 1) * len(order) // nb
+        idx = order[lo:hi]
+        if len(idx) == 0:
+            continue
+        reliability.append(
+            {
+                "pred": float(p_ridge[idx].mean()),
+                "actual": float(yte[idx].mean()),
+                "n": int(len(idx)),
+            }
+        )
+
     # --- Export ---
     out = {
         "interval": interval,
@@ -119,6 +137,7 @@ def main():
             "r2_ridge": float(r2_ridge), "rho_ridge": float(rho_ridge),
             "rho_naive": float(rho_naive), "n_test": int(len(te)),
         },
+        "reliability": reliability,
         "note": "Hedef = |H-bar forward log-getiri| (hareket BUYUKLUGU, yon DEGIL). "
                 "Tarayicida: z=(x-mean)/std; pred=intercept+coef.z; rejim=esiklerle.",
     }

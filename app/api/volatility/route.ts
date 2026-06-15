@@ -41,6 +41,7 @@ interface VolResponse {
   meta: {
     h1: { r2: number; rho: number; rhoNaive: number; nTest: number };
     h2: { r2: number; rho: number; rhoNaive: number; nTest: number };
+    reliability: { pred: number; actual: number; n: number }[];
   };
   stocks: StockVol[];
 }
@@ -122,6 +123,7 @@ export async function GET(req: Request) {
     meta: {
       h1: { r2: m1.r2_ridge, rho: m1.rho_ridge, rhoNaive: m1.rho_naive, nTest: m1.n_test },
       h2: { r2: m2.r2_ridge, rho: m2.rho_ridge, rhoNaive: m2.rho_naive, nTest: m2.n_test },
+      reliability: pair.h1.reliability ?? [],
     },
     stocks,
   };

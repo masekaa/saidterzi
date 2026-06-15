@@ -23,6 +23,7 @@ export interface VolModel {
   regime_thresholds: { low: number; high: number };
   regime_actual_move: { low: number; normal: number; high: number };
   oos: { r2_ridge: number; rho_ridge: number; rho_naive: number; n_test: number };
+  reliability?: { pred: number; actual: number; n: number }[];
   note: string;
 }
 
