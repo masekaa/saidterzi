@@ -1197,6 +1197,25 @@ export default function OynaklikPage() {
                 {open === s.ticker && s.h1 && (
                   <tr style={{ background: "var(--panel)" }}>
                     <td colSpan={6} style={{ padding: "4px 14px 16px" }}>
+                      {s.h2 &&
+                        (() => {
+                          const rank: Record<Regime, number> = { low: 0, normal: 1, high: 2 };
+                          const d = rank[s.h2!.regime] - rank[s.h1!.regime];
+                          const txt =
+                            d > 0
+                              ? "oynaklığın 2 saate doğru ARTMASI bekleniyor"
+                              : d < 0
+                              ? "oynaklığın 2 saate doğru YATIŞMASI bekleniyor"
+                              : "rejim 1→2 saat boyunca sabit kalıyor";
+                          const col = d > 0 ? "var(--cash)" : d < 0 ? "var(--long)" : "var(--text-dim)";
+                          return (
+                            <div style={{ fontSize: 13, color: "var(--text-dim)", marginBottom: 10 }}>
+                              <b>Ufuk karşılaştırması:</b> 1 saat ={" "}
+                              {REGIME_TR[s.h1!.regime]}, 2 saat = {REGIME_TR[s.h2!.regime]} →{" "}
+                              <b style={{ color: col }}>{txt}</b>.
+                            </div>
+                          );
+                        })()}
                       <div style={{ fontSize: 12.5, color: "var(--text-faint)", marginBottom: 8 }}>
                         Bu tahmini en çok belirleyen etkenler{" "}
                         <span style={{ color: "var(--cash)" }}>↑ oynaklığı yükseltiyor</span> ·{" "}
