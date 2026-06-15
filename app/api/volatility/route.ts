@@ -40,6 +40,7 @@ interface VolResponse {
   gran: string;
   marketOpen: boolean; // son bar yeterince taze mi (seans açık mı)
   lastBar: number | null; // en taze barın zamanı (unix sn)
+  marketVolHistory: number[]; // BIST kesitsel ort. beklenen hareket, bar bar
   meta: {
     h1: { r2: number; rho: number; rhoNaive: number; nTest: number };
     h2: { r2: number; rho: number; rhoNaive: number; nTest: number };
@@ -68,12 +69,17 @@ export async function GET(req: Request) {
     const feats = computeFeatures(series.bars, series.gmtoffset);
     const h1 = feats ? predict(pair.h1, feats) : null;
     const h2 = feats ? predict(pair.h2, feats) : null;
-    // Rejim geçmişi: son ~12 bar için (her biri kendi geçmişiyle) h1 rejimi.
+    // Rejim + hareket geçmişi: son ~12 bar için (her biri kendi geçmişiyle) h1.
     const okBars = series.bars.filter((b) => b.c != null);
     const regimeHistory: string[] = [];
+    const moveHistory: number[] = []; // beklenen ±% hareket, bar bar (endeks için)
     for (let i = Math.max(26, okBars.length - 12); i < okBars.length; i++) {
       const f = computeFeatures(okBars.slice(0, i + 1), series.gmtoffset);
-      if (f) regimeHistory.push(predict(pair.h1, f).regime);
+      if (f) {
+        const p = predict(pair.h1, f);
+        regimeHistory.push(p.regime);
+        moveHistory.push(p.expectedMovePct);
+      }
     }
     const closes = series.bars
       .map((b) => b.c)
@@ -109,15 +115,31 @@ export async function GET(req: Request) {
       h1,
       h2,
     };
-    return { sv, tz: series.exchangeTz };
+    return { sv, tz: series.exchangeTz, moveHistory };
   });
 
   const stocks: StockVol[] = [];
   let tz = "Europe/Istanbul";
+  const moveHists: number[][] = [];
   for (const r of results) {
     if (r.status === "fulfilled") {
       stocks.push(r.value.sv);
       if (r.value.tz) tz = r.value.tz;
+      if (r.value.moveHistory.length > 0) moveHists.push(r.value.moveHistory);
+    }
+  }
+  // BIST oynaklık endeksi: kesitsel (hisseler-arası) ortalama beklenen hareket,
+  // bar bar (sondan hizalı). Piyasa-geneli oynaklık yükseliyor mu düşüyor mu?
+  const maxLen = moveHists.reduce((m, h) => Math.max(m, h.length), 0);
+  const marketVolHistory: number[] = [];
+  for (let j = maxLen; j >= 1; j--) {
+    const vals: number[] = [];
+    for (const h of moveHists) {
+      const v = h[h.length - j]; // sondan j'inci
+      if (v != null && Number.isFinite(v)) vals.push(v);
+    }
+    if (vals.length >= 3) {
+      marketVolHistory.push(vals.reduce((a, b) => a + b, 0) / vals.length);
     }
   }
   // Beklenen harekete (H=1) göre büyükten küçüğe sırala (en oynak en üstte).
@@ -142,6 +164,7 @@ export async function GET(req: Request) {
     gran,
     marketOpen,
     lastBar,
+    marketVolHistory,
     meta: {
       h1: { r2: m1.r2_ridge, rho: m1.rho_ridge, rhoNaive: m1.rho_naive, nTest: m1.n_test },
       h2: { r2: m2.r2_ridge, rho: m2.rho_ridge, rhoNaive: m2.rho_naive, nTest: m2.n_test },

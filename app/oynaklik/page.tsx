@@ -28,6 +28,7 @@ interface VolResponse {
   gran: string;
   marketOpen: boolean;
   lastBar: number | null;
+  marketVolHistory: number[];
   meta: {
     h1: { r2: number; rho: number; rhoNaive: number; nTest: number };
     h2: { r2: number; rho: number; rhoNaive: number; nTest: number };
@@ -319,6 +320,60 @@ function SummaryStrip({ stocks }: { stocks: StockVol[] }) {
               {nm(s)}
             </div>
           ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// BIST Oynaklık Endeksi: hisseler-arası ortalama beklenen hareketin bar-bar seyri.
+// Piyasa-geneli oynaklık ısınıyor mu soğuyor mu?
+function MarketVolIndex({ hist }: { hist: number[] }) {
+  if (!hist || hist.length < 3) return null;
+  const W = 100, H = 34, pad = 2;
+  const min = Math.min(...hist), max = Math.max(...hist);
+  const span = max - min || 1;
+  const pts = hist.map((v, i) => {
+    const x = (i / (hist.length - 1)) * (W - 2 * pad) + pad;
+    const y = H - pad - ((v - min) / span) * (H - 2 * pad);
+    return `${x.toFixed(1)},${y.toFixed(1)}`;
+  });
+  const first = hist[0], cur = hist[hist.length - 1];
+  const rising = cur >= first;
+  const deltaPct = first > 0 ? ((cur - first) / first) * 100 : 0;
+  const col = rising ? "var(--cash)" : "var(--long)";
+  return (
+    <div
+      style={{
+        display: "flex",
+        alignItems: "center",
+        gap: 14,
+        border: "1px solid var(--border)",
+        borderRadius: 12,
+        padding: "12px 16px",
+        marginBottom: 16,
+        flexWrap: "wrap",
+      }}
+    >
+      <div>
+        <div style={{ fontSize: 13, fontWeight: 700, color: "var(--text)" }}>
+          BIST Oynaklık Endeksi
+        </div>
+        <div style={{ fontSize: 12, color: "var(--text-faint)" }}>
+          hisseler-arası ort. beklenen 1s hareket
+        </div>
+      </div>
+      <svg width={W} height={H} aria-hidden="true">
+        <polyline points={pts.join(" ")} fill="none" stroke={col} strokeWidth={1.5} />
+      </svg>
+      <div style={{ fontSize: 14, fontVariantNumeric: "tabular-nums" }}>
+        <span style={{ color: "var(--text)", fontWeight: 700 }}>±%{cur.toFixed(2)}</span>{" "}
+        <span style={{ color: col, fontWeight: 600 }}>
+          {rising ? "▲" : "▼"} {deltaPct >= 0 ? "+" : ""}
+          {deltaPct.toFixed(0)}%
+        </span>
+        <div style={{ fontSize: 11.5, color: "var(--text-faint)" }}>
+          {rising ? "oynaklık ısınıyor" : "oynaklık soğuyor"} (son barlar)
         </div>
       </div>
     </div>
@@ -846,6 +901,9 @@ export default function OynaklikPage() {
 
       {data && data.stocks.length > 0 && (
         <AdviceLine stocks={data.stocks} marketOpen={data.marketOpen} />
+      )}
+      {data && data.marketVolHistory.length >= 3 && (
+        <MarketVolIndex hist={data.marketVolHistory} />
       )}
       {data && data.stocks.length > 0 && <SummaryStrip stocks={data.stocks} />}
       {data && data.stocks.length > 0 && <SectorBreakdown stocks={data.stocks} />}
