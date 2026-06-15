@@ -28,6 +28,7 @@ interface StockVol {
   dayChangePct: number | null; // gün içi % değişim
   asof: number | null; // son barın zamanı (unix sn)
   spark: number[]; // son ~30 kapanış (mini grafik için)
+  regimeHistory: string[]; // son ~12 barın rejimi (low/normal/high)
   h1: VolPrediction | null;
   h2: VolPrediction | null;
 }
@@ -66,6 +67,13 @@ export async function GET(req: Request) {
     const feats = computeFeatures(series.bars, series.gmtoffset);
     const h1 = feats ? predict(pair.h1, feats) : null;
     const h2 = feats ? predict(pair.h2, feats) : null;
+    // Rejim geçmişi: son ~12 bar için (her biri kendi geçmişiyle) h1 rejimi.
+    const okBars = series.bars.filter((b) => b.c != null);
+    const regimeHistory: string[] = [];
+    for (let i = Math.max(26, okBars.length - 12); i < okBars.length; i++) {
+      const f = computeFeatures(okBars.slice(0, i + 1), series.gmtoffset);
+      if (f) regimeHistory.push(predict(pair.h1, f).regime);
+    }
     const closes = series.bars
       .map((b) => b.c)
       .filter((x): x is number => x != null);
@@ -84,6 +92,7 @@ export async function GET(req: Request) {
       dayChangePct,
       asof: lastT,
       spark: closes.slice(-30),
+      regimeHistory,
       h1,
       h2,
     };

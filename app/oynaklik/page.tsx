@@ -17,6 +17,7 @@ interface StockVol {
   dayChangePct: number | null;
   asof: number | null;
   spark: number[];
+  regimeHistory: Regime[];
   h1: VolPrediction | null;
   h2: VolPrediction | null;
 }
@@ -179,6 +180,42 @@ function DriverList({ title, drivers }: { title: string; drivers: Driver[] }) {
           </div>
         );
       })}
+    </div>
+  );
+}
+
+// Rejim geçmişi şeridi: son ~12 barın oynaklık rejimi (sol=eski, sağ=şimdi).
+function RegimeHistory({ hist }: { hist: Regime[] }) {
+  return (
+    <div style={{ flex: "1 1 240px" }}>
+      <div style={{ fontSize: 12, color: "var(--text-faint)", marginBottom: 6 }}>
+        Son barlarda rejim seyri (sol = eski → sağ = şimdi)
+      </div>
+      <div style={{ display: "flex", gap: 3, alignItems: "center" }}>
+        {hist.map((r, i) => (
+          <div
+            key={i}
+            title={REGIME_TR[r]}
+            style={{
+              width: 14,
+              height: 18,
+              borderRadius: 3,
+              background: REGIME_COLOR[r].fg,
+              opacity: 0.35 + 0.65 * ((i + 1) / hist.length), // yeni barlar daha belirgin
+            }}
+          />
+        ))}
+      </div>
+      <div style={{ display: "flex", gap: 12, marginTop: 6, fontSize: 11, color: "var(--text-faint)" }}>
+        {(["low", "normal", "high"] as Regime[]).map((r) => (
+          <span key={r} style={{ display: "inline-flex", alignItems: "center", gap: 4 }}>
+            <span
+              style={{ width: 9, height: 9, borderRadius: 2, background: REGIME_COLOR[r].fg, display: "inline-block" }}
+            />
+            {REGIME_TR[r]}
+          </span>
+        ))}
+      </div>
     </div>
   );
 }
@@ -944,6 +981,9 @@ export default function OynaklikPage() {
                         <DriverList title="1 saat içi" drivers={s.h1.drivers} />
                         {s.h2 && <DriverList title="2 saat içi" drivers={s.h2.drivers} />}
                       </div>
+                      {s.regimeHistory.length > 1 && (
+                        <RegimeHistory hist={s.regimeHistory} />
+                      )}
                     </td>
                   </tr>
                 )}
