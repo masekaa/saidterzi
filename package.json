@@ -10,7 +10,8 @@
     "lint": "next lint",
     "typecheck": "tsc --noEmit",
     "verify": "tsc --noEmit",
-    "test:parity": "python ml/parity_fixture.py THYAO 60m && node ml/parity_check.mjs"
+    "test:parity": "python ml/parity_fixture.py THYAO 60m && node ml/parity_check.mjs",
+    "test:smoke": "node ml/smoke_live.mjs THYAO.IS 60m"
   },
   "dependencies": {
     "next": "14.2.15",
