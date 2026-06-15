@@ -270,6 +270,78 @@ function SummaryStrip({ stocks }: { stocks: StockVol[] }) {
   );
 }
 
+// Sektör-bazlı oynaklık: hangi sektörler şu an daha hareketli (1 saat beklenen).
+function SectorBreakdown({ stocks }: { stocks: StockVol[] }) {
+  const withH1 = stocks.filter((s) => s.h1 && s.note);
+  if (withH1.length < 4) return null;
+  const map = new Map<string, { sum: number; n: number }>();
+  for (const s of withH1) {
+    const k = s.note as string;
+    const cur = map.get(k) ?? { sum: 0, n: 0 };
+    cur.sum += s.h1!.expectedMovePct;
+    cur.n += 1;
+    map.set(k, cur);
+  }
+  const rows = Array.from(map.entries())
+    .map(([sector, v]) => ({ sector, avg: v.sum / v.n, n: v.n }))
+    .sort((a, b) => b.avg - a.avg);
+  if (rows.length < 2) return null;
+  const max = Math.max(...rows.map((r) => r.avg)) || 1;
+  return (
+    <div
+      style={{
+        border: "1px solid var(--border)",
+        borderRadius: 12,
+        padding: "14px 16px",
+        marginBottom: 18,
+      }}
+    >
+      <div style={{ fontSize: 13, fontWeight: 700, color: "var(--text)", marginBottom: 4 }}>
+        Sektör oynaklığı (1 saat beklenen, ortalama)
+      </div>
+      <div style={{ fontSize: 12, color: "var(--text-faint)", marginBottom: 10 }}>
+        Hangi sektörler şu an daha hareketli? Çubuk uzunluğu beklenen mutlak hareketle orantılı.
+      </div>
+      {rows.map((r) => (
+        <div
+          key={r.sector}
+          style={{ display: "flex", alignItems: "center", gap: 10, margin: "5px 0" }}
+        >
+          <div style={{ width: 110, fontSize: 12.5, color: "var(--text-dim)", textAlign: "right" }}>
+            {r.sector}{" "}
+            <span style={{ color: "var(--text-faint)", fontSize: 11 }}>({r.n})</span>
+          </div>
+          <div style={{ flex: 1, background: "var(--panel)", borderRadius: 6, height: 16 }}>
+            <div
+              style={{
+                width: `${(r.avg / max) * 100}%`,
+                height: "100%",
+                borderRadius: 6,
+                background:
+                  r.avg >= max * 0.8
+                    ? "var(--cash)"
+                    : r.avg >= max * 0.5
+                    ? "var(--accent)"
+                    : "var(--long)",
+              }}
+            />
+          </div>
+          <div
+            style={{
+              width: 56,
+              fontSize: 12.5,
+              color: "var(--text)",
+              fontVariantNumeric: "tabular-nums",
+            }}
+          >
+            ±%{r.avg.toFixed(2)}
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 export default function OynaklikPage() {
   const [data, setData] = useState<VolResponse | null>(null);
   const [loading, setLoading] = useState(true);
@@ -482,6 +554,7 @@ export default function OynaklikPage() {
       )}
 
       {data && data.stocks.length > 0 && <SummaryStrip stocks={data.stocks} />}
+      {data && data.stocks.length > 0 && <SectorBreakdown stocks={data.stocks} />}
 
       {data && (
         <div
