@@ -70,6 +70,88 @@ const GRANS: { id: string; label: string; desc: string }[] = [
   { id: "5m", label: "5 dakikalık bar", desc: "5dk · ~3 ay veri, daha güncel" },
 ];
 
+// Üst özet şeridi: piyasa-geneli oynaklık seviyesi + en oynak/en sakin hisseler.
+function SummaryStrip({ stocks }: { stocks: StockVol[] }) {
+  const withH1 = stocks.filter((s) => s.h1);
+  if (withH1.length === 0) return null;
+  const high = withH1.filter((s) => s.h1!.regime === "high").length;
+  const low = withH1.filter((s) => s.h1!.regime === "low").length;
+  const normal = withH1.length - high - low;
+  const total = withH1.length;
+  // Piyasa hükmü
+  let verdict: string;
+  let vcolor: string;
+  if (high >= total * 0.45) {
+    verdict = "Bugün BIST geneli HAREKETLİ — oynaklık yüksek";
+    vcolor = "var(--cash)";
+  } else if (low >= total * 0.45) {
+    verdict = "Bugün BIST geneli SAKİN — oynaklık düşük";
+    vcolor = "var(--long)";
+  } else {
+    verdict = "Bugün BIST karışık — seçici oynaklık";
+    vcolor = "var(--accent)";
+  }
+  // En oynak / en sakin 3 (stocks zaten beklenen harekete göre sıralı geliyor)
+  const sorted = [...withH1].sort(
+    (a, b) => b.h1!.expectedMovePct - a.h1!.expectedMovePct
+  );
+  const top = sorted.slice(0, 3);
+  const calm = sorted.slice(-3).reverse();
+  const nm = (s: StockVol) => `${s.ticker.replace(".IS", "")} ±%${s.h1!.expectedMovePct.toFixed(2)}`;
+
+  const cell: React.CSSProperties = {
+    flex: "1 1 220px",
+    background: "var(--panel-2)",
+    border: "1px solid var(--border)",
+    borderRadius: 12,
+    padding: "12px 14px",
+  };
+  return (
+    <div style={{ marginBottom: 18 }}>
+      <div
+        style={{
+          background: "var(--panel-2)",
+          border: `1px solid ${vcolor}`,
+          borderLeft: `4px solid ${vcolor}`,
+          borderRadius: 12,
+          padding: "12px 16px",
+          marginBottom: 12,
+          fontWeight: 700,
+          color: vcolor,
+          fontSize: 15,
+        }}
+      >
+        {verdict}
+        <span style={{ color: "var(--text-dim)", fontWeight: 400, fontSize: 13, marginLeft: 8 }}>
+          ({high} yüksek · {normal} normal · {low} düşük, {total} hisse)
+        </span>
+      </div>
+      <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
+        <div style={cell}>
+          <div style={{ fontSize: 12.5, color: "var(--cash)", fontWeight: 700, marginBottom: 6 }}>
+            🔥 En oynak (1 saat)
+          </div>
+          {top.map((s) => (
+            <div key={s.ticker} style={{ fontSize: 13.5, color: "var(--text)" }}>
+              {nm(s)}
+            </div>
+          ))}
+        </div>
+        <div style={cell}>
+          <div style={{ fontSize: 12.5, color: "var(--long)", fontWeight: 700, marginBottom: 6 }}>
+            🧘 En sakin (1 saat)
+          </div>
+          {calm.map((s) => (
+            <div key={s.ticker} style={{ fontSize: 13.5, color: "var(--text)" }}>
+              {nm(s)}
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function OynaklikPage() {
   const [data, setData] = useState<VolResponse | null>(null);
   const [loading, setLoading] = useState(true);
@@ -222,6 +304,8 @@ export default function OynaklikPage() {
           Veri alınamadı: {err}
         </div>
       )}
+
+      {data && data.stocks.length > 0 && <SummaryStrip stocks={data.stocks} />}
 
       {data && (
         <div
