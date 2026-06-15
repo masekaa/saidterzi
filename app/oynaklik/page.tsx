@@ -1191,10 +1191,37 @@ export default function OynaklikPage() {
       )}
 
       {data && data.stocks.length === 0 && !loading && (
-        <p style={{ color: "var(--text-dim)", marginTop: 16 }}>
-          Şu an veri yok (borsa kapalı olabilir — BIST seansı dışında gün-içi bar
-          gelmez). Seans saatlerinde tekrar deneyin.
-        </p>
+        <div
+          style={{
+            color: "var(--text-dim)",
+            marginTop: 16,
+            border: "1px solid var(--border)",
+            borderRadius: 10,
+            padding: "14px 16px",
+            lineHeight: 1.6,
+          }}
+        >
+          <b style={{ color: "var(--text)" }}>Veri alınamadı.</b> Hiçbir hisse için
+          bar dönmedi — bu genelde <b>geçici bir veri-kaynağı sorunu</b> (Yahoo
+          erişimi) demektir. Borsa kapalı olsa bile son seansın barları gelir; yani
+          bu, “borsa kapalı” değil “şu an veri yok” durumudur.{" "}
+          <button
+            onClick={load}
+            style={{
+              background: "var(--accent)",
+              color: "#fff",
+              border: "none",
+              borderRadius: 6,
+              padding: "4px 12px",
+              fontSize: 13,
+              fontWeight: 600,
+              cursor: "pointer",
+              marginTop: 8,
+            }}
+          >
+            Tekrar dene
+          </button>
+        </div>
       )}
     </main>
   );
