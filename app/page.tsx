@@ -3288,6 +3288,29 @@ function YatirimTavsiyesi({ data }: { data: AnalysisResult }) {
     }
   }
 
+  // 7c) Gün-içi araç ipucu — BIST evreni varsa Oynaklık Radarı'na yönlendir.
+  // (Aylık karar değil; "bugün ne kadar oynar" için ayrı bir gün-içi ML aracı.)
+  if (
+    data.universes.some(
+      (u) => u.emoji === "🇹🇷" || /bist/i.test(u.label)
+    )
+  ) {
+    items.push({
+      icon: "⚡",
+      lead: "Gün-içi BIST oynaklığı için ayrı bir araç var.",
+      rest: (
+        <>
+          Bu panel <b>aylık</b> kararı verir. Gün içinde “hangi BIST hissesi
+          önümüzdeki 1–2 saatte ne kadar <b>oynar</b>?” sorusu için{" "}
+          <a href="/oynaklik" style={{ color: "var(--accent)", fontWeight: 600 }}>
+            Gün-İçi Oynaklık Radarı
+          </a>{" "}
+          sayfasına bak (yön değil, hareket büyüklüğü; kalibre ML tahmini).
+        </>
+      ),
+    });
+  }
+
   // 8) Altın kural — her zaman
   items.push({
     icon: "🧭",
