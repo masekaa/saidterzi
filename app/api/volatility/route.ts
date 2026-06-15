@@ -7,7 +7,13 @@ import { NextResponse } from "next/server";
 import { fetchIntraday } from "@/lib/intraday";
 import { settledLimit } from "@/lib/concurrency";
 import { BIST_UNIVERSE } from "@/lib/universe";
-import { VOL_MODELS, computeFeatures, predict, type VolPrediction } from "@/lib/volatility";
+import {
+  MODEL_PAIRS,
+  DEFAULT_GRAN,
+  computeFeatures,
+  predict,
+  type VolPrediction,
+} from "@/lib/volatility";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -28,6 +34,7 @@ interface StockVol {
 interface VolResponse {
   asof: string;
   exchangeTz: string;
+  gran: string;
   meta: {
     h1: { r2: number; rho: number; rhoNaive: number; nTest: number };
     h2: { r2: number; rho: number; rhoNaive: number; nTest: number };
@@ -35,21 +42,26 @@ interface VolResponse {
   stocks: StockVol[];
 }
 
-// Sunucu-içi önbellek (gün-içi veri — 3 dk taze).
-let cache: { at: number; data: VolResponse } | null = null;
+// Sunucu-içi önbellek (gün-içi veri — 3 dk taze), granülerlik başına.
+const cache: Record<string, { at: number; data: VolResponse }> = {};
 const TTL = 3 * 60 * 1000;
 
-export async function GET() {
-  if (cache && Date.now() - cache.at < TTL) {
-    return NextResponse.json(cache.data);
+export async function GET(req: Request) {
+  const url = new URL(req.url);
+  const granParam = url.searchParams.get("gran") ?? DEFAULT_GRAN;
+  const gran = MODEL_PAIRS[granParam] ? granParam : DEFAULT_GRAN;
+  const pair = MODEL_PAIRS[gran];
+
+  const c = cache[gran];
+  if (c && Date.now() - c.at < TTL) {
+    return NextResponse.json(c.data);
   }
 
   const results = await settledLimit(BIST_UNIVERSE, 6, async (inst) => {
-    // 60m bar, ~1 ay -> 24-bar pencereler için fazlasıyla yeterli.
-    const series = await fetchIntraday(inst.ticker, "60m", "1mo");
+    const series = await fetchIntraday(inst.ticker, pair.interval, pair.range);
     const feats = computeFeatures(series.bars, series.gmtoffset);
-    const h1 = feats ? predict(VOL_MODELS[1], feats) : null;
-    const h2 = feats ? predict(VOL_MODELS[2], feats) : null;
+    const h1 = feats ? predict(pair.h1, feats) : null;
+    const h2 = feats ? predict(pair.h2, feats) : null;
     const last = series.bars.filter((b) => b.c != null).at(-1);
     const dayChangePct =
       series.lastPrice != null && series.prevClose != null && series.prevClose !== 0
@@ -82,17 +94,18 @@ export async function GET() {
     (a, b) => (b.h1?.expectedMovePct ?? -1) - (a.h1?.expectedMovePct ?? -1)
   );
 
-  const m1 = VOL_MODELS[1].oos;
-  const m2 = VOL_MODELS[2].oos;
+  const m1 = pair.h1.oos;
+  const m2 = pair.h2.oos;
   const data: VolResponse = {
     asof: new Date().toISOString(),
     exchangeTz: tz,
+    gran,
     meta: {
       h1: { r2: m1.r2_ridge, rho: m1.rho_ridge, rhoNaive: m1.rho_naive, nTest: m1.n_test },
       h2: { r2: m2.r2_ridge, rho: m2.rho_ridge, rhoNaive: m2.rho_naive, nTest: m2.n_test },
     },
     stocks,
   };
-  cache = { at: Date.now(), data };
+  cache[gran] = { at: Date.now(), data };
   return NextResponse.json(data);
 }

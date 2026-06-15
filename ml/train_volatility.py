@@ -83,7 +83,9 @@ def main():
     naive = te["vol_12"].values
     rho_naive = spearmanr(yte, naive).correlation
 
-    print(f"\n  H={H} ({H} bar ~{H} saat sonraki |hareket|)")
+    bar_min = {"60m": 60, "30m": 30, "15m": 15, "5m": 5, "1m": 1}.get(interval, 60)
+    hrs = H * bar_min / 60
+    print(f"\n  H={H} ({H} bar ~{hrs:g} saat sonraki |hareket|)")
     print(f"    Ridge    OOS R2={r2_ridge:.3f}  rho={rho_ridge:.3f}")
     print(f"    LightGBM OOS R2={r2_gbm:.3f}  rho={rho_gbm:.3f}")
     print(f"    NAIVE (gecmis vol)        rho={rho_naive:.3f}")

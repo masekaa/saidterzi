@@ -49,3 +49,14 @@ geçiyor (rho 0.28 vs 0.165). Risk zamanlaması için kullanışlı:
 
 Rejim kalibrasyonu (OOS gerçek ort. |hareket|): +1s → düşük %0.33 · normal %0.42 · yüksek %0.62.
 Web: `app/oynaklik` sayfası + `/api/volatility` (gün-içi 60m bar → `lib/volatility.ts` çıkarım).
+
+### 5 dakikalık granülerlik (ek, ~3 ay veri, 128k bar)
+Aynı dürüst kurulum 5m barlarda da test edildi. **Yön yine ölü** (LightGBM/lojistik
+AUC ~0.51, naive ~%57'yi geçemiyor). **Oynaklık yine gerçek** ve naive'i geçiyor:
+| Ufuk | Ridge OOS R² | ρ | naive ρ |
+|------|--------------|---|---------|
+| H=12 (~1 saat) | 0.067 | 0.236 | 0.212 |
+| H=24 (~2 saat) | 0.028 | 0.155 | 0.112 |
+Rejim kalibrasyonu (H=12, OOS): düşük %0.40 · normal %0.52 · yüksek %0.74.
+Sayfaya **granülerlik geçişi** (Saatlik / 5 dakikalık) eklendi; 5m daha güncel,
+60m daha derin tarihe dayanır. Modeller: `lib/models/volatility_5m_{12,24}.json`.

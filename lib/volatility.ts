@@ -6,9 +6,11 @@
 // şekilde rastgele (LightGBM/lojistik/LSTM hepsi naive baseline'ı geçemiyor).
 // Oynaklık ise OOS'ta naive'i geçen gerçek bir sinyal (rho 0.25 vs 0.18).
 
-import type { IntradayBar } from "@/lib/intraday";
+import type { IntradayBar, IntradayInterval } from "@/lib/intraday";
 import model1 from "@/lib/models/volatility_60m_1.json";
 import model2 from "@/lib/models/volatility_60m_2.json";
+import model5m12 from "@/lib/models/volatility_5m_12.json";
+import model5m24 from "@/lib/models/volatility_5m_24.json";
 
 export interface VolModel {
   interval: string;
@@ -28,6 +30,20 @@ export const VOL_MODELS: Record<number, VolModel> = {
   1: model1 as VolModel,
   2: model2 as VolModel,
 };
+
+// Granülerliğe göre model çifti: h1 ≈ 1 saat, h2 ≈ 2 saat ufuk.
+// 60m: H=1/H=2 bar.  5m: H=12/H=24 bar (12·5dk=1s, 24·5dk=2s).
+export interface ModelPair {
+  interval: IntradayInterval;
+  range: string; // Yahoo'dan çekilecek aralık
+  h1: VolModel; // ~1 saat
+  h2: VolModel; // ~2 saat
+}
+export const MODEL_PAIRS: Record<string, ModelPair> = {
+  "60m": { interval: "60m", range: "1mo", h1: model1 as VolModel, h2: model2 as VolModel },
+  "5m": { interval: "5m", range: "5d", h1: model5m12 as VolModel, h2: model5m24 as VolModel },
+};
+export const DEFAULT_GRAN = "60m";
 
 export type Regime = "low" | "normal" | "high";
 

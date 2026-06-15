@@ -22,6 +22,7 @@ interface StockVol {
 interface VolResponse {
   asof: string;
   exchangeTz: string;
+  gran: string;
   meta: {
     h1: { r2: number; rho: number; rhoNaive: number; nTest: number };
     h2: { r2: number; rho: number; rhoNaive: number; nTest: number };
@@ -64,16 +65,22 @@ function RegimeBadge({ p }: { p: VolPrediction | null }) {
   );
 }
 
+const GRANS: { id: string; label: string; desc: string }[] = [
+  { id: "60m", label: "Saatlik bar", desc: "60dk · ~2 yıl veri" },
+  { id: "5m", label: "5 dakikalık bar", desc: "5dk · ~3 ay veri, daha güncel" },
+];
+
 export default function OynaklikPage() {
   const [data, setData] = useState<VolResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState<string | null>(null);
+  const [gran, setGran] = useState("60m");
 
   const load = useCallback(async () => {
     setLoading(true);
     setErr(null);
     try {
-      const res = await fetch("/api/volatility", { cache: "no-store" });
+      const res = await fetch(`/api/volatility?gran=${gran}`, { cache: "no-store" });
       if (!res.ok) throw new Error(`Sunucu ${res.status}`);
       setData((await res.json()) as VolResponse);
     } catch (e) {
@@ -81,7 +88,7 @@ export default function OynaklikPage() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [gran]);
 
   useEffect(() => {
     load();
@@ -145,6 +152,44 @@ export default function OynaklikPage() {
             {data.meta.h1.r2.toFixed(2)}. <b>Yatırım tavsiyesi değildir.</b>
           </div>
         )}
+      </div>
+
+      {/* Granülerlik seçimi */}
+      <div style={{ display: "flex", gap: 8, marginBottom: 14, flexWrap: "wrap" }}>
+        {GRANS.map((g) => {
+          const active = g.id === gran;
+          return (
+            <button
+              key={g.id}
+              onClick={() => setGran(g.id)}
+              disabled={loading && active}
+              style={{
+                background: active ? "var(--card)" : "transparent",
+                color: active ? "var(--text)" : "var(--text-dim)",
+                border: `1px solid ${active ? "var(--accent)" : "var(--border)"}`,
+                borderRadius: 9,
+                padding: "8px 14px",
+                fontSize: 13.5,
+                fontWeight: 600,
+                cursor: "pointer",
+                textAlign: "left",
+                lineHeight: 1.3,
+              }}
+            >
+              {g.label}
+              <span
+                style={{
+                  display: "block",
+                  fontSize: 11.5,
+                  fontWeight: 400,
+                  color: "var(--text-faint)",
+                }}
+              >
+                {g.desc}
+              </span>
+            </button>
+          );
+        })}
       </div>
 
       <div style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 14 }}>
