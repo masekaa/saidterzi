@@ -188,6 +188,23 @@ const GRANS: { id: string; label: string; desc: string }[] = [
   { id: "5m", label: "5 dakikalık bar", desc: "5dk · ~3 ay veri, daha güncel" },
 ];
 
+type SortKey = "name" | "price" | "day" | "move1" | "move2";
+// Sıralama için bir hissenin ilgili sayısal/metin değeri.
+function sortValue(s: StockVol, k: SortKey): number | string {
+  switch (k) {
+    case "name":
+      return s.name.toLocaleLowerCase("tr-TR");
+    case "price":
+      return s.lastPrice ?? -Infinity;
+    case "day":
+      return s.dayChangePct ?? -Infinity;
+    case "move1":
+      return s.h1?.expectedMovePct ?? -Infinity;
+    case "move2":
+      return s.h2?.expectedMovePct ?? -Infinity;
+  }
+}
+
 // Üst özet şeridi: piyasa-geneli oynaklık seviyesi + en oynak/en sakin hisseler.
 function SummaryStrip({ stocks }: { stocks: StockVol[] }) {
   const withH1 = stocks.filter((s) => s.h1);
@@ -342,6 +359,54 @@ function SectorBreakdown({ stocks }: { stocks: StockVol[] }) {
   );
 }
 
+// Tıklanabilir, sıralı sütun başlığı.
+function SortTh({
+  label,
+  k,
+  align,
+  sortKey,
+  sortDir,
+  onSort,
+}: {
+  label: string;
+  k: SortKey;
+  align?: "right";
+  sortKey: SortKey;
+  sortDir: "asc" | "desc";
+  onSort: (k: SortKey) => void;
+}) {
+  const active = sortKey === k;
+  return (
+    <th
+      onClick={() => onSort(k)}
+      role="button"
+      tabIndex={0}
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          onSort(k);
+        }
+      }}
+      aria-sort={active ? (sortDir === "asc" ? "ascending" : "descending") : "none"}
+      style={{
+        padding: "11px 14px",
+        fontSize: 12.5,
+        fontWeight: 600,
+        color: active ? "var(--text)" : "var(--text-dim)",
+        whiteSpace: "nowrap",
+        textAlign: align ?? "left",
+        cursor: "pointer",
+        userSelect: "none",
+      }}
+    >
+      {label}
+      <span style={{ color: "var(--accent)", marginLeft: 5, fontSize: 11 }}>
+        {active ? (sortDir === "asc" ? "▲" : "▼") : "↕"}
+      </span>
+    </th>
+  );
+}
+
 export default function OynaklikPage() {
   const [data, setData] = useState<VolResponse | null>(null);
   const [loading, setLoading] = useState(true);
@@ -350,6 +415,16 @@ export default function OynaklikPage() {
   const [open, setOpen] = useState<string | null>(null);
   const [query, setQuery] = useState("");
   const [rf, setRf] = useState<"all" | Regime>("all");
+  const [sortKey, setSortKey] = useState<SortKey>("move1");
+  const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
+
+  const toggleSort = (k: SortKey) => {
+    if (sortKey === k) setSortDir((d) => (d === "asc" ? "desc" : "asc"));
+    else {
+      setSortKey(k);
+      setSortDir(k === "name" ? "asc" : "desc");
+    }
+  };
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -385,6 +460,12 @@ export default function OynaklikPage() {
       s.name.toLocaleLowerCase("tr-TR").includes(q) ||
       s.ticker.toLocaleLowerCase("tr-TR").includes(q)
     );
+  });
+  const sorted = [...filtered].sort((a, b) => {
+    const va = sortValue(a, sortKey);
+    const vb = sortValue(b, sortKey);
+    const cmp = typeof va === "string" ? va.localeCompare(vb as string, "tr") : va - (vb as number);
+    return sortDir === "asc" ? cmp : -cmp;
   });
 
   return (
@@ -641,16 +722,16 @@ export default function OynaklikPage() {
           >
             <thead>
               <tr style={{ background: "var(--panel)", textAlign: "left" }}>
-                <th style={th}>Hisse</th>
-                <th style={{ ...th, textAlign: "right" }}>Fiyat</th>
-                <th style={{ ...th, textAlign: "right" }}>Gün %</th>
+                <SortTh label="Hisse" k="name" sortKey={sortKey} sortDir={sortDir} onSort={toggleSort} />
+                <SortTh label="Fiyat" k="price" align="right" sortKey={sortKey} sortDir={sortDir} onSort={toggleSort} />
+                <SortTh label="Gün %" k="day" align="right" sortKey={sortKey} sortDir={sortDir} onSort={toggleSort} />
                 <th style={th}>Seyir</th>
-                <th style={th}>1 saat içi oynaklık</th>
-                <th style={th}>2 saat içi oynaklık</th>
+                <SortTh label="1 saat içi oynaklık" k="move1" sortKey={sortKey} sortDir={sortDir} onSort={toggleSort} />
+                <SortTh label="2 saat içi oynaklık" k="move2" sortKey={sortKey} sortDir={sortDir} onSort={toggleSort} />
               </tr>
             </thead>
             <tbody>
-              {filtered.map((s) => (
+              {sorted.map((s) => (
                 <Fragment key={s.ticker}>
                 <tr
                   onClick={s.h1 ? () => setOpen(open === s.ticker ? null : s.ticker) : undefined}
