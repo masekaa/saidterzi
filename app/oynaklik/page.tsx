@@ -18,6 +18,7 @@ interface StockVol {
   asof: number | null;
   spark: number[];
   regimeHistory: Regime[];
+  typicalMovePct: number | null;
   h1: VolPrediction | null;
   h2: VolPrediction | null;
 }
@@ -1012,6 +1013,27 @@ export default function OynaklikPage() {
                       </div>
                       {s.regimeHistory.length > 1 && (
                         <RegimeHistory hist={s.regimeHistory} />
+                      )}
+                      {s.h1 && s.typicalMovePct != null && s.typicalMovePct > 0 && (
+                        <div style={{ flexBasis: "100%", marginTop: 10, fontSize: 13, color: "var(--text-dim)" }}>
+                          {(() => {
+                            const ratio = s.h1.expectedMovePct / s.typicalMovePct!;
+                            const col =
+                              ratio >= 1.3 ? "var(--cash)" : ratio <= 0.75 ? "var(--long)" : "var(--text)";
+                            const word =
+                              ratio >= 1.3 ? "normalden YÜKSEK" : ratio <= 0.75 ? "normalden DÜŞÜK" : "normal civarı";
+                            return (
+                              <>
+                                Bağlam: bu hissenin tipik 1-bar hareketi ±%
+                                {s.typicalMovePct!.toFixed(2)}; bugünkü beklenti{" "}
+                                <b style={{ color: col }}>
+                                  {ratio.toFixed(1)}× ({word})
+                                </b>
+                                .
+                              </>
+                            );
+                          })()}
+                        </div>
                       )}
                     </td>
                   </tr>
