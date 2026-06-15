@@ -44,26 +44,45 @@ const REGIME_COLOR: Record<Regime, { fg: string; bg: string }> = {
   high: { fg: "var(--cash)", bg: "var(--cash-bg)" },
 };
 
-function RegimeBadge({ p }: { p: VolPrediction | null }) {
+function RegimeBadge({ p, price }: { p: VolPrediction | null; price?: number | null }) {
   if (!p) return <span style={{ color: "var(--text-faint)" }}>—</span>;
   const col = REGIME_COLOR[p.regime];
+  // Beklenen simetrik fiyat bandı (yön değil, büyüklük): fiyat × (1 ∓ ±%).
+  const m = p.expectedMovePct / 100;
+  const band =
+    price != null && price > 0
+      ? `${(price * (1 - m)).toFixed(2)}–${(price * (1 + m)).toFixed(2)}`
+      : null;
   return (
-    <span style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>
-      <span
-        style={{
-          padding: "2px 9px",
-          borderRadius: 999,
-          fontSize: 12,
-          fontWeight: 700,
-          color: col.fg,
-          background: col.bg,
-        }}
-      >
-        {REGIME_TR[p.regime]}
+    <span style={{ display: "inline-flex", flexDirection: "column", gap: 2 }}>
+      <span style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>
+        <span
+          style={{
+            padding: "2px 9px",
+            borderRadius: 999,
+            fontSize: 12,
+            fontWeight: 700,
+            color: col.fg,
+            background: col.bg,
+          }}
+        >
+          {REGIME_TR[p.regime]}
+        </span>
+        <span style={{ color: "var(--text)", fontVariantNumeric: "tabular-nums" }}>
+          ±%{p.expectedMovePct.toFixed(2)}
+        </span>
       </span>
-      <span style={{ color: "var(--text)", fontVariantNumeric: "tabular-nums" }}>
-        ±%{p.expectedMovePct.toFixed(2)}
-      </span>
+      {band && (
+        <span
+          style={{
+            color: "var(--text-faint)",
+            fontSize: 11.5,
+            fontVariantNumeric: "tabular-nums",
+          }}
+        >
+          ≈ {band} ₺
+        </span>
+      )}
     </span>
   );
 }
@@ -457,10 +476,10 @@ export default function OynaklikPage() {
                     <Sparkline data={s.spark} />
                   </td>
                   <td style={td}>
-                    <RegimeBadge p={s.h1} />
+                    <RegimeBadge p={s.h1} price={s.lastPrice} />
                   </td>
                   <td style={td}>
-                    <RegimeBadge p={s.h2} />
+                    <RegimeBadge p={s.h2} price={s.lastPrice} />
                   </td>
                 </tr>
                 {open === s.ticker && s.h1 && (
