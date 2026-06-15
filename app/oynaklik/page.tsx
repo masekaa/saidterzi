@@ -612,16 +612,26 @@ export default function OynaklikPage() {
   // Tercihleri (granülerlik, sıralama, rejim filtresi) hatırla.
   const [prefsLoaded, setPrefsLoaded] = useState(false);
   useEffect(() => {
+    // Öncelik: URL sorgu parametreleri (paylaşılabilir) > localStorage > varsayılan.
+    let url: URLSearchParams | null = null;
+    try {
+      url = new URLSearchParams(window.location.search);
+    } catch {
+      /* yok say */
+    }
+    const fromUrl = (k: string) => url?.get(k) ?? null;
     try {
       const raw = localStorage.getItem("oynaklik:prefs");
-      if (raw) {
-        const p = JSON.parse(raw);
-        if (p.gran === "60m" || p.gran === "5m") setGran(p.gran);
-        if (["name", "price", "day", "move1", "move2"].includes(p.sortKey)) setSortKey(p.sortKey);
-        if (p.sortDir === "asc" || p.sortDir === "desc") setSortDir(p.sortDir);
-        if (["all", "low", "normal", "high"].includes(p.rf)) setRf(p.rf);
-        if (typeof p.autoRefresh === "boolean") setAutoRefresh(p.autoRefresh);
-      }
+      const p = raw ? JSON.parse(raw) : {};
+      const gv = fromUrl("gran") ?? p.gran;
+      const skv = fromUrl("sort") ?? p.sortKey;
+      const sdv = fromUrl("dir") ?? p.sortDir;
+      const rfv = fromUrl("rf") ?? p.rf;
+      if (gv === "60m" || gv === "5m") setGran(gv);
+      if (["name", "price", "day", "move1", "move2"].includes(skv)) setSortKey(skv);
+      if (sdv === "asc" || sdv === "desc") setSortDir(sdv);
+      if (["all", "low", "normal", "high"].includes(rfv)) setRf(rfv);
+      if (typeof p.autoRefresh === "boolean") setAutoRefresh(p.autoRefresh);
     } catch {
       /* yok say */
     }
@@ -634,6 +644,9 @@ export default function OynaklikPage() {
         "oynaklik:prefs",
         JSON.stringify({ gran, sortKey, sortDir, rf, autoRefresh })
       );
+      // URL'i de güncelle (paylaşılabilir görünüm) — sayfa yeniden yüklenmez.
+      const qs = new URLSearchParams({ gran, sort: sortKey, dir: sortDir, rf });
+      window.history.replaceState(null, "", `${window.location.pathname}?${qs}`);
     } catch {
       /* yok say */
     }
@@ -838,6 +851,28 @@ export default function OynaklikPage() {
             ⬇ CSV indir
           </button>
         )}
+        <button
+          onClick={() => {
+            try {
+              navigator.clipboard?.writeText(window.location.href);
+            } catch {
+              /* yok say */
+            }
+          }}
+          title="Bu görünümün bağlantısını kopyala (granülerlik + filtre + sıralama)"
+          style={{
+            background: "transparent",
+            color: "var(--text-dim)",
+            border: "1px solid var(--border)",
+            borderRadius: 8,
+            padding: "8px 14px",
+            fontSize: 13.5,
+            fontWeight: 600,
+            cursor: "pointer",
+          }}
+        >
+          🔗 Bağlantıyı kopyala
+        </button>
         <label
           style={{
             display: "inline-flex",
