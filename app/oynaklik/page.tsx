@@ -348,6 +348,8 @@ export default function OynaklikPage() {
   const [err, setErr] = useState<string | null>(null);
   const [gran, setGran] = useState("60m");
   const [open, setOpen] = useState<string | null>(null);
+  const [query, setQuery] = useState("");
+  const [rf, setRf] = useState<"all" | Regime>("all");
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -374,6 +376,16 @@ export default function OynaklikPage() {
       day: "2-digit",
       month: "2-digit",
     });
+
+  const q = query.trim().toLocaleLowerCase("tr-TR");
+  const filtered = (data?.stocks ?? []).filter((s) => {
+    if (rf !== "all" && s.h1?.regime !== rf) return false;
+    if (!q) return true;
+    return (
+      s.name.toLocaleLowerCase("tr-TR").includes(q) ||
+      s.ticker.toLocaleLowerCase("tr-TR").includes(q)
+    );
+  });
 
   return (
     <main
@@ -556,6 +568,60 @@ export default function OynaklikPage() {
       {data && data.stocks.length > 0 && <SummaryStrip stocks={data.stocks} />}
       {data && data.stocks.length > 0 && <SectorBreakdown stocks={data.stocks} />}
 
+      {data && data.stocks.length > 0 && (
+        <div
+          style={{ display: "flex", gap: 10, flexWrap: "wrap", alignItems: "center", marginBottom: 12 }}
+        >
+          <input
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Hisse ara (ör. THYAO, Garanti)…"
+            aria-label="Hisse ara"
+            style={{
+              flex: "1 1 220px",
+              maxWidth: 280,
+              background: "var(--panel-2)",
+              border: "1px solid var(--border)",
+              borderRadius: 8,
+              padding: "8px 12px",
+              fontSize: 13.5,
+              color: "var(--text)",
+            }}
+          />
+          <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+            {([
+              ["all", "Tümü"],
+              ["high", "Yüksek"],
+              ["normal", "Normal"],
+              ["low", "Düşük"],
+            ] as const).map(([id, label]) => {
+              const active = rf === id;
+              return (
+                <button
+                  key={id}
+                  onClick={() => setRf(id)}
+                  style={{
+                    background: active ? "var(--card)" : "transparent",
+                    color: active ? "var(--text)" : "var(--text-dim)",
+                    border: `1px solid ${active ? "var(--accent)" : "var(--border)"}`,
+                    borderRadius: 999,
+                    padding: "6px 13px",
+                    fontSize: 12.5,
+                    fontWeight: 600,
+                    cursor: "pointer",
+                  }}
+                >
+                  {label}
+                </button>
+              );
+            })}
+          </div>
+          <span style={{ color: "var(--text-faint)", fontSize: 12.5 }}>
+            {filtered.length}/{data.stocks.length} hisse
+          </span>
+        </div>
+      )}
+
       {data && (
         <div
           style={{
@@ -584,7 +650,7 @@ export default function OynaklikPage() {
               </tr>
             </thead>
             <tbody>
-              {data.stocks.map((s) => (
+              {filtered.map((s) => (
                 <Fragment key={s.ticker}>
                 <tr
                   onClick={s.h1 ? () => setOpen(open === s.ticker ? null : s.ticker) : undefined}
@@ -671,6 +737,12 @@ export default function OynaklikPage() {
             </tbody>
           </table>
         </div>
+      )}
+
+      {data && data.stocks.length > 0 && filtered.length === 0 && (
+        <p style={{ color: "var(--text-dim)", marginTop: 16, fontSize: 14 }}>
+          Eşleşen hisse yok. Aramayı veya rejim filtresini değiştirin.
+        </p>
       )}
 
       {data && data.stocks.length === 0 && !loading && (
