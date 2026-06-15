@@ -5,8 +5,8 @@
 // çıkarım yapar. DÜRÜSTLÜK: yön (artış/azalış) tahmin EDİLMEZ — kanıtlanmış
 // şekilde rastgele. Yalnız "ne kadar oynar" tahmin edilir (oynaklık kümelenmesi).
 
-import { useCallback, useEffect, useState } from "react";
-import type { Regime, VolPrediction } from "@/lib/volatility";
+import { Fragment, useCallback, useEffect, useState } from "react";
+import type { Driver, Regime, VolPrediction } from "@/lib/volatility";
 
 interface StockVol {
   ticker: string;
@@ -62,6 +62,26 @@ function RegimeBadge({ p }: { p: VolPrediction | null }) {
         ±%{p.expectedMovePct.toFixed(2)}
       </span>
     </span>
+  );
+}
+
+// Lineer modelin yerel açıklaması: en etkili sürücüler ↑ (yükseltir) / ↓ (düşürür).
+function DriverList({ title, drivers }: { title: string; drivers: Driver[] }) {
+  return (
+    <div style={{ flex: "1 1 240px" }}>
+      <div style={{ fontSize: 12, color: "var(--text-faint)", marginBottom: 4 }}>{title}</div>
+      {drivers.map((d, i) => {
+        const up = d.effect >= 0;
+        return (
+          <div key={i} style={{ fontSize: 13, color: "var(--text-dim)", lineHeight: 1.6 }}>
+            <span style={{ color: up ? "var(--cash)" : "var(--long)", fontWeight: 700 }}>
+              {up ? "↑" : "↓"}
+            </span>{" "}
+            {d.label}
+          </div>
+        );
+      })}
+    </div>
   );
 }
 
@@ -157,6 +177,7 @@ export default function OynaklikPage() {
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState<string | null>(null);
   const [gran, setGran] = useState("60m");
+  const [open, setOpen] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -327,9 +348,24 @@ export default function OynaklikPage() {
             </thead>
             <tbody>
               {data.stocks.map((s) => (
-                <tr key={s.ticker} style={{ borderTop: "1px solid var(--border-soft)" }}>
+                <Fragment key={s.ticker}>
+                <tr
+                  onClick={() => setOpen(open === s.ticker ? null : s.ticker)}
+                  style={{
+                    borderTop: "1px solid var(--border-soft)",
+                    cursor: s.h1 ? "pointer" : "default",
+                    background: open === s.ticker ? "var(--panel)" : "transparent",
+                  }}
+                >
                   <td style={td}>
-                    <div style={{ fontWeight: 600 }}>{s.name}</div>
+                    <div style={{ fontWeight: 600 }}>
+                      {s.h1 && (
+                        <span style={{ color: "var(--text-faint)", fontSize: 11, marginRight: 6 }}>
+                          {open === s.ticker ? "▾" : "▸"}
+                        </span>
+                      )}
+                      {s.name}
+                    </div>
                     <div style={{ color: "var(--text-faint)", fontSize: 12 }}>
                       {s.ticker.replace(".IS", "")} {s.note ? `· ${s.note}` : ""}
                     </div>
@@ -361,6 +397,22 @@ export default function OynaklikPage() {
                     <RegimeBadge p={s.h2} />
                   </td>
                 </tr>
+                {open === s.ticker && s.h1 && (
+                  <tr style={{ background: "var(--panel)" }}>
+                    <td colSpan={5} style={{ padding: "4px 14px 16px" }}>
+                      <div style={{ fontSize: 12.5, color: "var(--text-faint)", marginBottom: 8 }}>
+                        Bu tahmini en çok belirleyen etkenler{" "}
+                        <span style={{ color: "var(--cash)" }}>↑ oynaklığı yükseltiyor</span> ·{" "}
+                        <span style={{ color: "var(--long)" }}>↓ düşürüyor</span> (lineer model katkıları):
+                      </div>
+                      <div style={{ display: "flex", gap: 20, flexWrap: "wrap" }}>
+                        <DriverList title="1 saat içi" drivers={s.h1.drivers} />
+                        {s.h2 && <DriverList title="2 saat içi" drivers={s.h2.drivers} />}
+                      </div>
+                    </td>
+                  </tr>
+                )}
+                </Fragment>
               ))}
             </tbody>
           </table>

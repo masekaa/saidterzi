@@ -47,13 +47,39 @@ export const DEFAULT_GRAN = "60m";
 
 export type Regime = "low" | "normal" | "high";
 
+export interface Driver {
+  label: string; // insan-okur özellik adı
+  effect: number; // işaretli katkı (coef·z); + = oynaklığı YÜKSELTİYOR
+}
 export interface VolPrediction {
   pred: number; // ham tahmin (|log-getiri| ~ kesirsel hareket)
   predPct: number; // ham tahmin yüzde
   regime: Regime;
   // O rejimin OOS'ta GERÇEKLEŞEN ortalama mutlak hareketi (kalibre, dürüst sayı)
   expectedMovePct: number;
+  drivers: Driver[]; // tahmini en çok belirleyen özellikler (lineer model katkıları)
 }
+
+// 17 özelliğin sade-dil etiketleri (lineer modelin yerel açıklaması için).
+const FEATURE_LABELS: Record<string, string> = {
+  ret_1: "son 1-bar getiri",
+  ret_2: "son 2-bar getiri",
+  ret_3: "son 3-bar getiri",
+  ret_6: "son 6-bar getiri",
+  ret_12: "orta-vadeli getiri",
+  ret_24: "uzun-vadeli getiri",
+  vol_6: "son 6-bar oynaklık",
+  vol_12: "son 12-bar oynaklık",
+  vol_24: "son 24-bar oynaklık",
+  rsi_14: "RSI (aşırı alım/satım)",
+  toHi_12: "zirveye yakınlık",
+  toLo_12: "dibe yakınlık",
+  sma_gap_6: "kısa ortalamadan sapma",
+  sma_gap_12: "orta ortalamadan sapma",
+  vol_ratio_12: "hacim artışı",
+  bar_range: "bar-içi aralık",
+  hour: "seans saati",
+};
 
 const ln = Math.log;
 
@@ -157,12 +183,19 @@ export function computeFeatures(
 // Ridge çıkarımı: z=(x-mean)/std; pred=intercept+coef·z; rejim eşiklerle.
 export function predict(model: VolModel, x: number[]): VolPrediction {
   let pred = model.intercept;
+  const contribs: Driver[] = [];
   for (let i = 0; i < x.length; i++) {
     const z = (x[i] - model.mean[i]) / model.std[i];
-    pred += model.coef[i] * z;
+    const c = model.coef[i] * z;
+    pred += c;
+    contribs.push({ label: FEATURE_LABELS[model.features[i]] ?? model.features[i], effect: c });
   }
   const { low, high } = model.regime_thresholds;
   const regime: Regime = pred < low ? "low" : pred < high ? "normal" : "high";
   const expectedMovePct = model.regime_actual_move[regime] * 100;
-  return { pred, predPct: pred * 100, regime, expectedMovePct };
+  // En etkili 3 sürücü (mutlak katkıya göre).
+  const drivers = contribs
+    .sort((a, b) => Math.abs(b.effect) - Math.abs(a.effect))
+    .slice(0, 3);
+  return { pred, predPct: pred * 100, regime, expectedMovePct, drivers };
 }
