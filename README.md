@@ -12,7 +12,9 @@ Her evren aynı tam analiz paketini alır; üst sekmelerden geçilir. Tüm sleev
 
 ```bash
 npm install
-npm run dev      # http://localhost:3000
+npm run dev        # http://localhost:3000
+npm run typecheck  # TypeScript doğrulama (tsc --noEmit)
+npm run test:parity  # ML çıkarım paritesi (Python+Node, yerel ml/data gerekir)
 ```
 
 Deploy için → [`DEPLOY.md`](DEPLOY.md). Veri: Yahoo Finance (keyless). Çekirdek strateji: 12-ay look-back, T-Bill eşikli dual momentum (göreceli + mutlak). Sinyal `t`-sonu, getiri `t+1` (lookahead-bias yok). Sonuçlar 10 dk sunucu önbelleğinde tutulur.
