@@ -509,6 +509,7 @@ export default function OynaklikPage() {
   const [rf, setRf] = useState<"all" | Regime>("all");
   const [sortKey, setSortKey] = useState<SortKey>("move1");
   const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
+  const [autoRefresh, setAutoRefresh] = useState(true);
 
   const toggleSort = (k: SortKey) => {
     if (sortKey === k) setSortDir((d) => (d === "asc" ? "desc" : "asc"));
@@ -536,6 +537,14 @@ export default function OynaklikPage() {
     load();
   }, [load]);
 
+  // Borsa açıkken otomatik yenile (önbellek TTL'i 3 dk; buna denk).
+  const marketOpen = data?.marketOpen ?? false;
+  useEffect(() => {
+    if (!autoRefresh || !marketOpen) return;
+    const id = setInterval(() => load(), 180_000);
+    return () => clearInterval(id);
+  }, [autoRefresh, marketOpen, load]);
+
   // Tercihleri (granülerlik, sıralama, rejim filtresi) hatırla.
   const [prefsLoaded, setPrefsLoaded] = useState(false);
   useEffect(() => {
@@ -547,6 +556,7 @@ export default function OynaklikPage() {
         if (["name", "price", "day", "move1", "move2"].includes(p.sortKey)) setSortKey(p.sortKey);
         if (p.sortDir === "asc" || p.sortDir === "desc") setSortDir(p.sortDir);
         if (["all", "low", "normal", "high"].includes(p.rf)) setRf(p.rf);
+        if (typeof p.autoRefresh === "boolean") setAutoRefresh(p.autoRefresh);
       }
     } catch {
       /* yok say */
@@ -558,12 +568,12 @@ export default function OynaklikPage() {
     try {
       localStorage.setItem(
         "oynaklik:prefs",
-        JSON.stringify({ gran, sortKey, sortDir, rf })
+        JSON.stringify({ gran, sortKey, sortDir, rf, autoRefresh })
       );
     } catch {
       /* yok say */
     }
-  }, [prefsLoaded, gran, sortKey, sortDir, rf]);
+  }, [prefsLoaded, gran, sortKey, sortDir, rf, autoRefresh]);
 
   const fmtTime = (iso: string) =>
     new Date(iso).toLocaleString("tr-TR", {
@@ -764,6 +774,25 @@ export default function OynaklikPage() {
             ⬇ CSV indir
           </button>
         )}
+        <label
+          style={{
+            display: "inline-flex",
+            alignItems: "center",
+            gap: 6,
+            fontSize: 13,
+            color: "var(--text-dim)",
+            cursor: "pointer",
+            userSelect: "none",
+          }}
+        >
+          <input
+            type="checkbox"
+            checked={autoRefresh}
+            onChange={(e) => setAutoRefresh(e.target.checked)}
+            style={{ accentColor: "var(--accent)", cursor: "pointer" }}
+          />
+          Otomatik yenile {marketOpen ? "" : "(borsa açıkken)"}
+        </label>
         {data && (
           <span
             style={{
