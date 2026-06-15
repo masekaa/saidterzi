@@ -587,7 +587,21 @@ export default function OynaklikPage() {
               {data.stocks.map((s) => (
                 <Fragment key={s.ticker}>
                 <tr
-                  onClick={() => setOpen(open === s.ticker ? null : s.ticker)}
+                  onClick={s.h1 ? () => setOpen(open === s.ticker ? null : s.ticker) : undefined}
+                  onKeyDown={
+                    s.h1
+                      ? (e) => {
+                          if (e.key === "Enter" || e.key === " ") {
+                            e.preventDefault();
+                            setOpen(open === s.ticker ? null : s.ticker);
+                          }
+                        }
+                      : undefined
+                  }
+                  tabIndex={s.h1 ? 0 : undefined}
+                  role={s.h1 ? "button" : undefined}
+                  aria-expanded={s.h1 ? open === s.ticker : undefined}
+                  aria-label={s.h1 ? `${s.name} oynaklık etkenlerini göster` : undefined}
                   style={{
                     borderTop: "1px solid var(--border-soft)",
                     cursor: s.h1 ? "pointer" : "default",
