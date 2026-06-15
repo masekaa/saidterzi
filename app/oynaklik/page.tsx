@@ -452,6 +452,36 @@ export default function OynaklikPage() {
       month: "2-digit",
     });
 
+  // Görüntülenen (filtre+sıralama uygulanmış) satırları CSV olarak indir.
+  const downloadCsv = () => {
+    const head = [
+      "Sembol", "Hisse", "Sektor", "Fiyat", "Gun_%",
+      "1s_Rejim", "1s_BeklenenHareket_%", "2s_Rejim", "2s_BeklenenHareket_%",
+    ];
+    const reg = (r?: Regime) => (r ? REGIME_TR[r] : "");
+    const rows = sorted.map((s) =>
+      [
+        s.ticker.replace(".IS", ""),
+        `"${s.name.replace(/"/g, '""')}"`,
+        s.note ?? "",
+        s.lastPrice != null ? s.lastPrice.toFixed(2) : "",
+        s.dayChangePct != null ? s.dayChangePct.toFixed(2) : "",
+        reg(s.h1?.regime),
+        s.h1 ? s.h1.expectedMovePct.toFixed(2) : "",
+        reg(s.h2?.regime),
+        s.h2 ? s.h2.expectedMovePct.toFixed(2) : "",
+      ].join(",")
+    );
+    const csv = "﻿" + [head.join(","), ...rows].join("\r\n");
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `bist_oynaklik_${gran}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
   const q = query.trim().toLocaleLowerCase("tr-TR");
   const filtered = (data?.stocks ?? []).filter((s) => {
     if (rf !== "all" && s.h1?.regime !== rf) return false;
@@ -596,6 +626,23 @@ export default function OynaklikPage() {
         >
           {loading ? "Yükleniyor…" : "Yenile"}
         </button>
+        {data && data.stocks.length > 0 && (
+          <button
+            onClick={downloadCsv}
+            style={{
+              background: "transparent",
+              color: "var(--text-dim)",
+              border: "1px solid var(--border)",
+              borderRadius: 8,
+              padding: "8px 14px",
+              fontSize: 13.5,
+              fontWeight: 600,
+              cursor: "pointer",
+            }}
+          >
+            ⬇ CSV indir
+          </button>
+        )}
         {data && (
           <span
             style={{
