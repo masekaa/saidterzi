@@ -16,6 +16,7 @@ interface StockVol {
   prevClose: number | null;
   dayChangePct: number | null;
   asof: number | null;
+  spark: number[];
   h1: VolPrediction | null;
   h2: VolPrediction | null;
 }
@@ -62,6 +63,28 @@ function RegimeBadge({ p }: { p: VolPrediction | null }) {
         ±%{p.expectedMovePct.toFixed(2)}
       </span>
     </span>
+  );
+}
+
+// Gün-içi mini fiyat grafiği (son ~30 bar kapanışı). Yükseliş yeşil, düşüş kırmızı.
+function Sparkline({ data }: { data: number[] }) {
+  const w = 84;
+  const h = 26;
+  if (!data || data.length < 2) return <span style={{ color: "var(--text-faint)" }}>—</span>;
+  const min = Math.min(...data);
+  const max = Math.max(...data);
+  const span = max - min || 1;
+  const pts = data.map((v, i) => {
+    const x = (i / (data.length - 1)) * (w - 2) + 1;
+    const y = h - 1 - ((v - min) / span) * (h - 2);
+    return `${x.toFixed(1)},${y.toFixed(1)}`;
+  });
+  const up = data[data.length - 1] >= data[0];
+  const color = up ? "var(--long)" : "var(--danger)";
+  return (
+    <svg width={w} height={h} style={{ display: "block" }} aria-hidden="true">
+      <polyline points={pts.join(" ")} fill="none" stroke={color} strokeWidth={1.5} />
+    </svg>
   );
 }
 
@@ -342,6 +365,7 @@ export default function OynaklikPage() {
                 <th style={th}>Hisse</th>
                 <th style={{ ...th, textAlign: "right" }}>Fiyat</th>
                 <th style={{ ...th, textAlign: "right" }}>Gün %</th>
+                <th style={th}>Seyir</th>
                 <th style={th}>1 saat içi oynaklık</th>
                 <th style={th}>2 saat içi oynaklık</th>
               </tr>
@@ -391,6 +415,9 @@ export default function OynaklikPage() {
                       : "—"}
                   </td>
                   <td style={td}>
+                    <Sparkline data={s.spark} />
+                  </td>
+                  <td style={td}>
                     <RegimeBadge p={s.h1} />
                   </td>
                   <td style={td}>
@@ -399,7 +426,7 @@ export default function OynaklikPage() {
                 </tr>
                 {open === s.ticker && s.h1 && (
                   <tr style={{ background: "var(--panel)" }}>
-                    <td colSpan={5} style={{ padding: "4px 14px 16px" }}>
+                    <td colSpan={6} style={{ padding: "4px 14px 16px" }}>
                       <div style={{ fontSize: 12.5, color: "var(--text-faint)", marginBottom: 8 }}>
                         Bu tahmini en çok belirleyen etkenler{" "}
                         <span style={{ color: "var(--cash)" }}>↑ oynaklığı yükseltiyor</span> ·{" "}
