@@ -389,6 +389,36 @@ function MarketVolIndex({ hist }: { hist: number[] }) {
   );
 }
 
+// "Yeni ısınanlar": son barlarda YÜKSEK orijime YENİ geçen hisseler (bir şey oluyor).
+function NewlyHeated({ stocks }: { stocks: StockVol[] }) {
+  const fresh = stocks.filter((s) => {
+    const h = s.regimeHistory;
+    if (!h || h.length < 4) return false;
+    // Şimdi yüksek, ~3 bar önce yüksek değildi → yeni ısındı.
+    return h[h.length - 1] === "high" && h[h.length - 3] !== "high";
+  });
+  if (fresh.length === 0) return null;
+  const nm = (s: StockVol) => s.ticker.replace(".IS", "");
+  return (
+    <div
+      style={{
+        background: "var(--cash-bg)",
+        border: "1px solid var(--cash)",
+        borderRadius: 12,
+        padding: "10px 16px",
+        marginBottom: 16,
+        fontSize: 14,
+        color: "var(--text)",
+        lineHeight: 1.55,
+      }}
+    >
+      <b style={{ color: "var(--cash)" }}>🆕 Yeni ısınanlar:</b>{" "}
+      {fresh.map(nm).join(", ")} — son saatlerde <b>yüksek oynaklığa</b> yeni geçtiler
+      (sıçrama/haber olabilir; yön değil, hareket büyüklüğü).
+    </div>
+  );
+}
+
 // Sade-dil "şimdi ne yapmalı?" özeti — projenin Ayşe-teyze felsefesi, gün-içine uygulanmış.
 function AdviceLine({ stocks, marketOpen }: { stocks: StockVol[]; marketOpen: boolean }) {
   const withH1 = stocks.filter((s) => s.h1);
@@ -963,6 +993,7 @@ export default function OynaklikPage() {
       {data && data.marketVolHistory.length >= 3 && (
         <MarketVolIndex hist={data.marketVolHistory} />
       )}
+      {data && data.stocks.length > 0 && <NewlyHeated stocks={data.stocks} />}
       {data && data.stocks.length > 0 && <SummaryStrip stocks={data.stocks} />}
       {data && data.stocks.length > 0 && <SectorBreakdown stocks={data.stocks} />}
 
