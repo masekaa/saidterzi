@@ -19,6 +19,10 @@ import {
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
+
+// Vercel edge CDN'i 3 dk önbelleğe alsın (in-memory cache cold-start'ta kaybolur);
+// stale-while-revalidate ile eskimiş yanıt anında servis edilip arkada tazelenir.
+const CDN_CACHE = "public, s-maxage=180, stale-while-revalidate=300";
 export const maxDuration = 60;
 
 // Sunucu-içi önbellek (gün-içi veri — 3 dk taze), granülerlik başına.
@@ -33,7 +37,7 @@ export async function GET(req: Request) {
 
   const c = cache[gran];
   if (c && Date.now() - c.at < TTL) {
-    return NextResponse.json(c.data);
+    return NextResponse.json(c.data, { headers: { "Cache-Control": CDN_CACHE } });
   }
 
   const results = await settledLimit(BIST_UNIVERSE, 6, async (inst) => {
@@ -159,5 +163,5 @@ export async function GET(req: Request) {
     stocks,
   };
   cache[gran] = { at: Date.now(), data };
-  return NextResponse.json(data);
+  return NextResponse.json(data, { headers: { "Cache-Control": CDN_CACHE } });
 }
