@@ -30,6 +30,7 @@ interface StockVol {
   spark: number[]; // son ~30 kapanış (mini grafik için)
   regimeHistory: string[]; // son ~12 barın rejimi (low/normal/high)
   typicalMovePct: number | null; // hissenin tipik 1-bar |hareketi| (son ~60 bar)
+  volRatio: number | null; // son bar hacmi / önceki 12 bar ort. (>1.5 = spike)
   h1: VolPrediction | null;
   h2: VolPrediction | null;
 }
@@ -95,6 +96,19 @@ export async function GET(req: Request) {
         typicalMovePct = (rets.reduce((a, b) => a + b, 0) / rets.length) * 100;
       }
     }
+    // Hacim teyidi: son barın hacmi, önceki ~12 barın ortalamasının kaç katı?
+    let volRatio: number | null = null;
+    {
+      const vols = series.bars
+        .map((b) => b.v)
+        .filter((x): x is number => x != null && x > 0);
+      if (vols.length >= 13) {
+        const lastV = vols[vols.length - 1];
+        const base = vols.slice(-13, -1); // son bardan önceki 12 bar
+        const avg = base.reduce((a, b) => a + b, 0) / base.length;
+        if (avg > 0) volRatio = lastV / avg;
+      }
+    }
     const last = closes.at(-1) ?? null;
     const lastT = series.bars.filter((b) => b.c != null).at(-1)?.t ?? null;
     const dayChangePct =
@@ -112,6 +126,7 @@ export async function GET(req: Request) {
       spark: closes.slice(-30),
       regimeHistory,
       typicalMovePct,
+      volRatio,
       h1,
       h2,
     };

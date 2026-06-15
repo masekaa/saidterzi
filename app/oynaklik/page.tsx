@@ -19,6 +19,7 @@ interface StockVol {
   spark: number[];
   regimeHistory: Regime[];
   typicalMovePct: number | null;
+  volRatio: number | null;
   h1: VolPrediction | null;
   h2: VolPrediction | null;
 }
@@ -1068,6 +1069,22 @@ export default function OynaklikPage() {
                     </div>
                     <div style={{ color: "var(--text-faint)", fontSize: 12 }}>
                       {s.ticker.replace(".IS", "")} {s.note ? `· ${s.note}` : ""}
+                      {s.volRatio != null && s.volRatio >= 1.5 && (
+                        <span
+                          title={`Son bar hacmi, son 12 barın ${s.volRatio.toFixed(1)}× ortalaması — hacim teyidi`}
+                          style={{
+                            marginLeft: 6,
+                            padding: "1px 6px",
+                            borderRadius: 999,
+                            fontSize: 10.5,
+                            fontWeight: 700,
+                            color: "var(--accent)",
+                            background: "rgba(91,140,255,0.14)",
+                          }}
+                        >
+                          🔊 {s.volRatio.toFixed(1)}×
+                        </span>
+                      )}
                     </div>
                   </td>
                   <td style={{ ...td, textAlign: "right", fontVariantNumeric: "tabular-nums" }}>
